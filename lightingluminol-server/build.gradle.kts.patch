@@ -1,0 +1,72 @@
+--- a/luminol-server/build.gradle.kts
++++ b/luminol-server/build.gradle.kts
+@@ -47,7 +47,23 @@
+         }
+     }
+ 
+-    activeFork = luminol
++    val lightingluminol = forks.register("lightingluminol") {
++        forks = luminol
++        upstream.patchRepo("paperServer") {
++            upstreamRepo = luminol.patchedRepo("paperServer")
++            patchesDir = rootDirectory.dir("lightingluminol-server/paper-patches")
++            outputDir = rootDirectory.dir("paper-server")
++        }
++
++        upstream.patchDir("luminolServer") {
++            upstreamPath = "luminol-server"
++            excludes = setOf("src/minecraft", "paper-patches", "minecraft-patches", "build.gradle.kts", "build.gradle.kts.patch")
++            patchesDir = rootDirectory.dir("lightingluminol-server/luminol-patches")
++            outputDir = rootDirectory.dir("luminol-server")
++        }
++    }
++
++    activeFork = lightingluminol
+ 
+     spigot {
+         buildDataRef = "3edaf46ec1eed4115ce1b18d2846cded42577e42"
+@@ -135,12 +151,16 @@
+         resources { srcDir("../paper-server/src/main/resources") }
+         java { srcDir("../folia-server/src/main/java") }
+         resources { srcDir("../folia-server/src/main/resources") }
++        java { srcDir("../luminol-server/src/main/java") }
++        resources { srcDir("../luminol-server/src/main/resources") }
+     }
+     test {
+         java { srcDir("../paper-server/src/test/java") }
+         resources { srcDir("../paper-server/src/test/resources") }
+         java { srcDir("../folia-server/src/test/java") }
+         resources { srcDir("../folia-server/src/test/resources") }
++        java { srcDir("../luminol-server/src/main/java") }
++        resources { srcDir("../luminol-server/src/main/resources") }
+     }
+ }
+ 
+@@ -164,7 +184,7 @@
+ }
+ 
+ dependencies {
+-    implementation(project(":luminol-api")) // Luminol
++    implementation(project(":lightingluminol-api")) // Luminol // LightingLuminol
+     implementation("com.electronwill.night-config:toml:3.6.6") // Luminol - Night config
+     // Abomination start
+     implementation("com.github.luben:zstd-jni:1.5.4-1")
+@@ -247,14 +267,14 @@
+         val gitBranch = git.exec(providers, "rev-parse", "--abbrev-ref", "HEAD").get().trim()
+         attributes(
+             "Main-Class" to "org.bukkit.craftbukkit.Main",
+-            "Implementation-Title" to "Luminol",
++            "Implementation-Title" to "LightingLuminol",
+             "Implementation-Version" to implementationVersion,
+             "Implementation-Vendor" to date,
+-            "Specification-Title" to "Luminol",
++            "Specification-Title" to "LightingLuminol",
+             "Specification-Version" to project.version,
+             "Specification-Vendor" to "Luminol Team",
+-            "Brand-Id" to "luminolmc:luminol",
+-            "Brand-Name" to "Luminol",
++            "Brand-Id" to "luminolmc:lightingluminol",
++            "Brand-Name" to "LightingLuminol",
+             "Build-Number" to (build ?: ""),
+             "Build-Time" to buildTime.toString(),
+             "Git-Branch" to gitBranch,

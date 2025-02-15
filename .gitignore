@@ -1,60 +1,18 @@
-# JVM crash related
-core.*
-hs_err_pid*
-
-# Intellij
-.idea/
-*.iml
-*.ipr
-*.iws
-out/
-
-# Eclipse
-.classpath
-.project
-.settings/
-
-# netbeans
-nbproject/
-nbactions.xml
-
-# Gradle
-!gradle-wrapper.jar
+# Ignore Gradle project-specific cache directory
 .gradle
-build/
-*/build/
 
-# we use maven!
-build.xml
+# Ignore Gradle build output directory
+build
 
-# Maven
-log/
-target/
-dependency-reduced-pom.xml
+/run
 
-# various other potential build files
-bin/
-dist/
-manifest.mf
+/lightingluminol-server/build.gradle.kts
+/lightingluminol-api/build.gradle.kts
+/luminol-server/build.gradle.kts
+/luminol-server/src/minecraft
+/paper-server
+/luminol-api/build.gradle.kts
+/paper-api
+/paper-api-generator
 
-# Mac
-.DS_Store/
-.DS_Store
-
-# vim
-.*.sw[a-p]
-
-# Linux temp files
-*~
-
-# other stuff
-run/
-
-build-data/
-LightingLuminol-API
-LightingLuminol-API/*
-LightingLuminol-Server
-LightingLuminol-Server/*
-paper-api-generator
-*.jar
-/patches/todo/
+.idea/
