@@ -1,0 +1,585 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Kercute <A3167717663@hotmail.com>
+Date: Sun, 16 Feb 2025 16:16:18 +0800
+Subject: [PATCH] Base Dirty Patches
+
+
+diff --git a/io/papermc/paper/threadedregions/RegionizedServer.java b/io/papermc/paper/threadedregions/RegionizedServer.java
+index 1382c695c4991488b113401e231875ddc74f6b01..3b521744d65f20be51ce1ce6926e7bc9c7238f20 100644
+--- a/io/papermc/paper/threadedregions/RegionizedServer.java
++++ b/io/papermc/paper/threadedregions/RegionizedServer.java
+@@ -19,6 +19,7 @@ import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.server.network.ServerGamePacketListenerImpl;
+ import net.minecraft.world.level.GameRules;
+ import org.bukkit.Bukkit;
++import org.bukkit.craftbukkit.scheduler.CraftScheduler;
+ import org.slf4j.Logger;
+ import java.util.ArrayList;
+ import java.util.Collections;
+@@ -102,7 +103,7 @@ public final class RegionizedServer {
+ 
+     public static void ensureGlobalTickThread(final String reason) {
+         if (!isGlobalTickThread()) {
+-            throw new IllegalStateException(reason);
++            //throw new IllegalStateException(reason);
+         }
+     }
+ 
+@@ -292,6 +293,9 @@ public final class RegionizedServer {
+         // scheduler
+         ((FoliaGlobalRegionScheduler)Bukkit.getGlobalRegionScheduler()).tick();
+ 
++        // bukkit scheduler
++        ((CraftScheduler) Bukkit.getScheduler()).mainThreadHeartbeat();
++
+         // commands
+         ((DedicatedServer)MinecraftServer.getServer()).handleConsoleInputs();
+ 
+diff --git a/io/papermc/paper/threadedregions/RegionizedWorldData.java b/io/papermc/paper/threadedregions/RegionizedWorldData.java
+index 2c747cb8a724cd25c9d724908f92b320741600de..b4b141a320a74b5ad5fe8fde30704da48c269c42 100644
+--- a/io/papermc/paper/threadedregions/RegionizedWorldData.java
++++ b/io/papermc/paper/threadedregions/RegionizedWorldData.java
+@@ -6,12 +6,12 @@ import ca.spottedleaf.moonrise.common.misc.NearbyPlayers;
+ import ca.spottedleaf.moonrise.common.util.CoordinateUtils;
+ import ca.spottedleaf.moonrise.common.util.TickThread;
+ import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkHolderManager;
++import com.google.common.collect.Lists;
++import com.google.common.collect.Maps;
+ import com.mojang.logging.LogUtils;
+ import it.unimi.dsi.fastutil.longs.Long2ReferenceMap;
+ import it.unimi.dsi.fastutil.longs.Long2ReferenceOpenHashMap;
+-import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
+-import it.unimi.dsi.fastutil.objects.ReferenceLinkedOpenHashSet;
+-import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
++import it.unimi.dsi.fastutil.objects.*;
+ import net.minecraft.CrashReport;
+ import net.minecraft.ReportedException;
+ import net.minecraft.core.BlockPos;
+@@ -91,10 +91,10 @@ public final class RegionizedWorldData {
+             for (final Entity entity : from.loadedEntities) {
+                 into.loadedEntities.add(entity);
+             }
+-            for (final Iterator<Entity> iterator = from.entityTickList.unsafeIterator(); iterator.hasNext();) {
++            for (final Iterator<Entity> iterator = from.entityTickList.iterator(); iterator.hasNext();) {
+                 into.entityTickList.add(iterator.next());
+             }
+-            for (final Iterator<Mob> iterator = from.navigatingMobs.unsafeIterator(); iterator.hasNext();) {
++            for (final Iterator<Mob> iterator = from.navigatingMobs.iterator(); iterator.hasNext();) {
+                 into.navigatingMobs.add(iterator.next());
+             }
+             for (final Iterator<Entity> iterator = from.trackerEntities.iterator(); iterator.hasNext();) {
+@@ -135,6 +135,7 @@ public final class RegionizedWorldData {
+             for (final Iterator<ServerChunkCache.ChunkAndHolder> iterator = from.chunks.iterator(); iterator.hasNext();) {
+                 into.chunks.add(iterator.next());
+             }
++            from.world.worldDataSwitcher.resetRandomIdx();
+             // redstone torches
+             if (from.redstoneUpdateInfos != null && !from.redstoneUpdateInfos.isEmpty()) {
+                 if (into.redstoneUpdateInfos == null) {
+@@ -170,7 +171,7 @@ public final class RegionizedWorldData {
+                 final ChunkPos pos = player.chunkPosition();
+                 // Note: It is impossible for an entity in the world to _not_ be in an entity chunk, which means
+                 // the chunk holder must _exist_, and so the region section exists.
+-                regionToData.get(CoordinateUtils.getChunkKey(pos.x >> chunkToRegionShift, pos.z >> chunkToRegionShift))
++                from.world.worldDataSwitcher.randomIfNull(regionToData, regionToData.get(CoordinateUtils.getChunkKey(pos.x >> chunkToRegionShift, pos.z >> chunkToRegionShift)))
+                     .connections.add(conn);
+             }
+             // entities
+@@ -178,15 +179,16 @@ public final class RegionizedWorldData {
+                 final ChunkPos pos = player.chunkPosition();
+                 // Note: It is impossible for an entity in the world to _not_ be in an entity chunk, which means
+                 // the chunk holder must _exist_, and so the region section exists.
+-                final RegionizedWorldData into = regionToData.get(CoordinateUtils.getChunkKey(pos.x >> chunkToRegionShift, pos.z >> chunkToRegionShift));
++                final RegionizedWorldData into = from.world.worldDataSwitcher.randomIfNull(regionToData, regionToData.get(CoordinateUtils.getChunkKey(pos.x >> chunkToRegionShift, pos.z >> chunkToRegionShift)));
+                 into.localPlayers.add(player);
+                 into.nearbyPlayers.addPlayer(player);
+             }
++            from.world.worldDataSwitcher.resetRandomIdx();
+             for (final Entity entity : from.allEntities) {
+                 final ChunkPos pos = entity.chunkPosition();
+                 // Note: It is impossible for an entity in the world to _not_ be in an entity chunk, which means
+                 // the chunk holder must _exist_, and so the region section exists.
+-                final RegionizedWorldData into = regionToData.get(CoordinateUtils.getChunkKey(pos.x >> chunkToRegionShift, pos.z >> chunkToRegionShift));
++                final RegionizedWorldData into = from.world.worldDataSwitcher.randomIfNull(regionToData, regionToData.get(CoordinateUtils.getChunkKey(pos.x >> chunkToRegionShift, pos.z >> chunkToRegionShift)));
+                 into.allEntities.add(entity);
+                 // Note: entityTickList is a subset of allEntities
+                 if (from.entityTickList.contains(entity)) {
+@@ -207,13 +209,14 @@ public final class RegionizedWorldData {
+                     into.trackerUnloadedEntities.add(entity);
+                 }
+             }
++            from.world.worldDataSwitcher.resetRandomIdx();
+             // block ticking
+             for (final BlockEventData blockEventData : from.blockEvents) {
+                 final BlockPos pos = blockEventData.pos();
+                 final int chunkX = pos.getX() >> 4;
+                 final int chunkZ = pos.getZ() >> 4;
+ 
+-                final RegionizedWorldData into = regionToData.get(CoordinateUtils.getChunkKey(chunkX >> chunkToRegionShift, chunkZ >> chunkToRegionShift));
++                final RegionizedWorldData into = from.world.worldDataSwitcher.randomIfNull(regionToData, regionToData.get(CoordinateUtils.getChunkKey(chunkX >> chunkToRegionShift, chunkZ >> chunkToRegionShift)));
+                 // Unlike entities, the chunk holder is not guaranteed to exist for block events, because the block events
+                 // is just some list. So if it unloads, I guess it's just lost.
+                 if (into != null) {
+@@ -221,6 +224,7 @@ public final class RegionizedWorldData {
+                 }
+             }
+ 
++            from.world.worldDataSwitcher.resetRandomIdx();
+             final Long2ReferenceOpenHashMap<LevelTicks<Block>> levelTicksBlockRegionData = new Long2ReferenceOpenHashMap<>(regionToData.size(), 0.75f);
+             final Long2ReferenceOpenHashMap<LevelTicks<Fluid>> levelTicksFluidRegionData = new Long2ReferenceOpenHashMap<>(regionToData.size(), 0.75f);
+ 
+@@ -243,23 +247,25 @@ public final class RegionizedWorldData {
+                 final int chunkX = pos.getX() >> 4;
+                 final int chunkZ = pos.getZ() >> 4;
+ 
+-                final RegionizedWorldData into = regionToData.get(CoordinateUtils.getChunkKey(chunkX >> chunkToRegionShift, chunkZ >> chunkToRegionShift));
++                final RegionizedWorldData into = from.world.worldDataSwitcher.randomIfNull(regionToData, regionToData.get(CoordinateUtils.getChunkKey(chunkX >> chunkToRegionShift, chunkZ >> chunkToRegionShift)));
+                 if (into != null) {
+                     into.pendingBlockEntityTickers.add(tileEntity);
+                 } // else: when a chunk unloads, it does not actually _remove_ the tile entity from the list, it just gets
+                   //       marked as removed. So if there is no section, it's probably removed!
+             }
++            from.world.worldDataSwitcher.resetRandomIdx();
+             for (final TickingBlockEntity tileEntity : from.blockEntityTickers) {
+                 final BlockPos pos = tileEntity.getPos();
+                 final int chunkX = pos.getX() >> 4;
+                 final int chunkZ = pos.getZ() >> 4;
+ 
+-                final RegionizedWorldData into = regionToData.get(CoordinateUtils.getChunkKey(chunkX >> chunkToRegionShift, chunkZ >> chunkToRegionShift));
++                final RegionizedWorldData into = from.world.worldDataSwitcher.randomIfNull(regionToData, regionToData.get(CoordinateUtils.getChunkKey(chunkX >> chunkToRegionShift, chunkZ >> chunkToRegionShift)));
+                 if (into != null) {
+                     into.blockEntityTickers.add(tileEntity);
+                 } // else: when a chunk unloads, it does not actually _remove_ the tile entity from the list, it just gets
+                   //       marked as removed. So if there is no section, it's probably removed!
+             }
++            from.world.worldDataSwitcher.resetRandomIdx();
+             // time
+             for (final RegionizedWorldData regionizedWorldData : dataSet) {
+                 regionizedWorldData.redstoneTime = from.redstoneTime;
+@@ -270,15 +276,16 @@ public final class RegionizedWorldData {
+                 final ChunkPos pos = holder.chunk().getPos();
+ 
+                 // Impossible for get() to return null, as the chunk is entity ticking - thus the chunk holder is loaded
+-                regionToData.get(CoordinateUtils.getChunkKey(pos.x >> chunkToRegionShift, pos.z >> chunkToRegionShift))
++                from.world.worldDataSwitcher.randomIfNull(regionToData, regionToData.get(CoordinateUtils.getChunkKey(pos.x >> chunkToRegionShift, pos.z >> chunkToRegionShift)))
+                     .entityTickingChunks.add(holder);
+             }
++            from.world.worldDataSwitcher.resetRandomIdx();
+             for (final Iterator<ServerChunkCache.ChunkAndHolder> iterator = from.tickingChunks.iterator(); iterator.hasNext();) {
+                 final ServerChunkCache.ChunkAndHolder holder = iterator.next();
+                 final ChunkPos pos = holder.chunk().getPos();
+ 
+                 // Impossible for get() to return null, as the chunk is entity ticking - thus the chunk holder is loaded
+-                regionToData.get(CoordinateUtils.getChunkKey(pos.x >> chunkToRegionShift, pos.z >> chunkToRegionShift))
++                from.world.worldDataSwitcher.randomIfNull(regionToData, regionToData.get(CoordinateUtils.getChunkKey(pos.x >> chunkToRegionShift, pos.z >> chunkToRegionShift)))
+                     .tickingChunks.add(holder);
+             }
+             for (final Iterator<ServerChunkCache.ChunkAndHolder> iterator = from.chunks.iterator(); iterator.hasNext();) {
+@@ -295,7 +302,7 @@ public final class RegionizedWorldData {
+                 for (final net.minecraft.world.level.block.RedstoneTorchBlock.Toggle info : from.redstoneUpdateInfos) {
+                     final BlockPos pos = info.pos;
+ 
+-                    final RegionizedWorldData worldData = regionToData.get(CoordinateUtils.getChunkKey((pos.getX() >> 4) >> chunkToRegionShift, (pos.getZ() >> 4) >> chunkToRegionShift));
++                    final RegionizedWorldData worldData = from.world.worldDataSwitcher.randomIfNull(regionToData, regionToData.get(CoordinateUtils.getChunkKey((pos.getX() >> 4) >> chunkToRegionShift, (pos.getZ() >> 4) >> chunkToRegionShift)));
+                     if (worldData != null) {
+                         if (worldData.redstoneUpdateInfos == null) {
+                             worldData.redstoneUpdateInfos = new ArrayDeque<>();
+@@ -304,6 +311,7 @@ public final class RegionizedWorldData {
+                     } // else: chunk unloaded
+                 }
+             }
++            from.world.worldDataSwitcher.resetRandomIdx();
+             // mob spawning
+             for (final RegionizedWorldData regionizedWorldData : dataSet) {
+                 regionizedWorldData.catSpawnerNextTick = from.catSpawnerNextTick;
+@@ -332,7 +340,7 @@ public final class RegionizedWorldData {
+     private RegionizedServer.WorldLevelData tickData;
+ 
+     // connections
+-    public final List<Connection> connections = new ArrayList<>();
++    public final List<Connection> connections = ObjectLists.synchronize(new ObjectArrayList<>());
+ 
+     // misc. fields
+     private boolean isHandlingTick;
+@@ -346,7 +354,7 @@ public final class RegionizedWorldData {
+     }
+ 
+     // entities
+-    private final List<ServerPlayer> localPlayers = new ArrayList<>();
++    private final List<ServerPlayer> localPlayers = Lists.newCopyOnWriteArrayList();
+     private final NearbyPlayers nearbyPlayers;
+     private final ReferenceList<Entity> allEntities = new ReferenceList<>(EMPTY_ENTITY_ARRAY);
+     private final ReferenceList<Entity> loadedEntities = new ReferenceList<>(EMPTY_ENTITY_ARRAY);
+@@ -362,8 +370,8 @@ public final class RegionizedWorldData {
+     private final LevelTicks<Fluid> fluidLevelTicks;
+ 
+     // tile entity ticking
+-    private final List<TickingBlockEntity> pendingBlockEntityTickers = new ArrayList<>();
+-    private final List<TickingBlockEntity> blockEntityTickers = new ArrayList<>();
++    private final List<TickingBlockEntity> pendingBlockEntityTickers = Collections.synchronizedList(new ArrayList<>());
++    private final List<TickingBlockEntity> blockEntityTickers = Collections.synchronizedList(new ArrayList<>());
+     private boolean tickingBlockEntities;
+ 
+     // time
+@@ -402,8 +410,8 @@ public final class RegionizedWorldData {
+     public boolean captureBlockStates = false;
+     public boolean captureTreeGeneration = false;
+     public boolean isBlockPlaceCancelled = false; // Paper - prevent calling cleanup logic when undoing a block place upon a cancelled BlockPlaceEvent
+-    public final Map<BlockPos, CraftBlockState> capturedBlockStates = new java.util.LinkedHashMap<>(); // Paper
+-    public final Map<BlockPos, BlockEntity> capturedTileEntities = new java.util.LinkedHashMap<>(); // Paper
++    public final Map<BlockPos, CraftBlockState> capturedBlockStates = Maps.newConcurrentMap(); // Paper // LightingLuminol
++    public final Map<BlockPos, BlockEntity> capturedTileEntities = Maps.newConcurrentMap(); // Paper // LightingLuminol
+     public List<ItemEntity> captureDrops;
+     // Paper start
+     public int wakeupInactiveRemainingAnimals;
+@@ -575,11 +583,8 @@ public final class RegionizedWorldData {
+     }
+ 
+     public void addEntityTickingEntity(final Entity entity) {
+-        if (!TickThread.isTickThreadFor(entity)) {
+-            throw new IllegalArgumentException("Entity " + entity + " is not under this region's control");
+-        }
+         this.entityTickList.add(entity);
+-        TickRegions.RegionStats.updateCurrentRegion();
++        TickRegions.RegionStats.updateCurrentRegion(entity);
+     }
+ 
+     public boolean hasEntityTickingEntity(final Entity entity) {
+@@ -587,11 +592,8 @@ public final class RegionizedWorldData {
+     }
+ 
+     public void removeEntityTickingEntity(final Entity entity) {
+-        if (!TickThread.isTickThreadFor(entity)) {
+-            throw new IllegalArgumentException("Entity " + entity + " is not under this region's control");
+-        }
+         this.entityTickList.remove(entity);
+-        TickRegions.RegionStats.updateCurrentRegion();
++        TickRegions.RegionStats.updateCurrentRegion(entity);
+     }
+ 
+     public void forEachTickingEntity(final Consumer<Entity> action) {
+@@ -606,14 +608,11 @@ public final class RegionizedWorldData {
+     }
+ 
+     public void addEntity(final Entity entity) {
+-        if (!TickThread.isTickThreadFor(this.world, entity.chunkPosition())) {
+-            throw new IllegalArgumentException("Entity " + entity + " is not under this region's control");
+-        }
+         if (this.allEntities.add(entity)) {
+             if (entity instanceof ServerPlayer player) {
+                 this.localPlayers.add(player);
+             }
+-            TickRegions.RegionStats.updateCurrentRegion();
++            TickRegions.RegionStats.updateCurrentRegion(entity);
+         }
+     }
+ 
+@@ -622,33 +621,24 @@ public final class RegionizedWorldData {
+     }
+ 
+     public void removeEntity(final Entity entity) {
+-        if (!TickThread.isTickThreadFor(entity)) {
+-            throw new IllegalArgumentException("Entity " + entity + " is not under this region's control");
+-        }
+         if (this.allEntities.remove(entity)) {
+             if (entity instanceof ServerPlayer player) {
+                 this.localPlayers.remove(player);
+             }
+-            TickRegions.RegionStats.updateCurrentRegion();
++            TickRegions.RegionStats.updateCurrentRegion(entity);
+         }
+     }
+ 
+     public void addNavigatingMob(final Mob mob) {
+-        if (!TickThread.isTickThreadFor(mob)) {
+-            throw new IllegalArgumentException("Entity " + mob + " is not under this region's control");
+-        }
+         this.navigatingMobs.add(mob);
+     }
+ 
+     public void removeNavigatingMob(final Mob mob) {
+-        if (!TickThread.isTickThreadFor(mob)) {
+-            throw new IllegalArgumentException("Entity " + mob + " is not under this region's control");
+-        }
+         this.navigatingMobs.remove(mob);
+     }
+ 
+-    public Iterator<Mob> getNavigatingMobs() {
+-        return this.navigatingMobs.unsafeIterator();
++    public IteratorSafeOrderedReferenceSet<Mob> getNavigatingMobs() {
++        return this.navigatingMobs;
+     }
+ 
+     // block ticking hooks
+@@ -740,7 +730,7 @@ public final class RegionizedWorldData {
+ 
+     public void removeTickingChunk(final ServerChunkCache.ChunkAndHolder holder) {
+         this.tickingChunks.remove(holder);
+-        TickRegions.RegionStats.updateCurrentRegion();
++        TickRegions.RegionStats.updateCurrentRegion(holder.chunk());
+     }
+ 
+     public ReferenceList<ServerChunkCache.ChunkAndHolder> getTickingChunks() {
+@@ -749,12 +739,12 @@ public final class RegionizedWorldData {
+ 
+     public void addChunk(final ServerChunkCache.ChunkAndHolder holder) {
+         this.chunks.add(holder);
+-        TickRegions.RegionStats.updateCurrentRegion();
++        TickRegions.RegionStats.updateCurrentRegion(holder.chunk());
+     }
+ 
+     public void removeChunk(final ServerChunkCache.ChunkAndHolder holder) {
+         this.chunks.remove(holder);
+-        TickRegions.RegionStats.updateCurrentRegion();
++        TickRegions.RegionStats.updateCurrentRegion(holder.chunk());
+     }
+ 
+     public ReferenceList<ServerChunkCache.ChunkAndHolder> getChunks() {
+diff --git a/io/papermc/paper/threadedregions/TickRegionScheduler.java b/io/papermc/paper/threadedregions/TickRegionScheduler.java
+index 7123b3eb2f2e52946b8ef9de993a6828eb0bb6f7..a7bacd0cf28b5008736f6ead3f4bbf5a330799fb 100644
+--- a/io/papermc/paper/threadedregions/TickRegionScheduler.java
++++ b/io/papermc/paper/threadedregions/TickRegionScheduler.java
+@@ -222,9 +222,9 @@ public final class TickRegionScheduler {
+ 
+     // By using our own thread object, we can use a field for the current region rather than a ThreadLocal.
+     // This is much faster than a thread local, since the thread local has to use a map lookup.
+-    private static final class TickThreadRunner extends TickThread {
++    public static final class TickThreadRunner extends TickThread {
+ 
+-        private ThreadedRegionizer.ThreadedRegion<TickRegions.TickRegionData, TickRegions.TickRegionSectionData> currentTickingRegion;
++        public ThreadedRegionizer.ThreadedRegion<TickRegions.TickRegionData, TickRegions.TickRegionSectionData> currentTickingRegion;
+         private RegionizedWorldData currentTickingWorldRegionizedData;
+         private SchedulerThreadPool.SchedulableTick currentTickingTask;
+         // Folia start - profiler
+@@ -345,6 +345,7 @@ public final class TickRegionScheduler {
+                 // don't release region for another tick
+                 return null;
+             } finally {
++                if (this.region != null) { this.region.region.regioniser.world.worldDataSwitcher.onTickFinished(); }
+                 WATCHDOG_THREAD.removeTick(runningTick); // Folia - watchdog
+                 final long tickEnd = System.nanoTime();
+                 final long cpuEnd = MEASURE_CPU_TIME ? THREAD_MX_BEAN.getCurrentThreadCpuTime() : 0L;
+diff --git a/io/papermc/paper/threadedregions/TickRegions.java b/io/papermc/paper/threadedregions/TickRegions.java
+index 988fe74578065c9464f5639e5cc6af79619edef5..3ecf4a1a82ae70336c4e7f94428e65e4036bb437 100644
+--- a/io/papermc/paper/threadedregions/TickRegions.java
++++ b/io/papermc/paper/threadedregions/TickRegions.java
+@@ -12,6 +12,8 @@ import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
+ import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
+ import net.minecraft.server.MinecraftServer;
+ import net.minecraft.server.level.ServerLevel;
++import net.minecraft.world.entity.Entity;
++import net.minecraft.world.level.chunk.LevelChunk;
+ import org.slf4j.Logger;
+ import java.util.Iterator;
+ import java.util.concurrent.TimeUnit;
+@@ -153,6 +155,27 @@ public final class TickRegions implements ThreadedRegionizer.RegionCallbacks<Tic
+             this.chunkCount.setRelease(data == null ? 0 : data.getChunkCount());
+         }
+ 
++        static void updateCurrentRegion(Entity entity) {
++            ThreadedRegionizer.ThreadedRegion<TickRegions.TickRegionData, TickRegions.TickRegionSectionData> region =
++                    TickRegionScheduler.getCurrentRegion();
++
++            if (region == null){
++                region = ((ServerLevel) entity.level()).regioniser.getRegionAtUnsynchronised(entity.getBlockX() >> 4,entity.getBlockZ() >> 4);
++            }
++
++            region.getData().getRegionStats().updateFrom(TickRegionScheduler.getCurrentRegionizedWorldData());
++        }
++
++        static void updateCurrentRegion(LevelChunk chunk) {
++            ThreadedRegionizer.ThreadedRegion<TickRegions.TickRegionData, TickRegions.TickRegionSectionData> region =
++                    TickRegionScheduler.getCurrentRegion();
++
++            if (region == null){
++                region = chunk.level.regioniser.getRegionAtUnsynchronised(chunk.locX,chunk.locZ);
++            }
++
++            region.getData().getRegionStats().updateFrom(TickRegionScheduler.getCurrentRegionizedWorldData());
++        }
+         static void updateCurrentRegion() {
+             TickRegionScheduler.getCurrentRegion().getData().getRegionStats().updateFrom(TickRegionScheduler.getCurrentRegionizedWorldData());
+         }
+@@ -213,11 +236,11 @@ public final class TickRegions implements ThreadedRegionizer.RegionCallbacks<Tic
+             return this.holderManagerRegionData;
+         }
+ 
+-        <T> T getRegionizedData(final RegionizedData<T> regionizedData) {
++        public <T> T getRegionizedData(final RegionizedData<T> regionizedData) {
+             return (T)this.regionizedData.get(regionizedData);
+         }
+ 
+-        <T> T getOrCreateRegionizedData(final RegionizedData<T> regionizedData) {
++        public <T> T getOrCreateRegionizedData(final RegionizedData<T> regionizedData) {
+             T ret = (T)this.regionizedData.get(regionizedData);
+ 
+             if (ret != null) {
+@@ -227,6 +250,10 @@ public final class TickRegions implements ThreadedRegionizer.RegionCallbacks<Tic
+             ret = regionizedData.createNewValue();
+             this.regionizedData.put(regionizedData, ret);
+ 
++            if (ret instanceof RegionizedWorldData worldData){
++                worldData.world.worldDataSwitcher.updateCurrent(worldData);
++            }
++
+             return ret;
+         }
+ 
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index 330af9f4de1c72387326816065350e71fe546efe..ef909cd23cf308dcfbb521f77b9e41d2e73e396b 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -2223,7 +2223,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     }
+ 
+     public int getTickCount() {
+-        throw new UnsupportedOperationException(); // Folia - region threading
++        return ((int) io.papermc.paper.threadedregions.RegionizedServer.getGlobalTickData().getCurrentTick());
+     }
+ 
+     public int getSpawnProtectionRadius() {
+diff --git a/net/minecraft/server/level/ServerChunkCache.java b/net/minecraft/server/level/ServerChunkCache.java
+index 82d95005fc67336458b50c47d44ec4047fffcd1e..7d6ee393abfed2c55fd8bd5d8b803281e41e8c78 100644
+--- a/net/minecraft/server/level/ServerChunkCache.java
++++ b/net/minecraft/server/level/ServerChunkCache.java
+@@ -113,7 +113,7 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+             );
+         }
+ 
+-        if (ca.spottedleaf.moonrise.common.util.TickThread.isTickThreadFor(this.level, chunkX, chunkZ)) {
++        if (io.papermc.paper.threadedregions.RegionizedServer.isGlobalTickThread() || ca.spottedleaf.moonrise.common.util.TickThread.isTickThreadFor(this.level, chunkX, chunkZ)) {
+             ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.pushChunkWait(this.level, chunkX, chunkZ);
+             this.mainThreadProcessor.managedBlock(completable::isDone);
+             ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.popChunkWait();
+@@ -907,8 +907,10 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+         @Override
+         public boolean pollTask() {
+             // Folia start - region threading
+-            if (ServerChunkCache.this.level != io.papermc.paper.threadedregions.TickRegionScheduler.getCurrentRegionizedWorldData().world) {
+-                throw new IllegalStateException("Polling tasks from non-owned region");
++            if (!io.papermc.paper.threadedregions.RegionizedServer.isGlobalTickThread()){
++                if (ServerChunkCache.this.level != io.papermc.paper.threadedregions.TickRegionScheduler.getCurrentRegionizedWorldData().world) {
++                    throw new IllegalStateException("Polling tasks from non-owned region");
++                }
+             }
+             // Folia end - region threading
+             // Paper start - rewrite chunk system
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index 12f6c929c0168ea5b3242ff7139f1eac8b4e3a4b..f5d206f28714f4ddb0413844c44a72ef443fd878 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -183,6 +183,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+     public final ServerChunkCache chunkSource;
+     private final MinecraftServer server;
+     public final net.minecraft.world.level.storage.PrimaryLevelData serverLevelData; // CraftBukkit - type
++    public Object convertable;
+     private int lastSpawnChunkRadius;
+     //final EntityTickList entityTickList = new EntityTickList(); // Folia - region threading
+     // Paper - rewrite chunk system
+diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
+index b1ded501047f75d2e7af775bf8866fd6a5400a91..144bc3ac786467f1c355444d00c5bde446200425 100644
+--- a/net/minecraft/world/entity/Entity.java
++++ b/net/minecraft/world/entity/Entity.java
+@@ -6,6 +6,7 @@ import com.google.common.collect.Lists;
+ import com.google.common.collect.Sets;
+ import com.google.common.collect.ImmutableList.Builder;
+ import com.mojang.logging.LogUtils;
++import io.papermc.paper.util.MCUtil;
+ import it.unimi.dsi.fastutil.floats.FloatArraySet;
+ import it.unimi.dsi.fastutil.floats.FloatArrays;
+ import it.unimi.dsi.fastutil.floats.FloatSet;
+@@ -134,6 +135,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
+ import net.minecraft.world.scores.PlayerTeam;
+ import net.minecraft.world.scores.ScoreHolder;
+ import net.minecraft.world.scores.Team;
++import org.bukkit.event.player.PlayerTeleportEvent;
+ import org.slf4j.Logger;
+ 
+ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess, ScoreHolder, ca.spottedleaf.moonrise.patches.chunk_system.entity.ChunkSystemEntity, ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity, dev.tr7zw.entityculling.versionless.access.Cullable {  // Paper - rewrite chunk system // Paper - optimise entity tracker // Luminol - Ray tracing entity tracker
+@@ -4143,7 +4145,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+         if (!this.canTeleportAsync()) {
+             return false;
+         }
+-        this.getBukkitEntity(); // force bukkit entity to be created before TPing
++        final org.bukkit.entity.Entity bukkitEntity = this.getBukkitEntity(); // force bukkit entity to be created before TPing
++
++        if (!this.preventMoving && this instanceof ServerPlayer) {
++            if (!new PlayerTeleportEvent((org.bukkit.entity.Player) bukkitEntity,bukkitEntity.getLocation(), MCUtil.toLocation(destination,pos)).callEvent()){
++                return false;
++            }
++        }
+         if ((teleportFlags & TELEPORT_FLAG_UNMOUNT) == 0L) {
+             for (Entity entity : this.getIndirectPassengers()) {
+                 if (!entity.canTeleportAsync()) {
+@@ -4604,12 +4612,35 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+         ca.spottedleaf.concurrentutil.completable.CallbackCompletable<TeleportTransition> portalInfoCompletable
+             = new ca.spottedleaf.concurrentutil.completable.CallbackCompletable<>();
+ 
+-        portalInfoCompletable.addWaiter((TeleportTransition info, Throwable throwable) -> {
++        portalInfoCompletable.addWaiter((TeleportTransition infoTemp, Throwable throwable) -> {
+             if (!originWorld.removePendingTeleport(beforeFindDestination)) {
+                 // the shutdown thread has placed us back into the origin world at the original position
+                 // we just have to abandon this teleport to prevent duplication
+                 return;
+             }
++            TeleportTransition info;
++            if (this instanceof ServerPlayer){
++                final org.bukkit.entity.Player bukkitPlayer = ((ServerPlayer) this).getBukkitEntity();
++                PlayerTeleportEvent.TeleportCause cause = PlayerTeleportEvent.TeleportCause.UNKNOWN;
++
++                switch (type){
++                    case END -> cause = PlayerTeleportEvent.TeleportCause.END_PORTAL;
++                    case NETHER -> cause = PlayerTeleportEvent.TeleportCause.NETHER_PORTAL;
++                }
++
++                final org.bukkit.event.player.PlayerPortalEvent eventWrapped = new org.bukkit.event.player.PlayerPortalEvent(bukkitPlayer,MCUtil.toLocation(originWorld, initialPosition),MCUtil.toLocation(destination, infoTemp.position()),cause,0,true, 0);
++                eventWrapped.callEvent();
++                info = new TeleportTransition(
++                        infoTemp.newLevel(),
++                        MCUtil.toVec3(eventWrapped.getTo()),
++                        infoTemp.deltaMovement(),
++                        infoTemp.yRot(),
++                        infoTemp.xRot(),
++                        infoTemp.postTeleportTransition()
++                );
++            } else {
++                info = infoTemp;
++            }
+             originWorld.chunkSource.removeTicketAtLevel(
+                 TicketType.TELEPORT_HOLD_TICKET, initialPositionChunk,
+                 ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkHolderManager.MAX_TICKET_LEVEL,
+diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
+index 96daa716aa06de31b2867f09833ac8e77b6314c4..b0c3ce6f8e8ca5b06b1d9ee20d56dbe4a31a756d 100644
+--- a/net/minecraft/world/level/Level.java
++++ b/net/minecraft/world/level/Level.java
+@@ -9,6 +9,8 @@ import java.util.List;
+ import java.util.function.Consumer;
+ import java.util.function.Predicate;
+ import javax.annotation.Nullable;
++
++import me.earthme.lightingluminol.RegonizedWorldDataSwitcher;
+ import net.minecraft.CrashReport;
+ import net.minecraft.CrashReportCategory;
+ import net.minecraft.ReportedException;
+@@ -825,16 +827,19 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+     );
+     public volatile io.papermc.paper.threadedregions.RegionizedServer.WorldLevelData tickData;
+     public final java.util.concurrent.ConcurrentHashMap.KeySetView<net.minecraft.server.level.ChunkHolder, Boolean> needsChangeBroadcasting = java.util.concurrent.ConcurrentHashMap.newKeySet();
++    public final RegonizedWorldDataSwitcher worldDataSwitcher = new RegonizedWorldDataSwitcher();
+ 
+     public io.papermc.paper.threadedregions.RegionizedWorldData getCurrentWorldData() {
+         final io.papermc.paper.threadedregions.RegionizedWorldData ret = io.papermc.paper.threadedregions.TickRegionScheduler.getCurrentRegionizedWorldData();
+         if (ret == null) {
+-            return ret;
++            return this.worldDataSwitcher.getLastMatch();
+         }
+         Level world = ret.world;
+         if (world != this) {
+-            throw new IllegalStateException("World mismatch: expected " + this.getWorld().getName() + " but got " + world.getWorld().getName());
++            //throw new IllegalStateException("World mismatch: expected " + this.getWorld().getName() + " but got " + world.getWorld().getName());
++            return this.worldDataSwitcher.getLastMatch();
+         }
++        this.worldDataSwitcher.updateCurrent(ret);
+         return ret;
+     }
+ 
