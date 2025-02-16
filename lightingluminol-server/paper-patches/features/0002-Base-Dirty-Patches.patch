@@ -278,7 +278,7 @@ index 0000000000000000000000000000000000000000..79b4fce127eb4681ee30dde599d5b12d
 +}
 \ No newline at end of file
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index d34502a826b1582dd13c6983ed1060373837353f..0667e68d21e99d63c91ecdc07e954cecd6925304 100644
+index d34502a826b1582dd13c6983ed1060373837353f..d69c45ab40e0678a74f4e6d774df33fa6b30cbe0 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -1,5 +1,6 @@
@@ -360,8 +360,8 @@ index d34502a826b1582dd13c6983ed1060373837353f..0667e68d21e99d63c91ecdc07e954cec
 -            io.papermc.paper.FeatureHooks.closeEntityManager(handle, save); // SPIGOT-6722: close entityManager // Paper - chunk system
 -            handle.levelStorageAccess.close();
 +                    handle.getChunkSource().close(save);
-+                    // handle.entityManager.close(save); // SPIGOT-6722: close entityManager // Paper - rewrite chunk system
-+                    handle.convertable.clone();
++                    //io.papermc.paper.FeatureHooks.closeEntityManager(handle, save); // SPIGOT-6722: close entityManager // Paper - rewrite chunk system
++                    handle.levelStorageAccess.close();
 +                } catch (Exception ex) {
 +                    this.getLogger().log(Level.SEVERE, null, ex);
 +                }
@@ -374,8 +374,8 @@ index d34502a826b1582dd13c6983ed1060373837353f..0667e68d21e99d63c91ecdc07e954cec
 +                        }
 +
 +                        handle.getChunkSource().close(save);
-+                        // handle.entityManager.close(save); // SPIGOT-6722: close entityManager // Paper - rewrite chunk system
-+                        handle.convertable.clone();
++                        //io.papermc.paper.FeatureHooks.closeEntityManager(handle, save); // SPIGOT-6722: close entityManager // Paper - rewrite chunk system
++                        handle.levelStorageAccess.close();
 +                    } catch (Exception ex) {
 +                        this.getLogger().log(Level.SEVERE, null, ex);
 +                    } finally {
