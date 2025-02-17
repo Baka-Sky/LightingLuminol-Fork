@@ -35,8 +35,41 @@ index 1382c695c4991488b113401e231875ddc74f6b01..3b521744d65f20be51ce1ce6926e7bc9
          // commands
          ((DedicatedServer)MinecraftServer.getServer()).handleConsoleInputs();
  
+diff --git a/io/papermc/paper/threadedregions/RegionizedServerInitEvent.java b/io/papermc/paper/threadedregions/RegionizedServerInitEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..aabbbb4159cc97159f9ff0a566bb5f047bc22706
+--- /dev/null
++++ b/io/papermc/paper/threadedregions/RegionizedServerInitEvent.java
+@@ -0,0 +1,26 @@
++package io.papermc.paper.threadedregions;
++
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.server.ServerEvent;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * This event is called after the server is initialised but <b>before</b> the server begins ticking regions in parallel.
++ * Plugins may use this as a hook to run post initialisation logic without worrying about the possibility that
++ * regions are ticking in parallel.
++ */
++public class RegionizedServerInitEvent extends ServerEvent {
++
++    private static final HandlerList handlers = new HandlerList();
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++}
+\ No newline at end of file
 diff --git a/io/papermc/paper/threadedregions/RegionizedWorldData.java b/io/papermc/paper/threadedregions/RegionizedWorldData.java
-index 2c747cb8a724cd25c9d724908f92b320741600de..b4b141a320a74b5ad5fe8fde30704da48c269c42 100644
+index 2c747cb8a724cd25c9d724908f92b320741600de..62730d7e7b8e03aa94773f7a529729b815f6a1a4 100644
 --- a/io/papermc/paper/threadedregions/RegionizedWorldData.java
 +++ b/io/papermc/paper/threadedregions/RegionizedWorldData.java
 @@ -6,12 +6,12 @@ import ca.spottedleaf.moonrise.common.misc.NearbyPlayers;
@@ -274,7 +307,7 @@ index 2c747cb8a724cd25c9d724908f92b320741600de..b4b141a320a74b5ad5fe8fde30704da4
          }
      }
  
-@@ -622,33 +621,24 @@ public final class RegionizedWorldData {
+@@ -622,28 +621,19 @@ public final class RegionizedWorldData {
      }
  
      public void removeEntity(final Entity entity) {
@@ -304,13 +337,6 @@ index 2c747cb8a724cd25c9d724908f92b320741600de..b4b141a320a74b5ad5fe8fde30704da4
          this.navigatingMobs.remove(mob);
      }
  
--    public Iterator<Mob> getNavigatingMobs() {
--        return this.navigatingMobs.unsafeIterator();
-+    public IteratorSafeOrderedReferenceSet<Mob> getNavigatingMobs() {
-+        return this.navigatingMobs;
-     }
- 
-     // block ticking hooks
 @@ -740,7 +730,7 @@ public final class RegionizedWorldData {
  
      public void removeTickingChunk(final ServerChunkCache.ChunkAndHolder holder) {
