@@ -12,12 +12,12 @@ preVersion=$(prop preVersion)
 release_tag="$mcversion-$commitid"
 jarName="$project_id-$mcversion-paperclip.jar"
 jarName_bundler="$project_id-$mcversion-bundler.jar"
-jarName_dir="build/libs/$jarName"
-jarName_bundler_dir="build/libs/$jarName_bundler"
+jarName_dir="lightingluminol-server/build/libs/$jarName"
+jarName_bundler_dir="lightingluminol-server/build/libs/$jarName_bundler"
 make_latest=$([ $preVersion = "true" ] && echo "false" || echo "true")
 
-mv build/libs/$project_id_b-paperclip-$grdversion-mojmap.jar $jarName_dir
-mv build/libs/$project_id_b-bundler-$grdversion-mojmap.jar $jarName_bundler_dir
+mv lightingluminol-server/build/libs/$project_id_b-paperclip-$grdversion-mojmap.jar $jarName_dir
+mv lightingluminol-server/build/libs/$project_id_b-bundler-$grdversion-mojmap.jar $jarName_bundler_dir
 
 echo "project_id=$project_id" >> $GITHUB_ENV
 echo "project_id_b=$project_id_b" >> $GITHUB_ENV
