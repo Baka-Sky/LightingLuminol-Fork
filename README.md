@@ -22,33 +22,48 @@
 任何版本都可以在 [Release](https://github.com/LuminolMC/LightingLuminol/releases), 中找到，你也可以通过[以下步骤](./README.md#构建)自己构建。
 
 ## 构建
-要构建一个paperclip jar，你需要运行以下命令。你可以在build/libs中找到jar（注意：需要`JDK21`）
+要构建一个paperclip jar，你需要运行以下命令。你可以在lightingluminol-server/build/libs中找到jar（注意：需要`JDK21`）
  ```shell
- ./gradlew applyPatches && ./gradlew createMojmapPaperclipJar
+./gradlew applyAllPatches && ./gradlew createMojmapPaperclipJar
 ```
-<!-- ## Using API
-For gradle:
+## 使用API
+使用 Gradle:
+
 ```kotlin
+repositories {
+    maven {
+        url = "https://maven.moliatopia.icu/repository/maven-snapshots/"
+    }
+}
+
 dependencies {
-    compileOnly("me.earthme.luminol:luminol-api:1.20.4-R0.1-SNAPSHOT")
+    compileOnly("me.earthme.luminol:luminol-api:$VERSION")
 }
  ```
-For maven
+
+使用 Maven
+
 ```xml
-<dependency>
-  <groupId>me.earthme.luminol</groupId>
-  <artifactId>luminol-api</artifactId>
-  <version>1.20.4-R0.1-SNAPSHOT</version>
-</dependency> 
-```-->
+<repositories>
+    <repository>
+        <id>moliatopia</id>
+        <url>https://maven.moliatopia.icu/repository/maven-snapshots/</url>
+    </repository>
+</repositories>
+
+<dependencies>
+    <dependency>
+        <groupId>me.earthme.luminol</groupId>
+        <artifactId>luminol-api</artifactId>
+        <version>$VERSION</version>
+    </dependency>
+</dependencies>
+```
 
 ## 联系方式
 > 如果您对这个项目感兴趣或有任何问题，请随时向我们提问。
 
-QQ群: [368632360](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=MfosKhcDd8Fdxn1MREuZ8Krbf9T6jiBC&authKey=3cm6qdHohON3gHnuD63FK4k07fIbrWnY4hdyq8OmELsfjMVP1kbFTJY9mRyM2Rkj&noverify=0&group_code=368632360) | QQ频道: [点击加入](https://pd.qq.com/s/eq9krf9j) | Telegram: [点击加入](https://t.me/LuminolMC) | Discord: [点击加入](https://discord.gg/Qd7m3V6eDx)
-
-> [!WARNING]
-> **此项目与Leaves无关。不要向Leaves报告任何有关协议支持的错误，因为协议支持已经重构**
+**QQ群: [1015048616](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=QML5kIVsniPi1PlZvnjHQT_02EHsZ5Jc&authKey=%2FTCJsZC7JFQ9sxAroPCKuYnlV57Z5fyqp36ewXZk3Sn4iJ9p4MB1JKdc%2FFcX3HOM&noverify=0&group_code=1015048616)** | QQ频道: [点击加入](https://pd.qq.com/s/eq9krf9j) | Telegram: [点击加入](https://t.me/LuminolMinecraft) | Discord: [点击加入](https://discord.gg/Qd7m3V6eDx)
 
 ## 关于 Issue
 当您遇到任何问题时，请向我们提问，我们将尽力解决，但请记得清楚地描述您的问题并提供足够的日志等信息。
