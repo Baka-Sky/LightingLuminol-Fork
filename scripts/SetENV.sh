@@ -16,8 +16,8 @@ jarName_dir="lightingluminol-server/build/libs/$jarName"
 jarName_bundler_dir="lightingluminol-server/build/libs/$jarName_bundler"
 make_latest=$([ $preVersion = "true" ] && echo "false" || echo "true")
 
-mv lightingluminol-server/build/libs/$project_id_b-paperclip-$grdversion-mojmap.jar $jarName_dir
-mv lightingluminol-server/build/libs/$project_id_b-bundler-$grdversion-mojmap.jar $jarName_bundler_dir
+mv lightingluminol-server/build/libs/$project_id-paperclip-$grdversion-mojmap.jar $jarName_dir
+mv lightingluminol-server/build/libs/$project_id-bundler-$grdversion-mojmap.jar $jarName_bundler_dir
 
 echo "project_id=$project_id" >> $GITHUB_ENV
 echo "project_id_b=$project_id_b" >> $GITHUB_ENV
