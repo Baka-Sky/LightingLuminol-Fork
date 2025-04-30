@@ -503,7 +503,7 @@ index d8e1febfa14be1c0f4869ae647bd17113660432b..6900a597185f8b3730f9798cc0a3d7da
      //final EntityTickList entityTickList = new EntityTickList(); // Folia - region threading
      // Paper - rewrite chunk system
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index ceca76a5791e319dd7cc4048c9860b1df065b95a..3e8ef0ace83674633f14e621936f5c0836efef42 100644
+index ddea23366c290ce44cc0c6764dffba5aeb63772a..3dba37da124d7e8afb33064033cc69f5e8f88bdb 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -6,6 +6,7 @@ import com.google.common.collect.Lists;
@@ -522,7 +522,7 @@ index ceca76a5791e319dd7cc4048c9860b1df065b95a..3e8ef0ace83674633f14e621936f5c08
  import org.slf4j.Logger;
  
  public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess, ScoreHolder, ca.spottedleaf.moonrise.patches.chunk_system.entity.ChunkSystemEntity, ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity, dev.tr7zw.entityculling.versionless.access.Cullable {  // Paper - rewrite chunk system // Paper - optimise entity tracker // Luminol - Ray tracing entity tracker
-@@ -4137,7 +4139,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4157,7 +4159,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          if (!this.canTeleportAsync()) {
              return false;
          }
@@ -537,7 +537,7 @@ index ceca76a5791e319dd7cc4048c9860b1df065b95a..3e8ef0ace83674633f14e621936f5c08
          if ((teleportFlags & TELEPORT_FLAG_UNMOUNT) == 0L) {
              for (Entity entity : this.getIndirectPassengers()) {
                  if (!entity.canTeleportAsync()) {
-@@ -4603,12 +4611,35 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4629,12 +4637,35 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          ca.spottedleaf.concurrentutil.completable.CallbackCompletable<TeleportTransition> portalInfoCompletable
              = new ca.spottedleaf.concurrentutil.completable.CallbackCompletable<>();
  
