@@ -5,7 +5,7 @@ Subject: [PATCH] Base Dirty Patches
 
 
 diff --git a/io/papermc/paper/threadedregions/RegionizedServer.java b/io/papermc/paper/threadedregions/RegionizedServer.java
-index 1382c695c4991488b113401e231875ddc74f6b01..3b521744d65f20be51ce1ce6926e7bc9c7238f20 100644
+index 68280b07a71dcdb42eaee6f62fbda074813a22e4..049b09b7f8f8549f3334b26f542fa4a4b0664d92 100644
 --- a/io/papermc/paper/threadedregions/RegionizedServer.java
 +++ b/io/papermc/paper/threadedregions/RegionizedServer.java
 @@ -19,6 +19,7 @@ import net.minecraft.server.level.ServerLevel;
@@ -25,7 +25,7 @@ index 1382c695c4991488b113401e231875ddc74f6b01..3b521744d65f20be51ce1ce6926e7bc9
          }
      }
  
-@@ -292,6 +293,9 @@ public final class RegionizedServer {
+@@ -297,6 +298,9 @@ public final class RegionizedServer {
          // scheduler
          ((FoliaGlobalRegionScheduler)Bukkit.getGlobalRegionScheduler()).tick();
  
@@ -362,7 +362,7 @@ index 2c747cb8a724cd25c9d724908f92b320741600de..62730d7e7b8e03aa94773f7a529729b8
  
      public ReferenceList<ServerChunkCache.ChunkAndHolder> getChunks() {
 diff --git a/io/papermc/paper/threadedregions/TickRegionScheduler.java b/io/papermc/paper/threadedregions/TickRegionScheduler.java
-index 7123b3eb2f2e52946b8ef9de993a6828eb0bb6f7..a7bacd0cf28b5008736f6ead3f4bbf5a330799fb 100644
+index 82948984404a183711588932a4a026dc4c241feb..44897e76401638cadc2680aaecd82c310c3cb39d 100644
 --- a/io/papermc/paper/threadedregions/TickRegionScheduler.java
 +++ b/io/papermc/paper/threadedregions/TickRegionScheduler.java
 @@ -222,9 +222,9 @@ public final class TickRegionScheduler {
@@ -452,7 +452,7 @@ index 988fe74578065c9464f5639e5cc6af79619edef5..3ecf4a1a82ae70336c4e7f94428e65e4
          }
  
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index 330af9f4de1c72387326816065350e71fe546efe..ef909cd23cf308dcfbb521f77b9e41d2e73e396b 100644
+index e62e8b9af7ad3e4454702ac86ad2b27973eba66f..5cb92a4820c3456c89272ba951c83028d84679d1 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
 @@ -2223,7 +2223,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -503,7 +503,7 @@ index d8e1febfa14be1c0f4869ae647bd17113660432b..6900a597185f8b3730f9798cc0a3d7da
      //final EntityTickList entityTickList = new EntityTickList(); // Folia - region threading
      // Paper - rewrite chunk system
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index ddea23366c290ce44cc0c6764dffba5aeb63772a..3dba37da124d7e8afb33064033cc69f5e8f88bdb 100644
+index 07774ab130c951bcfb0030afaee740eeda81b0fe..234c224b937c096fedb9080e2bfa24f38c2a9965 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -6,6 +6,7 @@ import com.google.common.collect.Lists;
@@ -522,7 +522,7 @@ index ddea23366c290ce44cc0c6764dffba5aeb63772a..3dba37da124d7e8afb33064033cc69f5
  import org.slf4j.Logger;
  
  public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess, ScoreHolder, ca.spottedleaf.moonrise.patches.chunk_system.entity.ChunkSystemEntity, ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity, dev.tr7zw.entityculling.versionless.access.Cullable {  // Paper - rewrite chunk system // Paper - optimise entity tracker // Luminol - Ray tracing entity tracker
-@@ -4157,7 +4159,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4159,7 +4161,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          if (!this.canTeleportAsync()) {
              return false;
          }
@@ -537,7 +537,7 @@ index ddea23366c290ce44cc0c6764dffba5aeb63772a..3dba37da124d7e8afb33064033cc69f5
          if ((teleportFlags & TELEPORT_FLAG_UNMOUNT) == 0L) {
              for (Entity entity : this.getIndirectPassengers()) {
                  if (!entity.canTeleportAsync()) {
-@@ -4629,12 +4637,35 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4632,12 +4640,35 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          ca.spottedleaf.concurrentutil.completable.CallbackCompletable<TeleportTransition> portalInfoCompletable
              = new ca.spottedleaf.concurrentutil.completable.CallbackCompletable<>();
  
