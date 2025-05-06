@@ -491,7 +491,7 @@ index 82d95005fc67336458b50c47d44ec4047fffcd1e..7d6ee393abfed2c55fd8bd5d8b803281
              // Folia end - region threading
              // Paper start - rewrite chunk system
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index d8e1febfa14be1c0f4869ae647bd17113660432b..6900a597185f8b3730f9798cc0a3d7da3aa1b3c2 100644
+index 9b8325a55889155766e034ff8847751ac551b2d2..4fec8fe1b680dfc716a8006a8924a6051b82b286 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -183,6 +183,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
@@ -503,7 +503,7 @@ index d8e1febfa14be1c0f4869ae647bd17113660432b..6900a597185f8b3730f9798cc0a3d7da
      //final EntityTickList entityTickList = new EntityTickList(); // Folia - region threading
      // Paper - rewrite chunk system
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 07774ab130c951bcfb0030afaee740eeda81b0fe..234c224b937c096fedb9080e2bfa24f38c2a9965 100644
+index 002466add86b36529bff6787332b575d1f12305b..9faf8dd7841f8b0e7c2dd6fa055270b41df70cab 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -6,6 +6,7 @@ import com.google.common.collect.Lists;
@@ -522,7 +522,7 @@ index 07774ab130c951bcfb0030afaee740eeda81b0fe..234c224b937c096fedb9080e2bfa24f3
  import org.slf4j.Logger;
  
  public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess, ScoreHolder, ca.spottedleaf.moonrise.patches.chunk_system.entity.ChunkSystemEntity, ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity, dev.tr7zw.entityculling.versionless.access.Cullable {  // Paper - rewrite chunk system // Paper - optimise entity tracker // Luminol - Ray tracing entity tracker
-@@ -4159,7 +4161,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4164,7 +4166,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          if (!this.canTeleportAsync()) {
              return false;
          }
@@ -537,7 +537,7 @@ index 07774ab130c951bcfb0030afaee740eeda81b0fe..234c224b937c096fedb9080e2bfa24f3
          if ((teleportFlags & TELEPORT_FLAG_UNMOUNT) == 0L) {
              for (Entity entity : this.getIndirectPassengers()) {
                  if (!entity.canTeleportAsync()) {
-@@ -4632,12 +4640,35 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4638,12 +4646,35 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          ca.spottedleaf.concurrentutil.completable.CallbackCompletable<TeleportTransition> portalInfoCompletable
              = new ca.spottedleaf.concurrentutil.completable.CallbackCompletable<>();
  
