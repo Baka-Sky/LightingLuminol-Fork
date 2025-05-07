@@ -32,12 +32,12 @@
 ```kotlin
 repositories {
     maven {
-        url = "https://maven.moliatopia.icu/repository/maven-snapshots/"
+        url = "https://repo.menthamc.com/repository/maven-public/"
     }
 }
 
 dependencies {
-    compileOnly("me.earthme.luminol:luminol-api:$VERSION")
+    compileOnly("me.earthme.lightingluminol:lightingluminol-api:$VERSION")
 }
  ```
 
@@ -46,15 +46,15 @@ dependencies {
 ```xml
 <repositories>
     <repository>
-        <id>moliatopia</id>
-        <url>https://maven.moliatopia.icu/repository/maven-snapshots/</url>
+        <id>menthamc</id>
+        <url>https://repo.menthamc.com/repository/maven-public/</url>
     </repository>
 </repositories>
 
 <dependencies>
     <dependency>
-        <groupId>me.earthme.luminol</groupId>
-        <artifactId>luminol-api</artifactId>
+        <groupId>me.earthme.lightingluminol</groupId>
+        <artifactId>lightingluminol-api</artifactId>
         <version>$VERSION</version>
     </dependency>
 </dependencies>

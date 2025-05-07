@@ -77,12 +77,13 @@ subprojects {
 
     extensions.configure<PublishingExtension> {
         repositories {
-            /*
-            maven("https://repo.papermc.io/repository/maven-snapshots/") {
-                name = "paperSnapshots"
-                credentials(PasswordCredentials::class)
+            maven("https://repo.menthamc.com/repository/maven-snapshots/") {
+                name = "MenthaMC"
+                credentials(PasswordCredentials::class) {
+                    username = System.getenv("MAVEN_REPO_USER")
+                    password = System.getenv("MAVEN_REPO_PASSWORD")
+                }
             }
-             */
         }
     }
 }
