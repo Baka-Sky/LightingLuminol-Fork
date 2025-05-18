@@ -7,7 +7,7 @@
 
 <h4>LightingLuminol is a Luminol fork with many useful optimizations, configurable vanilla features, and more API supports, aims to run more bukkit plugins on folia</h4>
 
-[![MIT License](https://img.shields.io/github/license/LuminolMC/LightingLuminol?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/github/license/LuminolMC/LightingLuminol?style=flat-square)](LICENSE.md)
 [![Issues](https://img.shields.io/github/issues/LuminolMC/LightingLuminol?style=flat-square)](https://github.com/LuminolMC/Luminol/issues)
 ![Commit Activity](https://img.shields.io/github/commit-activity/w/LuminolMC/LightingLuminol?style=flat-square)
 ![GitHub all releases](https://img.shields.io/github/downloads/LuminolMC/LightingLuminol/total?style=flat-square)

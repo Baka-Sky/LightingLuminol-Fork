@@ -4,7 +4,7 @@
 
 <h4>LightingLuminol 是一个基于Luminol的分支，具有许多有用的优化、可配置的原版特性和更多的API支持，目标是在Folia上运行更多Bukkit插件</h4>
 
-[![MIT License](https://img.shields.io/github/license/LuminolMC/LightingLuminol?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/github/license/LuminolMC/LightingLuminol?style=flat-square)](LICENSE.md)
 [![Issues](https://img.shields.io/github/issues/LuminolMC/LightingLuminol?style=flat-square)](https://github.com/LuminolMC/LightingLuminol/issues)
 ![Commit Activity](https://img.shields.io/github/commit-activity/w/LuminolMC/LightingLuminol?style=flat-square)
 ![GitHub all releases](https://img.shields.io/github/downloads/LuminolMC/LightingLuminol/total?style=flat-square)
