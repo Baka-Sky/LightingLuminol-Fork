@@ -278,7 +278,7 @@ index 0000000000000000000000000000000000000000..79b4fce127eb4681ee30dde599d5b12d
 +}
 \ No newline at end of file
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 9c7a5d0a94417a65788330b7239aa746006407fa..58c66e80a09d7196ca5b022f6c5c5d0df6bb919c 100644
+index 292f32c935767b54098290eea8a512b82f962caf..a246fc3d032426dc137c3dff6e6f8d09ed26ed17 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -1,5 +1,6 @@
@@ -305,7 +305,7 @@ index 9c7a5d0a94417a65788330b7239aa746006407fa..58c66e80a09d7196ca5b022f6c5c5d0d
  import java.util.function.Consumer;
  import java.util.logging.Level;
  import java.util.logging.Logger;
-@@ -1322,7 +1326,7 @@ public final class CraftServer implements Server {
+@@ -1323,7 +1327,7 @@ public final class CraftServer implements Server {
  
      @Override
      public World createWorld(WorldCreator creator) {
@@ -314,7 +314,7 @@ index 9c7a5d0a94417a65788330b7239aa746006407fa..58c66e80a09d7196ca5b022f6c5c5d0d
          Preconditions.checkState(this.console.getAllLevels().iterator().hasNext(), "Cannot create additional worlds on STARTUP");
          //Preconditions.checkState(!this.console.isIteratingOverLevels, "Cannot create a world while worlds are being ticked"); // Paper - Cat - Temp disable. We'll see how this goes.
          Preconditions.checkArgument(creator != null, "WorldCreator cannot be null");
-@@ -1505,7 +1509,18 @@ public final class CraftServer implements Server {
+@@ -1506,7 +1510,18 @@ public final class CraftServer implements Server {
          }
  
          this.console.addLevel(serverLevel); // Paper - Put world into worldlist before initing the world; move up
@@ -334,7 +334,7 @@ index 9c7a5d0a94417a65788330b7239aa746006407fa..58c66e80a09d7196ca5b022f6c5c5d0d
  
          serverLevel.setSpawnSettings(true);
          // Paper - Put world into worldlist before initing the world; move up
-@@ -1524,7 +1539,7 @@ public final class CraftServer implements Server {
+@@ -1525,7 +1540,7 @@ public final class CraftServer implements Server {
  
      @Override
      public boolean unloadWorld(World world, boolean save) {
@@ -343,7 +343,7 @@ index 9c7a5d0a94417a65788330b7239aa746006407fa..58c66e80a09d7196ca5b022f6c5c5d0d
          //Preconditions.checkState(!this.console.isIteratingOverLevels, "Cannot unload a world while worlds are being ticked"); // Paper - Cat - Temp disable. We'll see how this goes.
          if (world == null) {
              return false;
-@@ -1552,13 +1567,41 @@ public final class CraftServer implements Server {
+@@ -1553,13 +1568,41 @@ public final class CraftServer implements Server {
          }
  
          try {
@@ -392,7 +392,7 @@ index 9c7a5d0a94417a65788330b7239aa746006407fa..58c66e80a09d7196ca5b022f6c5c5d0d
              this.getLogger().log(Level.SEVERE, null, ex);
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index ac4ab407095d998b1418d740ab54e8157bce6a02..ed7f2e446e2e566bc71f52790580951dda2643cd 100644
+index f0c8e76efaf897a81283edbf9a9c2a71bc28c9a9..604c8921ef1b80423506417317e14f013edaf83c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -396,7 +396,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
@@ -695,10 +695,10 @@ index ac4ab407095d998b1418d740ab54e8157bce6a02..ed7f2e446e2e566bc71f52790580951d
          Preconditions.checkArgument(newValue != null, "GameRule value cannot be null");
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 91dd18a874ea83bed83983ecfa52decce2b163a5..5035c242c74df0bda5d484f0b5cf0abca4f6aa9c 100644
+index 48c85729a6de20b554325ca29c2448d515bbc7a7..2a25cdff9cee1ff5c19c30e8b7de1b54a62f45f8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -1410,7 +1410,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1409,7 +1409,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      public boolean teleport(Location location, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, io.papermc.paper.entity.TeleportFlag... flags) {
          // Folia start - region threading
          if (true) {

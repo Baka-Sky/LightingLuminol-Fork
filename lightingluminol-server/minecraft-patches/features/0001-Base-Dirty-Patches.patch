@@ -386,7 +386,7 @@ index 82948984404a183711588932a4a026dc4c241feb..44897e76401638cadc2680aaecd82c31
                  final long tickEnd = System.nanoTime();
                  final long cpuEnd = MEASURE_CPU_TIME ? THREAD_MX_BEAN.getCurrentThreadCpuTime() : 0L;
 diff --git a/io/papermc/paper/threadedregions/TickRegions.java b/io/papermc/paper/threadedregions/TickRegions.java
-index 988fe74578065c9464f5639e5cc6af79619edef5..3ecf4a1a82ae70336c4e7f94428e65e4036bb437 100644
+index bfb39cbf1ba58d02da7e35300eb95872747506e8..ae64e6701860f898da57435b97f032690d84d7f6 100644
 --- a/io/papermc/paper/threadedregions/TickRegions.java
 +++ b/io/papermc/paper/threadedregions/TickRegions.java
 @@ -12,6 +12,8 @@ import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
@@ -398,7 +398,7 @@ index 988fe74578065c9464f5639e5cc6af79619edef5..3ecf4a1a82ae70336c4e7f94428e65e4
  import org.slf4j.Logger;
  import java.util.Iterator;
  import java.util.concurrent.TimeUnit;
-@@ -153,6 +155,27 @@ public final class TickRegions implements ThreadedRegionizer.RegionCallbacks<Tic
+@@ -154,6 +156,27 @@ public final class TickRegions implements ThreadedRegionizer.RegionCallbacks<Tic
              this.chunkCount.setRelease(data == null ? 0 : data.getChunkCount());
          }
  
@@ -426,7 +426,7 @@ index 988fe74578065c9464f5639e5cc6af79619edef5..3ecf4a1a82ae70336c4e7f94428e65e4
          static void updateCurrentRegion() {
              TickRegionScheduler.getCurrentRegion().getData().getRegionStats().updateFrom(TickRegionScheduler.getCurrentRegionizedWorldData());
          }
-@@ -213,11 +236,11 @@ public final class TickRegions implements ThreadedRegionizer.RegionCallbacks<Tic
+@@ -215,11 +238,11 @@ public final class TickRegions implements ThreadedRegionizer.RegionCallbacks<Tic
              return this.holderManagerRegionData;
          }
  
@@ -440,7 +440,7 @@ index 988fe74578065c9464f5639e5cc6af79619edef5..3ecf4a1a82ae70336c4e7f94428e65e4
              T ret = (T)this.regionizedData.get(regionizedData);
  
              if (ret != null) {
-@@ -227,6 +250,10 @@ public final class TickRegions implements ThreadedRegionizer.RegionCallbacks<Tic
+@@ -229,6 +252,10 @@ public final class TickRegions implements ThreadedRegionizer.RegionCallbacks<Tic
              ret = regionizedData.createNewValue();
              this.regionizedData.put(regionizedData, ret);
  
@@ -491,7 +491,7 @@ index 82d95005fc67336458b50c47d44ec4047fffcd1e..7d6ee393abfed2c55fd8bd5d8b803281
              // Folia end - region threading
              // Paper start - rewrite chunk system
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 9b8325a55889155766e034ff8847751ac551b2d2..4fec8fe1b680dfc716a8006a8924a6051b82b286 100644
+index de3042c1cad21c55b19ed12da0f4cbd99068540f..f5a8175b6fd96b0f8b73dc1fd36e5aab2a35c710 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -183,6 +183,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
