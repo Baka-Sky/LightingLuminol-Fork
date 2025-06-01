@@ -1,6 +1,6 @@
 --- a/luminol-server/build.gradle.kts
 +++ b/luminol-server/build.gradle.kts
-@@ -47,7 +_,23 @@
+@@ -54,7 +_,23 @@
          }
      }
  
@@ -24,8 +24,8 @@
 +    activeFork = lightingluminol
  
      spigot {
-         buildDataRef = "3edaf46ec1eed4115ce1b18d2846cded42577e42"
-@@ -135,12 +_,16 @@
+         buildDataRef = "702e1a0a5072b2c4082371d5228cb30525687efc"
+@@ -142,12 +_,16 @@
          resources { srcDir("../paper-server/src/main/resources") }
          java { srcDir("../folia-server/src/main/java") }
          resources { srcDir("../folia-server/src/main/resources") }
@@ -41,17 +41,17 @@
 +        resources { srcDir("../luminol-server/src/main/resources") }
      }
  }
- 
-@@ -164,7 +_,7 @@
+ val log4jPlugins = sourceSets.create("log4jPlugins") {
+@@ -174,7 +_,7 @@
  }
  
  dependencies {
 -    implementation(project(":luminol-api")) // Luminol
-+    implementation(project(":lightingluminol-api")) // Luminol // LightingLuminol
++    implementation(project(":lightingluminol-api")) // LightingLuminol
      implementation("com.electronwill.night-config:toml:3.6.6") // Luminol - Night config
      // Abomination start
      implementation("com.github.luben:zstd-jni:1.5.4-1")
-@@ -248,14 +_,14 @@
+@@ -264,14 +_,14 @@
          val gitBranch = git.exec(providers, "rev-parse", "--abbrev-ref", "HEAD").get().trim()
          attributes(
              "Main-Class" to "org.bukkit.craftbukkit.Main",

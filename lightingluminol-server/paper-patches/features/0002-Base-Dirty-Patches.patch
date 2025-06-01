@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Kercute <A3167717663@hotmail.com>
-Date: Sun, 16 Feb 2025 16:16:20 +0800
+Date: Sat, 31 May 2025 23:12:45 +0800
 Subject: [PATCH] Base Dirty Patches
 
 
@@ -209,94 +209,19 @@ index 335058589eeba934105bea31a0c3aea2293a5597..db1e0d7f27ecae60ab853b4a16ec2cf1
          }
          // Folia end - block plugins not marked as supported
          // Copied from SimplePluginManager#loadPlugins
-diff --git a/src/main/java/me/earthme/lightingluminol/RegonizedWorldDataSwitcher.java b/src/main/java/me/earthme/lightingluminol/RegonizedWorldDataSwitcher.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..79b4fce127eb4681ee30dde599d5b12dc60c8026
---- /dev/null
-+++ b/src/main/java/me/earthme/lightingluminol/RegonizedWorldDataSwitcher.java
-@@ -0,0 +1,61 @@
-+package me.earthme.lightingluminol;
-+
-+import io.papermc.paper.threadedregions.RegionizedWorldData;
-+import it.unimi.dsi.fastutil.longs.Long2ReferenceOpenHashMap;
-+
-+
-+public class RegonizedWorldDataSwitcher {
-+    private volatile RegionizedWorldData lastMatch = null;
-+
-+    public RegionizedWorldData getLastMatch(){
-+        return this.lastMatch;
-+    }
-+
-+    public void updateCurrent(RegionizedWorldData data){
-+        this.lastMatch = data;
-+    }
-+
-+    private final ThreadLocal<Integer> randomIndex = ThreadLocal.withInitial(() -> 0);
-+    private final ThreadLocal<Integer> calledTimes = ThreadLocal.withInitial(() -> 0);
-+
-+    public void onTickFinished(){
-+        this.randomIndex.remove();
-+        this.calledTimes.remove();
-+    }
-+
-+    public void resetRandomIdx(){
-+        this.randomIndex.set(0);
-+        this.calledTimes.set(0);
-+    }
-+
-+    public RegionizedWorldData randomIfNull(Long2ReferenceOpenHashMap<RegionizedWorldData> regionToData, RegionizedWorldData data){
-+        if (data != null){
-+            return data;
-+        }
-+
-+        int idx = this.randomIndex.get();
-+
-+        if (this.calledTimes.get() / regionToData.size() >= 400){ //TODO Is that a truly exact value?
-+            this.calledTimes.set(0);
-+            this.randomIndex.set(idx+1);
-+        }
-+
-+        if (idx > regionToData.size()){
-+            this.randomIndex.set(0);
-+            idx = 0;
-+        }
-+
-+        int curr = 0;
-+        RegionizedWorldData result = this.getLastMatch();
-+
-+        for (RegionizedWorldData target : regionToData.values()){
-+            if (curr == idx){
-+                result = target;
-+            }
-+
-+            curr++;
-+        }
-+
-+        return result;
-+    }
-+}
-\ No newline at end of file
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 292f32c935767b54098290eea8a512b82f962caf..a246fc3d032426dc137c3dff6e6f8d09ed26ed17 100644
+index e86347245b674b552a8d9e5a109ec8a41999f7ee..9fbed62162237912022b7b3eabadbf490f3ec0c7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -1,5 +1,6 @@
+@@ -1,5 +1,7 @@
  package org.bukkit.craftbukkit;
  
 +import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkHolderManager;
- import com.google.common.base.Charsets;
++import io.papermc.paper.threadedregions.RegionizedServer;
  import com.google.common.base.Function;
  import com.google.common.base.Joiner;
-@@ -13,6 +14,7 @@ import com.mojang.brigadier.StringReader;
- import com.mojang.brigadier.exceptions.CommandSyntaxException;
- import com.mojang.serialization.Dynamic;
- import com.mojang.serialization.Lifecycle;
-+import io.papermc.paper.threadedregions.RegionizedServer;
- import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
- import java.awt.image.BufferedImage;
- import java.io.ByteArrayOutputStream;
-@@ -35,6 +37,8 @@ import java.util.Map;
+ import com.google.common.base.Preconditions;
+@@ -37,6 +39,8 @@ import java.util.Map;
  import java.util.Optional;
  import java.util.Set;
  import java.util.UUID;
@@ -305,7 +230,7 @@ index 292f32c935767b54098290eea8a512b82f962caf..a246fc3d032426dc137c3dff6e6f8d09
  import java.util.function.Consumer;
  import java.util.logging.Level;
  import java.util.logging.Logger;
-@@ -1323,7 +1327,7 @@ public final class CraftServer implements Server {
+@@ -1291,7 +1295,7 @@ public final class CraftServer implements Server {
  
      @Override
      public World createWorld(WorldCreator creator) {
@@ -314,7 +239,7 @@ index 292f32c935767b54098290eea8a512b82f962caf..a246fc3d032426dc137c3dff6e6f8d09
          Preconditions.checkState(this.console.getAllLevels().iterator().hasNext(), "Cannot create additional worlds on STARTUP");
          //Preconditions.checkState(!this.console.isIteratingOverLevels, "Cannot create a world while worlds are being ticked"); // Paper - Cat - Temp disable. We'll see how this goes.
          Preconditions.checkArgument(creator != null, "WorldCreator cannot be null");
-@@ -1506,7 +1510,18 @@ public final class CraftServer implements Server {
+@@ -1474,7 +1478,18 @@ public final class CraftServer implements Server {
          }
  
          this.console.addLevel(serverLevel); // Paper - Put world into worldlist before initing the world; move up
@@ -334,7 +259,7 @@ index 292f32c935767b54098290eea8a512b82f962caf..a246fc3d032426dc137c3dff6e6f8d09
  
          serverLevel.setSpawnSettings(true);
          // Paper - Put world into worldlist before initing the world; move up
-@@ -1525,7 +1540,7 @@ public final class CraftServer implements Server {
+@@ -1493,7 +1508,7 @@ public final class CraftServer implements Server {
  
      @Override
      public boolean unloadWorld(World world, boolean save) {
@@ -343,7 +268,7 @@ index 292f32c935767b54098290eea8a512b82f962caf..a246fc3d032426dc137c3dff6e6f8d09
          //Preconditions.checkState(!this.console.isIteratingOverLevels, "Cannot unload a world while worlds are being ticked"); // Paper - Cat - Temp disable. We'll see how this goes.
          if (world == null) {
              return false;
-@@ -1553,13 +1568,41 @@ public final class CraftServer implements Server {
+@@ -1519,13 +1534,41 @@ public final class CraftServer implements Server {
          }
  
          try {
@@ -392,10 +317,10 @@ index 292f32c935767b54098290eea8a512b82f962caf..a246fc3d032426dc137c3dff6e6f8d09
              this.getLogger().log(Level.SEVERE, null, ex);
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index f0c8e76efaf897a81283edbf9a9c2a71bc28c9a9..604c8921ef1b80423506417317e14f013edaf83c 100644
+index a301a6824e68a9a18a42f16f7c47d66e9ee66c9a..cd4c77ad1defcd02a27040467fdefd81b957d2cd 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -396,7 +396,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -397,7 +397,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      public boolean isChunkGenerated(int x, int z) {
          // Paper start - Fix this method
@@ -404,7 +329,7 @@ index f0c8e76efaf897a81283edbf9a9c2a71bc28c9a9..604c8921ef1b80423506417317e14f01
              return java.util.concurrent.CompletableFuture.supplyAsync(() -> {
                  return CraftWorld.this.isChunkGenerated(x, z);
              }, (run) -> { io.papermc.paper.threadedregions.RegionizedServer.getInstance().taskQueue.queueChunkTask(this.getHandle(), x, z, run);}).join(); // Folia - region threading
-@@ -409,7 +409,11 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -410,7 +410,11 @@ public class CraftWorld extends CraftRegionAccessor implements World {
          ca.spottedleaf.moonrise.common.PlatformHooks.get().scheduleChunkLoad(
              this.world, x, z, false, ChunkStatus.EMPTY, true, ca.spottedleaf.concurrentutil.util.Priority.NORMAL, future::complete
          );
@@ -417,13 +342,13 @@ index f0c8e76efaf897a81283edbf9a9c2a71bc28c9a9..604c8921ef1b80423506417317e14f01
          return future.thenApply(c -> {
              if (c != null) {
                  return c.getPersistedStatus() == ChunkStatus.FULL;
-@@ -618,20 +622,20 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -619,20 +623,20 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public boolean isChunkForceLoaded(int x, int z) {
 -        io.papermc.paper.threadedregions.RegionizedServer.ensureGlobalTickThread("Cannot read force-loaded chunk off global region"); // Folia - region threading
 +        //io.papermc.paper.threadedregions.RegionizedServer.ensureGlobalTickThread("Cannot read force-loaded chunk off global region"); // Folia - region threading
-         return this.getHandle().getForcedChunks().contains(ChunkPos.asLong(x, z));
+         return this.getHandle().getForceLoadedChunks().contains(ChunkPos.asLong(x, z));
      }
  
      @Override
@@ -440,17 +365,17 @@ index f0c8e76efaf897a81283edbf9a9c2a71bc28c9a9..604c8921ef1b80423506417317e14f01
 +        //io.papermc.paper.threadedregions.RegionizedServer.ensureGlobalTickThread("Cannot read force-loaded chunks off global region"); // Folia - region threading
          Set<Chunk> chunks = new HashSet<>();
  
-         for (long coord : this.getHandle().getForcedChunks()) {
-@@ -808,7 +812,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         for (long coord : this.getHandle().getForceLoadedChunks()) {
+@@ -809,7 +813,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setTime(long time) {
 -        io.papermc.paper.threadedregions.RegionizedServer.ensureGlobalTickThread("Cannot modify time off of the global region"); // Folia - region threading
 +        //io.papermc.paper.threadedregions.RegionizedServer.ensureGlobalTickThread("Cannot modify time off of the global region"); // Folia - region threading
-         long margin = (time - this.getFullTime()) % 24000;
-         if (margin < 0) margin += 24000;
+         long margin = (time - this.getFullTime()) % Level.TICKS_PER_DAY;
+         if (margin < 0) margin += Level.TICKS_PER_DAY;
          this.setFullTime(this.getFullTime() + margin);
-@@ -821,7 +825,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -822,7 +826,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setFullTime(long time) {
@@ -459,7 +384,7 @@ index f0c8e76efaf897a81283edbf9a9c2a71bc28c9a9..604c8921ef1b80423506417317e14f01
          // Notify anyone who's listening
          TimeSkipEvent event = new TimeSkipEvent(this, TimeSkipEvent.SkipReason.CUSTOM, time - this.world.getDayTime());
          this.server.getPluginManager().callEvent(event);
-@@ -1329,7 +1333,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1330,7 +1334,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setStorm(boolean hasStorm) {
@@ -468,7 +393,7 @@ index f0c8e76efaf897a81283edbf9a9c2a71bc28c9a9..604c8921ef1b80423506417317e14f01
          this.world.serverLevelData.setRaining(hasStorm, org.bukkit.event.weather.WeatherChangeEvent.Cause.PLUGIN); // Paper - Add cause to Weather/ThunderChangeEvents
          this.setWeatherDuration(0); // Reset weather duration (legacy behaviour)
          this.setClearWeatherDuration(0); // Reset clear weather duration (reset "/weather clear" commands)
-@@ -1342,7 +1346,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1343,7 +1347,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setWeatherDuration(int duration) {
@@ -477,7 +402,7 @@ index f0c8e76efaf897a81283edbf9a9c2a71bc28c9a9..604c8921ef1b80423506417317e14f01
          this.world.serverLevelData.setRainTime(duration);
      }
  
-@@ -1353,7 +1357,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1354,7 +1358,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setThundering(boolean thundering) {
@@ -486,7 +411,7 @@ index f0c8e76efaf897a81283edbf9a9c2a71bc28c9a9..604c8921ef1b80423506417317e14f01
          this.world.serverLevelData.setThundering(thundering, org.bukkit.event.weather.ThunderChangeEvent.Cause.PLUGIN); // Paper - Add cause to Weather/ThunderChangeEvents
          this.setThunderDuration(0); // Reset weather duration (legacy behaviour)
          this.setClearWeatherDuration(0); // Reset clear weather duration (reset "/weather clear" commands)
-@@ -1366,7 +1370,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1367,7 +1371,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setThunderDuration(int duration) {
@@ -495,7 +420,7 @@ index f0c8e76efaf897a81283edbf9a9c2a71bc28c9a9..604c8921ef1b80423506417317e14f01
          this.world.serverLevelData.setThunderTime(duration);
      }
  
-@@ -1377,7 +1381,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1378,7 +1382,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setClearWeatherDuration(int duration) {
@@ -504,7 +429,7 @@ index f0c8e76efaf897a81283edbf9a9c2a71bc28c9a9..604c8921ef1b80423506417317e14f01
          this.world.serverLevelData.setClearWeatherTime(duration);
      }
  
-@@ -1576,7 +1580,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1577,7 +1581,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setKeepSpawnInMemory(boolean keepLoaded) {
@@ -513,7 +438,7 @@ index f0c8e76efaf897a81283edbf9a9c2a71bc28c9a9..604c8921ef1b80423506417317e14f01
          if (keepLoaded) {
              this.setGameRule(GameRule.SPAWN_CHUNK_RADIUS, this.getGameRuleDefault(GameRule.SPAWN_CHUNK_RADIUS));
          } else {
-@@ -1645,7 +1649,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1651,7 +1655,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setHardcore(boolean hardcore) {
@@ -522,7 +447,7 @@ index f0c8e76efaf897a81283edbf9a9c2a71bc28c9a9..604c8921ef1b80423506417317e14f01
          this.world.serverLevelData.settings.hardcore = hardcore;
      }
  
-@@ -1658,7 +1662,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1664,7 +1668,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      @Deprecated
      public void setTicksPerAnimalSpawns(int ticksPerAnimalSpawns) {
@@ -531,7 +456,7 @@ index f0c8e76efaf897a81283edbf9a9c2a71bc28c9a9..604c8921ef1b80423506417317e14f01
          this.setTicksPerSpawns(SpawnCategory.ANIMAL, ticksPerAnimalSpawns);
      }
  
-@@ -1671,7 +1675,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1677,7 +1681,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      @Deprecated
      public void setTicksPerMonsterSpawns(int ticksPerMonsterSpawns) {
@@ -540,7 +465,7 @@ index f0c8e76efaf897a81283edbf9a9c2a71bc28c9a9..604c8921ef1b80423506417317e14f01
          this.setTicksPerSpawns(SpawnCategory.MONSTER, ticksPerMonsterSpawns);
      }
  
-@@ -1684,7 +1688,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1690,7 +1694,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      @Deprecated
      public void setTicksPerWaterSpawns(int ticksPerWaterSpawns) {
@@ -549,7 +474,7 @@ index f0c8e76efaf897a81283edbf9a9c2a71bc28c9a9..604c8921ef1b80423506417317e14f01
          this.setTicksPerSpawns(SpawnCategory.WATER_ANIMAL, ticksPerWaterSpawns);
      }
  
-@@ -1697,7 +1701,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1703,7 +1707,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      @Deprecated
      public void setTicksPerWaterAmbientSpawns(int ticksPerWaterAmbientSpawns) {
@@ -558,7 +483,7 @@ index f0c8e76efaf897a81283edbf9a9c2a71bc28c9a9..604c8921ef1b80423506417317e14f01
          this.setTicksPerSpawns(SpawnCategory.WATER_AMBIENT, ticksPerWaterAmbientSpawns);
      }
  
-@@ -1710,7 +1714,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1716,7 +1720,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      @Deprecated
      public void setTicksPerWaterUndergroundCreatureSpawns(int ticksPerWaterUndergroundCreatureSpawns) {
@@ -567,7 +492,7 @@ index f0c8e76efaf897a81283edbf9a9c2a71bc28c9a9..604c8921ef1b80423506417317e14f01
          this.setTicksPerSpawns(SpawnCategory.WATER_UNDERGROUND_CREATURE, ticksPerWaterUndergroundCreatureSpawns);
      }
  
-@@ -1723,13 +1727,13 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1729,13 +1733,13 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      @Deprecated
      public void setTicksPerAmbientSpawns(int ticksPerAmbientSpawns) {
@@ -583,7 +508,7 @@ index f0c8e76efaf897a81283edbf9a9c2a71bc28c9a9..604c8921ef1b80423506417317e14f01
          Preconditions.checkArgument(spawnCategory != null, "SpawnCategory cannot be null");
          Preconditions.checkArgument(CraftSpawnCategory.isValidForLimits(spawnCategory), "SpawnCategory.%s are not supported", spawnCategory);
  
-@@ -1746,25 +1750,25 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1752,25 +1756,25 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setMetadata(String metadataKey, MetadataValue newMetadataValue) {
@@ -613,7 +538,7 @@ index f0c8e76efaf897a81283edbf9a9c2a71bc28c9a9..604c8921ef1b80423506417317e14f01
          this.server.getWorldMetadata().removeMetadata(this, metadataKey, owningPlugin);
      }
  
-@@ -1777,7 +1781,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1783,7 +1787,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      @Deprecated
      public void setMonsterSpawnLimit(int limit) {
@@ -622,7 +547,7 @@ index f0c8e76efaf897a81283edbf9a9c2a71bc28c9a9..604c8921ef1b80423506417317e14f01
          this.setSpawnLimit(SpawnCategory.MONSTER, limit);
      }
  
-@@ -1790,7 +1794,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1796,7 +1800,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      @Deprecated
      public void setAnimalSpawnLimit(int limit) {
@@ -631,7 +556,7 @@ index f0c8e76efaf897a81283edbf9a9c2a71bc28c9a9..604c8921ef1b80423506417317e14f01
          this.setSpawnLimit(SpawnCategory.ANIMAL, limit);
      }
  
-@@ -1803,7 +1807,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1809,7 +1813,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      @Deprecated
      public void setWaterAnimalSpawnLimit(int limit) {
@@ -640,7 +565,7 @@ index f0c8e76efaf897a81283edbf9a9c2a71bc28c9a9..604c8921ef1b80423506417317e14f01
          this.setSpawnLimit(SpawnCategory.WATER_ANIMAL, limit);
      }
  
-@@ -1816,7 +1820,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1822,7 +1826,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      @Deprecated
      public void setWaterAmbientSpawnLimit(int limit) {
@@ -649,7 +574,7 @@ index f0c8e76efaf897a81283edbf9a9c2a71bc28c9a9..604c8921ef1b80423506417317e14f01
          this.setSpawnLimit(SpawnCategory.WATER_AMBIENT, limit);
      }
  
-@@ -1829,7 +1833,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1835,7 +1839,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      @Deprecated
      public void setWaterUndergroundCreatureSpawnLimit(int limit) {
@@ -658,7 +583,7 @@ index f0c8e76efaf897a81283edbf9a9c2a71bc28c9a9..604c8921ef1b80423506417317e14f01
          this.setSpawnLimit(SpawnCategory.WATER_UNDERGROUND_CREATURE, limit);
      }
  
-@@ -1842,7 +1846,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1848,7 +1852,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      @Deprecated
      public void setAmbientSpawnLimit(int limit) {
@@ -667,7 +592,7 @@ index f0c8e76efaf897a81283edbf9a9c2a71bc28c9a9..604c8921ef1b80423506417317e14f01
          this.setSpawnLimit(SpawnCategory.AMBIENT, limit);
      }
  
-@@ -1865,7 +1869,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1871,7 +1875,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setSpawnLimit(SpawnCategory spawnCategory, int limit) {
@@ -676,7 +601,7 @@ index f0c8e76efaf897a81283edbf9a9c2a71bc28c9a9..604c8921ef1b80423506417317e14f01
          Preconditions.checkArgument(spawnCategory != null, "SpawnCategory cannot be null");
          Preconditions.checkArgument(CraftSpawnCategory.isValidForLimits(spawnCategory), "SpawnCategory.%s are not supported", spawnCategory);
  
-@@ -2052,7 +2056,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -2058,7 +2062,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public boolean setGameRuleValue(String rule, String value) {
@@ -685,7 +610,7 @@ index f0c8e76efaf897a81283edbf9a9c2a71bc28c9a9..604c8921ef1b80423506417317e14f01
          // No null values allowed
          if (rule == null || value == null) return false;
  
-@@ -2101,7 +2105,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -2107,7 +2111,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public <T> boolean setGameRule(GameRule<T> rule, T newValue) {
@@ -695,10 +620,10 @@ index f0c8e76efaf897a81283edbf9a9c2a71bc28c9a9..604c8921ef1b80423506417317e14f01
          Preconditions.checkArgument(newValue != null, "GameRule value cannot be null");
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 48c85729a6de20b554325ca29c2448d515bbc7a7..2a25cdff9cee1ff5c19c30e8b7de1b54a62f45f8 100644
+index 77dd160db2d05d6542ae336fbd71eeae76479b91..166b83426b51930af6fc174f3d72ea119b1f7053 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -1409,7 +1409,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1410,7 +1410,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      public boolean teleport(Location location, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, io.papermc.paper.entity.TeleportFlag... flags) {
          // Folia start - region threading
          if (true) {
@@ -721,27 +646,26 @@ index fad85bea8643a3a88ec5c4194de7a5060e81c136..c4b57c2dbcb0726d6ffa58177d74d70c
          if (!this.isAsyncScheduler && !task.isSync()) {
              this.asyncScheduler.handle(task, delay);
 diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java
-index ce8b91f00f925960ad17f381162a11294e8b511d..506a8edda4fbf710b36919806ceb39b708641e37 100644
+index b959fe4311fc6cbae3dcc052ef4710f8c8aefec6..80c1d5f725179d6904451271f0c9d7ccf6fd018f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java
-@@ -44,8 +44,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
-         return this.registerNewObjective(name, criteria, displayName, RenderType.INTEGER);
+@@ -31,7 +31,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
      }
+ 
      @Override
--    public CraftObjective registerNewObjective(String name, Criteria criteria, net.kyori.adventure.text.Component displayName, RenderType renderType) throws IllegalArgumentException {
--        if (true) throw new UnsupportedOperationException(); // Folia - not supported yet
-+    public synchronized CraftObjective registerNewObjective(String name, Criteria criteria, net.kyori.adventure.text.Component displayName, RenderType renderType) throws IllegalArgumentException {
+-    public Objective registerNewObjective(String name, Criteria criteria, net.kyori.adventure.text.Component displayName, RenderType renderType) throws IllegalArgumentException {
++    public synchronized Objective registerNewObjective(String name, Criteria criteria, net.kyori.adventure.text.Component displayName, RenderType renderType) throws IllegalArgumentException {
+         if (true) throw new UnsupportedOperationException(); // Folia - not supported yet
          if (displayName == null) {
              displayName = net.kyori.adventure.text.Component.empty();
-         }
-@@ -86,14 +85,14 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
+@@ -57,14 +57,14 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
      }
  
      @Override
 -    public Objective getObjective(String name) {
 +    public synchronized Objective getObjective(String name) {
          Preconditions.checkArgument(name != null, "Objective name cannot be null");
-         net.minecraft.world.scores.Objective nms = this.board.getObjective(name);
+         net.minecraft.world.scores.Objective nms = this.getHandle().getObjective(name);
          return nms == null ? null : new CraftObjective(this, nms);
      }
  
@@ -750,8 +674,8 @@ index ce8b91f00f925960ad17f381162a11294e8b511d..506a8edda4fbf710b36919806ceb39b7
 +    public synchronized ImmutableSet<Objective> getObjectivesByCriteria(String criteria) {
          Preconditions.checkArgument(criteria != null, "Criteria name cannot be null");
  
-         ImmutableSet.Builder<Objective> objectives = ImmutableSet.builder();
-@@ -107,7 +106,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
+         ImmutableSet.Builder<Objective> result = ImmutableSet.builder();
+@@ -79,7 +79,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
      }
  
      @Override
@@ -759,23 +683,23 @@ index ce8b91f00f925960ad17f381162a11294e8b511d..506a8edda4fbf710b36919806ceb39b7
 +    public synchronized ImmutableSet<Objective> getObjectivesByCriteria(Criteria criteria) {
          Preconditions.checkArgument(criteria != null, "Criteria cannot be null");
  
-         ImmutableSet.Builder<Objective> objectives = ImmutableSet.builder();
-@@ -122,12 +121,12 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
+         ImmutableSet.Builder<Objective> result = ImmutableSet.builder();
+@@ -95,12 +95,12 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
      }
  
      @Override
 -    public ImmutableSet<Objective> getObjectives() {
 +    public synchronized ImmutableSet<Objective> getObjectives() {
-         return ImmutableSet.copyOf(Iterables.transform(this.board.getObjectives(), (Function<net.minecraft.world.scores.Objective, Objective>) input -> new CraftObjective(CraftScoreboard.this, input)));
+         return ImmutableSet.copyOf(Iterables.transform(this.getHandle().getObjectives(), (Function<net.minecraft.world.scores.Objective, Objective>) input -> new CraftObjective(CraftScoreboard.this, input)));
      }
  
      @Override
 -    public Objective getObjective(DisplaySlot slot) {
 +    public synchronized Objective getObjective(DisplaySlot slot) {
          Preconditions.checkArgument(slot != null, "Display slot cannot be null");
-         net.minecraft.world.scores.Objective objective = this.board.getDisplayObjective(CraftScoreboardTranslations.fromBukkitSlot(slot));
+         net.minecraft.world.scores.Objective objective = this.getHandle().getDisplayObjective(CraftScoreboardTranslations.fromBukkitSlot(slot));
          if (objective == null) {
-@@ -142,7 +141,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
+@@ -115,7 +115,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
      }
  
      @Override
@@ -784,7 +708,7 @@ index ce8b91f00f925960ad17f381162a11294e8b511d..506a8edda4fbf710b36919806ceb39b7
          return this.getScores(CraftScoreboard.getScoreHolder(entry));
      }
  
-@@ -162,7 +161,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
+@@ -135,7 +135,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
      }
  
      @Override
@@ -793,7 +717,7 @@ index ce8b91f00f925960ad17f381162a11294e8b511d..506a8edda4fbf710b36919806ceb39b7
          this.resetScores(CraftScoreboard.getScoreHolder(entry));
      }
  
-@@ -175,7 +174,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
+@@ -148,7 +148,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
      }
  
      @Override
@@ -801,8 +725,8 @@ index ce8b91f00f925960ad17f381162a11294e8b511d..506a8edda4fbf710b36919806ceb39b7
 +    public synchronized Team getPlayerTeam(OfflinePlayer player) {
          Preconditions.checkArgument(player != null, "OfflinePlayer cannot be null");
  
-         PlayerTeam team = this.board.getPlayersTeam(player.getName());
-@@ -183,7 +182,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
+         PlayerTeam team = this.getHandle().getPlayersTeam(player.getName());
+@@ -156,7 +156,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
      }
  
      @Override
@@ -810,8 +734,8 @@ index ce8b91f00f925960ad17f381162a11294e8b511d..506a8edda4fbf710b36919806ceb39b7
 +    public synchronized Team getEntryTeam(String entry) {
          Preconditions.checkArgument(entry != null, "Entry cannot be null");
  
-         PlayerTeam team = this.board.getPlayersTeam(entry);
-@@ -191,7 +190,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
+         PlayerTeam team = this.getHandle().getPlayersTeam(entry);
+@@ -164,7 +164,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
      }
  
      @Override
@@ -819,14 +743,14 @@ index ce8b91f00f925960ad17f381162a11294e8b511d..506a8edda4fbf710b36919806ceb39b7
 +    public synchronized Team getTeam(String teamName) {
          Preconditions.checkArgument(teamName != null, "Team name cannot be null");
  
-         PlayerTeam team = this.board.getPlayerTeam(teamName);
-@@ -199,13 +198,12 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
+         PlayerTeam team = this.getHandle().getPlayerTeam(teamName);
+@@ -172,13 +172,12 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
      }
  
      @Override
 -    public ImmutableSet<Team> getTeams() {
 +    public synchronized ImmutableSet<Team> getTeams() {
-         return ImmutableSet.copyOf(Iterables.transform(this.board.getPlayerTeams(), (Function<PlayerTeam, Team>) input -> new CraftTeam(CraftScoreboard.this, input)));
+         return ImmutableSet.copyOf(Iterables.transform(this.getHandle().getPlayerTeams(), (Function<PlayerTeam, Team>) input -> new CraftTeam(CraftScoreboard.this, input)));
      }
  
      @Override
@@ -835,26 +759,26 @@ index ce8b91f00f925960ad17f381162a11294e8b511d..506a8edda4fbf710b36919806ceb39b7
 +    public synchronized Team registerNewTeam(String name) {
          Preconditions.checkArgument(name != null, "Team name cannot be null");
          Preconditions.checkArgument(name.length() <= Short.MAX_VALUE, "Team name '%s' is longer than the limit of 32767 characters (%s)", name, name.length());
-         Preconditions.checkArgument(this.board.getPlayerTeam(name) == null, "Team name '%s' is already in use", name);
-@@ -214,7 +212,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
+         Preconditions.checkArgument(this.getHandle().getPlayerTeam(name) == null, "Team name '%s' is already in use", name);
+@@ -187,7 +186,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
      }
  
      @Override
 -    public ImmutableSet<OfflinePlayer> getPlayers() {
 +    public synchronized ImmutableSet<OfflinePlayer> getPlayers() {
          ImmutableSet.Builder<OfflinePlayer> players = ImmutableSet.builder();
-         for (ScoreHolder playerName : this.board.getTrackedPlayers()) {
+         for (ScoreHolder playerName : this.getHandle().getTrackedPlayers()) {
              players.add(Bukkit.getOfflinePlayer(playerName.getScoreboardName()));
-@@ -223,7 +221,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
+@@ -196,7 +195,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
      }
  
      @Override
 -    public ImmutableSet<String> getEntries() {
 +    public synchronized ImmutableSet<String> getEntries() {
          ImmutableSet.Builder<String> entries = ImmutableSet.builder();
-         for (ScoreHolder entry : this.board.getTrackedPlayers()) {
+         for (ScoreHolder entry : this.getHandle().getTrackedPlayers()) {
              entries.add(entry.getScoreboardName());
-@@ -232,27 +230,26 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
+@@ -205,26 +204,25 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
      }
  
      @Override
@@ -862,10 +786,9 @@ index ce8b91f00f925960ad17f381162a11294e8b511d..506a8edda4fbf710b36919806ceb39b7
 -        if (true) throw new UnsupportedOperationException(); // Folia - not supported yet
 +    public synchronized void clearSlot(DisplaySlot slot) {
          Preconditions.checkArgument(slot != null, "Slot cannot be null");
-         this.board.setDisplayObjective(CraftScoreboardTranslations.fromBukkitSlot(slot), null);
+         this.getHandle().setDisplayObjective(CraftScoreboardTranslations.fromBukkitSlot(slot), null);
      }
  
-     // Paper start
      @Override
 -    public ImmutableSet<Score> getScoresFor(org.bukkit.entity.Entity entity) throws IllegalArgumentException {
 +    public synchronized ImmutableSet<Score> getScoresFor(org.bukkit.entity.Entity entity) throws IllegalArgumentException {
@@ -887,15 +810,15 @@ index ce8b91f00f925960ad17f381162a11294e8b511d..506a8edda4fbf710b36919806ceb39b7
          return this.getEntryTeam(((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().getScoreboardName());
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index 68cc7eb8d7357d357d9d57d6391bf5a4a09221de..b6222b55584ef327a865ee9a9c0c3254adbbf4da 100644
+index c9fa6339f4821319b942b443fbe26d6b9b94ecb8..321dad849cdf31ad0894fd8d7a2dda2c08577f28 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -381,7 +381,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
+@@ -372,7 +372,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
  
          // Folia start - block plugins not marked as supported
-         if (!pdf.isFoliaSupported()) {
--            throw new InvalidPluginException("Plugin " + pdf.getFullName() + " is not marked as supporting regionised multithreading");
-+            //throw new InvalidPluginException("Plugin " + pdf.getFullName() + " is not marked as supporting regionised multithreading");
+         if (!descriptionFile.isFoliaSupported()) {
+-            throw new InvalidPluginException("Plugin " + descriptionFile.getFullName() + " is not marked as supporting regionised multithreading");
++            //throw new InvalidPluginException("Plugin " + descriptionFile.getFullName() + " is not marked as supporting regionised multithreading");
          }
          // Folia end - block plugins not marked as supported
  
