@@ -2,7 +2,7 @@ name: LightingLuminol CI - ver/1.21.5
 
 on:
     push:
-      branches: [ "veer/1.21.5" ]
+      branches: [ "ver/1.21.5" ]
     pull_request:
       branches: [ "ver/1.21.5" ]
 
