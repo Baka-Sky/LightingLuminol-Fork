@@ -210,7 +210,7 @@ index 335058589eeba934105bea31a0c3aea2293a5597..db1e0d7f27ecae60ab853b4a16ec2cf1
          // Folia end - block plugins not marked as supported
          // Copied from SimplePluginManager#loadPlugins
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index e86347245b674b552a8d9e5a109ec8a41999f7ee..9fbed62162237912022b7b3eabadbf490f3ec0c7 100644
+index e86347245b674b552a8d9e5a109ec8a41999f7ee..26e303685c29c43389b72ded99d13cfc562a0390 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -1,5 +1,7 @@
@@ -252,7 +252,7 @@ index e86347245b674b552a8d9e5a109ec8a41999f7ee..9fbed62162237912022b7b3eabadbf49
 +            for (int currZ = -loadRegionRadius; currZ <= loadRegionRadius; ++currZ) {
 +                net.minecraft.world.level.ChunkPos pos = new net.minecraft.world.level.ChunkPos(currX, currZ);
 +                serverLevel.chunkSource.addTicketAtLevel(
-+                        TicketType.UNKNOWN, pos, ChunkHolderManager.MAX_TICKET_LEVEL, pos
++                        TicketType.UNKNOWN, pos, ChunkHolderManager.MAX_TICKET_LEVEL
 +                );
 +            }
 +        }

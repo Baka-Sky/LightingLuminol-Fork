@@ -35,6 +35,39 @@ index 55476f0d4898c67e433dcee769a5cf8bd6109930..7a0fc3b218984129469108045728dae5
          // commands
          ((DedicatedServer)MinecraftServer.getServer()).handleConsoleInputs();
  
+diff --git a/io/papermc/paper/threadedregions/RegionizedServerInitEvent.java b/io/papermc/paper/threadedregions/RegionizedServerInitEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..aabbbb4159cc97159f9ff0a566bb5f047bc22706
+--- /dev/null
++++ b/io/papermc/paper/threadedregions/RegionizedServerInitEvent.java
+@@ -0,0 +1,26 @@
++package io.papermc.paper.threadedregions;
++
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.server.ServerEvent;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * This event is called after the server is initialised but <b>before</b> the server begins ticking regions in parallel.
++ * Plugins may use this as a hook to run post initialisation logic without worrying about the possibility that
++ * regions are ticking in parallel.
++ */
++public class RegionizedServerInitEvent extends ServerEvent {
++
++    private static final HandlerList handlers = new HandlerList();
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++}
+\ No newline at end of file
 diff --git a/io/papermc/paper/threadedregions/RegionizedWorldData.java b/io/papermc/paper/threadedregions/RegionizedWorldData.java
 index 0168c2a0e3ce16f107bbd83e1071004e61de32f8..a1129f56cff86b3f2e06b44a4f5d2baa75387cbe 100644
 --- a/io/papermc/paper/threadedregions/RegionizedWorldData.java
