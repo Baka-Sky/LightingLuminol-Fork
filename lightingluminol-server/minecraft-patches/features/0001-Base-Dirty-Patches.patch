@@ -36,7 +36,7 @@ index 55476f0d4898c67e433dcee769a5cf8bd6109930..7a0fc3b218984129469108045728dae5
          ((DedicatedServer)MinecraftServer.getServer()).handleConsoleInputs();
  
 diff --git a/io/papermc/paper/threadedregions/RegionizedWorldData.java b/io/papermc/paper/threadedregions/RegionizedWorldData.java
-index 0168c2a0e3ce16f107bbd83e1071004e61de32f8..749e28d10da73338a101a30d6e52efba551e7f25 100644
+index 0168c2a0e3ce16f107bbd83e1071004e61de32f8..a1129f56cff86b3f2e06b44a4f5d2baa75387cbe 100644
 --- a/io/papermc/paper/threadedregions/RegionizedWorldData.java
 +++ b/io/papermc/paper/threadedregions/RegionizedWorldData.java
 @@ -6,12 +6,12 @@ import ca.spottedleaf.moonrise.common.misc.NearbyPlayers;
@@ -309,7 +309,7 @@ index 0168c2a0e3ce16f107bbd83e1071004e61de32f8..749e28d10da73338a101a30d6e52efba
      public void removeTickingChunk(final LevelChunk chunk) {
          this.tickingChunks.remove(chunk);
 -        TickRegions.RegionStats.updateCurrentRegion();
-+        TickRegions.RegionStats.updateCurrentRegion(holder.chunk());
++        TickRegions.RegionStats.updateCurrentRegion(chunk);
      }
  
      public ReferenceList<LevelChunk> getTickingChunks() {
@@ -318,13 +318,13 @@ index 0168c2a0e3ce16f107bbd83e1071004e61de32f8..749e28d10da73338a101a30d6e52efba
      public void addChunk(final LevelChunk chunk) {
          this.chunks.add(chunk);
 -        TickRegions.RegionStats.updateCurrentRegion();
-+        TickRegions.RegionStats.updateCurrentRegion(holder.chunk());
++        TickRegions.RegionStats.updateCurrentRegion(chunk);
      }
  
      public void removeChunk(final LevelChunk chunk) {
          this.chunks.remove(chunk);
 -        TickRegions.RegionStats.updateCurrentRegion();
-+        TickRegions.RegionStats.updateCurrentRegion(holder.chunk());
++        TickRegions.RegionStats.updateCurrentRegion(chunk);
      }
  
      public ReferenceList<LevelChunk> getChunks() {
@@ -534,7 +534,7 @@ index b163c43f5398b9f38c75ae7af6a3015b686624ce..010b34004b21ebe26a89f4935bc1487f
                  TicketType.TELEPORT_HOLD_TICKET, initialPositionChunk,
                  ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkHolderManager.MAX_TICKET_LEVEL,
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index ba1ccd6eab77e27a38d22c12dba0797d65cc4c4e..7e2d0c7cc87d48987af0b73a2c0133c5c13de8f8 100644
+index ba1ccd6eab77e27a38d22c12dba0797d65cc4c4e..c3ce74f24546675ec0a79f3eb3a33047bf95f553 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
 @@ -11,6 +11,8 @@ import java.util.function.Consumer;
@@ -542,7 +542,7 @@ index ba1ccd6eab77e27a38d22c12dba0797d65cc4c4e..7e2d0c7cc87d48987af0b73a2c0133c5
  import java.util.stream.Collectors;
  import javax.annotation.Nullable;
 +
-+import me.earthme.lightingluminol.RegonizedWorldDataSwitcher;
++import dev.bacteriawa.RegonizedWorldDataSwitcher;
  import net.minecraft.CrashReport;
  import net.minecraft.CrashReportCategory;
  import net.minecraft.ReportedException;
