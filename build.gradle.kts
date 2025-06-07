@@ -26,6 +26,11 @@ paperweight {
             patchesDir = file("lightingluminol-api/paper-patches")
             outputDir = file("paper-api")
         }
+        patchRepo("foliaApi") {
+            upstreamPath = "folia-api"
+            patchesDir = file("lophine-api/folia-patches")
+            outputDir = file("folia-api")
+        }
         patchDir("luminolApi") {
             upstreamPath = "luminol-api"
             excludes = listOf("build.gradle.kts", "build.gradle.kts.patch", "paper-patches")
