@@ -28,7 +28,7 @@ paperweight {
         }
         patchRepo("foliaApi") {
             upstreamPath = "folia-api"
-            patchesDir = file("lophine-api/folia-patches")
+            patchesDir = file("lightingluminol-api/folia-patches")
             outputDir = file("folia-api")
         }
         patchDir("luminolApi") {
