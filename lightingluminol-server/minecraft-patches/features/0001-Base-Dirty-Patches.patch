@@ -329,10 +329,10 @@ index 0168c2a0e3ce16f107bbd83e1071004e61de32f8..a1129f56cff86b3f2e06b44a4f5d2baa
  
      public ReferenceList<LevelChunk> getChunks() {
 diff --git a/io/papermc/paper/threadedregions/TickRegionScheduler.java b/io/papermc/paper/threadedregions/TickRegionScheduler.java
-index fa6b8d756195c1b430cc11214a901bd42eebc98d..5ea458a31d4654662fe88c16790ec765dca8d7e3 100644
+index 0357792de0ed8ec9058d1847c8b45c33ff365af6..45ada98f80ed92063f7a417cc62660ed66d0b096 100644
 --- a/io/papermc/paper/threadedregions/TickRegionScheduler.java
 +++ b/io/papermc/paper/threadedregions/TickRegionScheduler.java
-@@ -222,9 +222,9 @@ public final class TickRegionScheduler {
+@@ -241,9 +241,9 @@ public final class TickRegionScheduler {
  
      // By using our own thread object, we can use a field for the current region rather than a ThreadLocal.
      // This is much faster than a thread local, since the thread local has to use a map lookup.
@@ -344,7 +344,7 @@ index fa6b8d756195c1b430cc11214a901bd42eebc98d..5ea458a31d4654662fe88c16790ec765
          private RegionizedWorldData currentTickingWorldRegionizedData;
          private SchedulerThreadPool.SchedulableTick currentTickingTask;
          // Folia start - profiler
-@@ -345,6 +345,7 @@ public final class TickRegionScheduler {
+@@ -364,6 +364,7 @@ public final class TickRegionScheduler {
                  // don't release region for another tick
                  return null;
              } finally {

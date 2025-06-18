@@ -51,7 +51,7 @@
      implementation("com.electronwill.night-config:toml:3.8.2") // Luminol - Night config
      // Abomination start
      implementation("com.github.luben:zstd-jni:1.5.4-1")
-@@ -264,14 +_,14 @@
+@@ -265,14 +_,14 @@
          val gitBranch = git.exec(providers, "rev-parse", "--abbrev-ref", "HEAD").get().trim()
          attributes(
              "Main-Class" to "org.bukkit.craftbukkit.Main",
