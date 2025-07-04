@@ -36,7 +36,7 @@ index 8e91ec81128bdbd5f78e1f04fe17bcbd6e5dc280..aa1d94ec69ccfafda2adf0e7d0f46ae4
          ((DedicatedServer)MinecraftServer.getServer()).handleConsoleInputs();
  
 diff --git a/io/papermc/paper/threadedregions/RegionizedWorldData.java b/io/papermc/paper/threadedregions/RegionizedWorldData.java
-index 0168c2a0e3ce16f107bbd83e1071004e61de32f8..a1129f56cff86b3f2e06b44a4f5d2baa75387cbe 100644
+index 8c4d89c47fd176d584d3dbd0e3325f69b5e847c3..06bb9d563354048414a0f5a6331fb08f23e51972 100644
 --- a/io/papermc/paper/threadedregions/RegionizedWorldData.java
 +++ b/io/papermc/paper/threadedregions/RegionizedWorldData.java
 @@ -6,12 +6,12 @@ import ca.spottedleaf.moonrise.common.misc.NearbyPlayers;
@@ -55,7 +55,7 @@ index 0168c2a0e3ce16f107bbd83e1071004e61de32f8..a1129f56cff86b3f2e06b44a4f5d2baa
  import net.minecraft.CrashReport;
  import net.minecraft.ReportedException;
  import net.minecraft.core.BlockPos;
-@@ -91,10 +91,10 @@ public final class RegionizedWorldData {
+@@ -92,10 +92,10 @@ public final class RegionizedWorldData {
              for (final Entity entity : from.loadedEntities) {
                  into.loadedEntities.add(entity);
              }
@@ -68,7 +68,7 @@ index 0168c2a0e3ce16f107bbd83e1071004e61de32f8..a1129f56cff86b3f2e06b44a4f5d2baa
                  into.navigatingMobs.add(iterator.next());
              }
              for (final Iterator<Entity> iterator = from.trackerEntities.iterator(); iterator.hasNext();) {
-@@ -135,6 +135,7 @@ public final class RegionizedWorldData {
+@@ -136,6 +136,7 @@ public final class RegionizedWorldData {
              for (final Iterator<LevelChunk> iterator = from.chunks.iterator(); iterator.hasNext();) {
                  into.chunks.add(iterator.next());
              }
@@ -76,7 +76,7 @@ index 0168c2a0e3ce16f107bbd83e1071004e61de32f8..a1129f56cff86b3f2e06b44a4f5d2baa
              // redstone torches
              if (from.redstoneUpdateInfos != null && !from.redstoneUpdateInfos.isEmpty()) {
                  if (into.redstoneUpdateInfos == null) {
-@@ -170,7 +171,7 @@ public final class RegionizedWorldData {
+@@ -171,7 +172,7 @@ public final class RegionizedWorldData {
                  final ChunkPos pos = player.chunkPosition();
                  // Note: It is impossible for an entity in the world to _not_ be in an entity chunk, which means
                  // the chunk holder must _exist_, and so the region section exists.
@@ -85,7 +85,7 @@ index 0168c2a0e3ce16f107bbd83e1071004e61de32f8..a1129f56cff86b3f2e06b44a4f5d2baa
                      .connections.add(conn);
              }
              // entities
-@@ -178,15 +179,16 @@ public final class RegionizedWorldData {
+@@ -179,15 +180,16 @@ public final class RegionizedWorldData {
                  final ChunkPos pos = player.chunkPosition();
                  // Note: It is impossible for an entity in the world to _not_ be in an entity chunk, which means
                  // the chunk holder must _exist_, and so the region section exists.
@@ -104,9 +104,9 @@ index 0168c2a0e3ce16f107bbd83e1071004e61de32f8..a1129f56cff86b3f2e06b44a4f5d2baa
                  into.allEntities.add(entity);
                  // Note: entityTickList is a subset of allEntities
                  if (from.entityTickList.contains(entity)) {
-@@ -207,13 +209,14 @@ public final class RegionizedWorldData {
-                     into.trackerUnloadedEntities.add(entity);
+@@ -209,13 +211,14 @@ public final class RegionizedWorldData {
                  }
+                 entity.getBukkitEntity().taskScheduler.registerTo(into.entitySchedulerTickList);
              }
 +            from.world.worldDataSwitcher.resetRandomIdx();
              // block ticking
@@ -120,7 +120,7 @@ index 0168c2a0e3ce16f107bbd83e1071004e61de32f8..a1129f56cff86b3f2e06b44a4f5d2baa
                  // Unlike entities, the chunk holder is not guaranteed to exist for block events, because the block events
                  // is just some list. So if it unloads, I guess it's just lost.
                  if (into != null) {
-@@ -221,6 +224,7 @@ public final class RegionizedWorldData {
+@@ -223,6 +226,7 @@ public final class RegionizedWorldData {
                  }
              }
  
@@ -128,7 +128,7 @@ index 0168c2a0e3ce16f107bbd83e1071004e61de32f8..a1129f56cff86b3f2e06b44a4f5d2baa
              final Long2ReferenceOpenHashMap<LevelTicks<Block>> levelTicksBlockRegionData = new Long2ReferenceOpenHashMap<>(regionToData.size(), 0.75f);
              final Long2ReferenceOpenHashMap<LevelTicks<Fluid>> levelTicksFluidRegionData = new Long2ReferenceOpenHashMap<>(regionToData.size(), 0.75f);
  
-@@ -243,23 +247,25 @@ public final class RegionizedWorldData {
+@@ -245,23 +249,25 @@ public final class RegionizedWorldData {
                  final int chunkX = pos.getX() >> 4;
                  final int chunkZ = pos.getZ() >> 4;
  
@@ -156,7 +156,7 @@ index 0168c2a0e3ce16f107bbd83e1071004e61de32f8..a1129f56cff86b3f2e06b44a4f5d2baa
              // time
              for (final RegionizedWorldData regionizedWorldData : dataSet) {
                  regionizedWorldData.redstoneTime = from.redstoneTime;
-@@ -270,15 +276,16 @@ public final class RegionizedWorldData {
+@@ -272,15 +278,16 @@ public final class RegionizedWorldData {
                  final ChunkPos pos = chunk.getPos();
  
                  // Impossible for get() to return null, as the chunk is entity ticking - thus the chunk holder is loaded
@@ -175,7 +175,7 @@ index 0168c2a0e3ce16f107bbd83e1071004e61de32f8..a1129f56cff86b3f2e06b44a4f5d2baa
                      .tickingChunks.add(chunk);
              }
              for (final Iterator<LevelChunk> iterator = from.chunks.iterator(); iterator.hasNext();) {
-@@ -295,7 +302,7 @@ public final class RegionizedWorldData {
+@@ -297,7 +304,7 @@ public final class RegionizedWorldData {
                  for (final net.minecraft.world.level.block.RedstoneTorchBlock.Toggle info : from.redstoneUpdateInfos) {
                      final BlockPos pos = info.pos;
  
@@ -184,7 +184,7 @@ index 0168c2a0e3ce16f107bbd83e1071004e61de32f8..a1129f56cff86b3f2e06b44a4f5d2baa
                      if (worldData != null) {
                          if (worldData.redstoneUpdateInfos == null) {
                              worldData.redstoneUpdateInfos = new ArrayDeque<>();
-@@ -304,6 +311,7 @@ public final class RegionizedWorldData {
+@@ -306,6 +313,7 @@ public final class RegionizedWorldData {
                      } // else: chunk unloaded
                  }
              }
@@ -192,7 +192,7 @@ index 0168c2a0e3ce16f107bbd83e1071004e61de32f8..a1129f56cff86b3f2e06b44a4f5d2baa
              // mob spawning
              for (final RegionizedWorldData regionizedWorldData : dataSet) {
                  regionizedWorldData.catSpawnerNextTick = from.catSpawnerNextTick;
-@@ -332,7 +340,7 @@ public final class RegionizedWorldData {
+@@ -334,7 +342,7 @@ public final class RegionizedWorldData {
      private RegionizedServer.WorldLevelData tickData;
  
      // connections
@@ -201,16 +201,16 @@ index 0168c2a0e3ce16f107bbd83e1071004e61de32f8..a1129f56cff86b3f2e06b44a4f5d2baa
  
      // misc. fields
      private boolean isHandlingTick;
-@@ -346,7 +354,7 @@ public final class RegionizedWorldData {
+@@ -348,7 +356,7 @@ public final class RegionizedWorldData {
      }
  
      // entities
 -    private final List<ServerPlayer> localPlayers = new ArrayList<>();
 +    private final List<ServerPlayer> localPlayers = Lists.newCopyOnWriteArrayList();
      private final NearbyPlayers nearbyPlayers;
+     public final io.papermc.paper.threadedregions.EntityScheduler.EntitySchedulerTickList entitySchedulerTickList = new io.papermc.paper.threadedregions.EntityScheduler.EntitySchedulerTickList();
      private final ReferenceList<Entity> allEntities = new ReferenceList<>(EMPTY_ENTITY_ARRAY);
-     private final ReferenceList<Entity> loadedEntities = new ReferenceList<>(EMPTY_ENTITY_ARRAY);
-@@ -362,8 +370,8 @@ public final class RegionizedWorldData {
+@@ -365,8 +373,8 @@ public final class RegionizedWorldData {
      private final LevelTicks<Fluid> fluidLevelTicks;
  
      // tile entity ticking
@@ -221,7 +221,7 @@ index 0168c2a0e3ce16f107bbd83e1071004e61de32f8..a1129f56cff86b3f2e06b44a4f5d2baa
      private boolean tickingBlockEntities;
  
      // time
-@@ -400,8 +408,8 @@ public final class RegionizedWorldData {
+@@ -403,8 +411,8 @@ public final class RegionizedWorldData {
      public final NeighborUpdater neighborUpdater;
      public boolean captureBlockStates = false;
      public boolean captureTreeGeneration = false;
@@ -232,7 +232,7 @@ index 0168c2a0e3ce16f107bbd83e1071004e61de32f8..a1129f56cff86b3f2e06b44a4f5d2baa
      public List<ItemEntity> captureDrops;
      // Paper start
      public int wakeupInactiveRemainingAnimals;
-@@ -573,11 +581,8 @@ public final class RegionizedWorldData {
+@@ -576,11 +584,8 @@ public final class RegionizedWorldData {
      }
  
      public void addEntityTickingEntity(final Entity entity) {
@@ -245,7 +245,7 @@ index 0168c2a0e3ce16f107bbd83e1071004e61de32f8..a1129f56cff86b3f2e06b44a4f5d2baa
      }
  
      public boolean hasEntityTickingEntity(final Entity entity) {
-@@ -585,11 +590,8 @@ public final class RegionizedWorldData {
+@@ -588,11 +593,8 @@ public final class RegionizedWorldData {
      }
  
      public void removeEntityTickingEntity(final Entity entity) {
@@ -258,7 +258,7 @@ index 0168c2a0e3ce16f107bbd83e1071004e61de32f8..a1129f56cff86b3f2e06b44a4f5d2baa
      }
  
      public void forEachTickingEntity(final Consumer<Entity> action) {
-@@ -604,14 +606,11 @@ public final class RegionizedWorldData {
+@@ -607,14 +609,11 @@ public final class RegionizedWorldData {
      }
  
      public void addEntity(final Entity entity) {
@@ -274,7 +274,7 @@ index 0168c2a0e3ce16f107bbd83e1071004e61de32f8..a1129f56cff86b3f2e06b44a4f5d2baa
          }
      }
  
-@@ -620,28 +619,19 @@ public final class RegionizedWorldData {
+@@ -623,28 +622,19 @@ public final class RegionizedWorldData {
      }
  
      public void removeEntity(final Entity entity) {
@@ -304,7 +304,7 @@ index 0168c2a0e3ce16f107bbd83e1071004e61de32f8..a1129f56cff86b3f2e06b44a4f5d2baa
          this.navigatingMobs.remove(mob);
      }
  
-@@ -738,7 +728,7 @@ public final class RegionizedWorldData {
+@@ -741,7 +731,7 @@ public final class RegionizedWorldData {
  
      public void removeTickingChunk(final LevelChunk chunk) {
          this.tickingChunks.remove(chunk);
@@ -313,7 +313,7 @@ index 0168c2a0e3ce16f107bbd83e1071004e61de32f8..a1129f56cff86b3f2e06b44a4f5d2baa
      }
  
      public ReferenceList<LevelChunk> getTickingChunks() {
-@@ -747,12 +737,12 @@ public final class RegionizedWorldData {
+@@ -750,12 +740,12 @@ public final class RegionizedWorldData {
  
      public void addChunk(final LevelChunk chunk) {
          this.chunks.add(chunk);
@@ -419,10 +419,10 @@ index bfb39cbf1ba58d02da7e35300eb95872747506e8..ae64e6701860f898da57435b97f03269
          }
  
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index 33d596c0f07d076886c0dd8eb93e901cdb56e438..e11f05dde83356f794e537d22e57bb046dd2e18b 100644
+index b487adb2b104b14346bf7373f07c8d48c239feb4..3d30884d6ac0d178d0b4d69361f6f506d10e2df7 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -2222,7 +2222,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2223,7 +2223,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
      public int getTickCount() {
@@ -432,7 +432,7 @@ index 33d596c0f07d076886c0dd8eb93e901cdb56e438..e11f05dde83356f794e537d22e57bb04
  
      public int getSpawnProtectionRadius() {
 diff --git a/net/minecraft/server/level/ServerChunkCache.java b/net/minecraft/server/level/ServerChunkCache.java
-index 0e08512ce94435ca90a2344eefc761fa4fcdeb18..3e07c7d4d90e2872ac026b1ac2d0f806ee00559b 100644
+index 05bad0366bd36b8134290a0cceb4d4dfcbbd0544..8604202fce68c8ec77a364947163348c749e2bb5 100644
 --- a/net/minecraft/server/level/ServerChunkCache.java
 +++ b/net/minecraft/server/level/ServerChunkCache.java
 @@ -117,7 +117,7 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
@@ -444,7 +444,7 @@ index 0e08512ce94435ca90a2344eefc761fa4fcdeb18..3e07c7d4d90e2872ac026b1ac2d0f806
              ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.pushChunkWait(this.level, chunkX, chunkZ);
              this.mainThreadProcessor.managedBlock(completable::isDone);
              ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.popChunkWait();
-@@ -919,8 +919,10 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+@@ -910,8 +910,10 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
          @Override
          public boolean pollTask() {
              // Folia start - region threading
@@ -458,19 +458,19 @@ index 0e08512ce94435ca90a2344eefc761fa4fcdeb18..3e07c7d4d90e2872ac026b1ac2d0f806
              // Folia end - region threading
              // Paper start - rewrite chunk system
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 84a6bf575902676fc06211562b57806415528e64..05a031949c617efe76b633151579e75e9b0c23ed 100644
+index 87377bba2ebdc0eba5b7b212d971994c35ca0b62..41ce21f8b16abe2f1617130c5c44fe08e2d859ba 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
-@@ -179,6 +179,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+@@ -181,6 +181,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
      public final ServerChunkCache chunkSource;
      private final MinecraftServer server;
      public final net.minecraft.world.level.storage.PrimaryLevelData serverLevelData; // CraftBukkit - type
 +    public Object convertable;
      private int lastSpawnChunkRadius;
      //final EntityTickList entityTickList = new EntityTickList(); // Folia - region threading
-     // Paper - rewrite chunk system
+     private final ServerWaypointManager waypointManager;
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index a023cc399fc8bfee7771e5ca6716578f89b7072f..b82c5764a7514f819829f918c85b638a82da19b6 100644
+index b936d50e8c3668783d4b8d9d65b33706787f7791..cb9beedc57ec089542c6dcd9247d00566a7d9b8f 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -1,5 +1,7 @@
@@ -481,7 +481,7 @@ index a023cc399fc8bfee7771e5ca6716578f89b7072f..b82c5764a7514f819829f918c85b638a
  import com.google.common.collect.ImmutableList;
  import com.google.common.collect.Lists;
  import com.google.common.collect.Sets;
-@@ -4143,7 +4145,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4341,7 +4343,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          if (!this.canTeleportAsync()) {
              return false;
          }
@@ -496,7 +496,7 @@ index a023cc399fc8bfee7771e5ca6716578f89b7072f..b82c5764a7514f819829f918c85b638a
          if ((teleportFlags & TELEPORT_FLAG_UNMOUNT) == 0L) {
              for (Entity entity : this.getIndirectPassengers()) {
                  if (!entity.canTeleportAsync()) {
-@@ -4610,12 +4618,35 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4808,12 +4816,35 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          ca.spottedleaf.concurrentutil.completable.CallbackCompletable<TeleportTransition> portalInfoCompletable
              = new ca.spottedleaf.concurrentutil.completable.CallbackCompletable<>();
  
@@ -534,7 +534,7 @@ index a023cc399fc8bfee7771e5ca6716578f89b7072f..b82c5764a7514f819829f918c85b638a
                  TicketType.TELEPORT_HOLD_TICKET, initialPositionChunk,
                  ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkHolderManager.MAX_TICKET_LEVEL,
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index ba1ccd6eab77e27a38d22c12dba0797d65cc4c4e..c3ce74f24546675ec0a79f3eb3a33047bf95f553 100644
+index 93d722d437121e605cee0e168ac17ee9bef0610e..ada3617640d07d6bfe8a3814fb0d9f884885fe83 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
 @@ -11,6 +11,8 @@ import java.util.function.Consumer;
