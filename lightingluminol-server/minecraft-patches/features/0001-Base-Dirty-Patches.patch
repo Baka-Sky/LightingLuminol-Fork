@@ -36,7 +36,7 @@ index 8e91ec81128bdbd5f78e1f04fe17bcbd6e5dc280..aa1d94ec69ccfafda2adf0e7d0f46ae4
          ((DedicatedServer)MinecraftServer.getServer()).handleConsoleInputs();
  
 diff --git a/io/papermc/paper/threadedregions/RegionizedWorldData.java b/io/papermc/paper/threadedregions/RegionizedWorldData.java
-index 8c4d89c47fd176d584d3dbd0e3325f69b5e847c3..06bb9d563354048414a0f5a6331fb08f23e51972 100644
+index 8c4d89c47fd176d584d3dbd0e3325f69b5e847c3..93b8dc491d83551f05bcaaf1b738c6bd15df7653 100644
 --- a/io/papermc/paper/threadedregions/RegionizedWorldData.java
 +++ b/io/papermc/paper/threadedregions/RegionizedWorldData.java
 @@ -6,12 +6,12 @@ import ca.spottedleaf.moonrise.common.misc.NearbyPlayers;
@@ -304,7 +304,28 @@ index 8c4d89c47fd176d584d3dbd0e3325f69b5e847c3..06bb9d563354048414a0f5a6331fb08f
          this.navigatingMobs.remove(mob);
      }
  
-@@ -741,7 +731,7 @@ public final class RegionizedWorldData {
+@@ -722,12 +712,12 @@ public final class RegionizedWorldData {
+     // ticking chunks
+     public void addEntityTickingChunk(final LevelChunk chunk) {
+         this.entityTickingChunks.add(chunk);
+-        TickRegions.RegionStats.updateCurrentRegion();
++        TickRegions.RegionStats.updateCurrentRegion(chunk);
+     }
+ 
+     public void removeEntityTickingChunk(final LevelChunk chunk) {
+         this.entityTickingChunks.remove(chunk);
+-        TickRegions.RegionStats.updateCurrentRegion();
++        TickRegions.RegionStats.updateCurrentRegion(chunk);
+     }
+ 
+     public ReferenceList<LevelChunk> getEntityTickingChunks() {
+@@ -736,12 +726,12 @@ public final class RegionizedWorldData {
+ 
+     public void addTickingChunk(final LevelChunk chunk) {
+         this.tickingChunks.add(chunk);
+-        TickRegions.RegionStats.updateCurrentRegion();
++        TickRegions.RegionStats.updateCurrentRegion(chunk);
+     }
  
      public void removeTickingChunk(final LevelChunk chunk) {
          this.tickingChunks.remove(chunk);
@@ -353,7 +374,7 @@ index 0357792de0ed8ec9058d1847c8b45c33ff365af6..45ada98f80ed92063f7a417cc62660ed
                  final long tickEnd = System.nanoTime();
                  final long cpuEnd = MEASURE_CPU_TIME ? THREAD_MX_BEAN.getCurrentThreadCpuTime() : 0L;
 diff --git a/io/papermc/paper/threadedregions/TickRegions.java b/io/papermc/paper/threadedregions/TickRegions.java
-index bfb39cbf1ba58d02da7e35300eb95872747506e8..ae64e6701860f898da57435b97f032690d84d7f6 100644
+index bfb39cbf1ba58d02da7e35300eb95872747506e8..0d6e28f1d21e6cf23f67e132764c51435e1d25de 100644
 --- a/io/papermc/paper/threadedregions/TickRegions.java
 +++ b/io/papermc/paper/threadedregions/TickRegions.java
 @@ -12,6 +12,8 @@ import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
@@ -365,16 +386,24 @@ index bfb39cbf1ba58d02da7e35300eb95872747506e8..ae64e6701860f898da57435b97f03269
  import org.slf4j.Logger;
  import java.util.Iterator;
  import java.util.concurrent.TimeUnit;
-@@ -154,6 +156,27 @@ public final class TickRegions implements ThreadedRegionizer.RegionCallbacks<Tic
+@@ -154,8 +156,36 @@ public final class TickRegions implements ThreadedRegionizer.RegionCallbacks<Tic
              this.chunkCount.setRelease(data == null ? 0 : data.getChunkCount());
          }
  
+-        static void updateCurrentRegion() {
+-            TickRegionScheduler.getCurrentRegion().getData().getRegionStats().updateFrom(TickRegionScheduler.getCurrentRegionizedWorldData());
 +        static void updateCurrentRegion(Entity entity) {
 +            ThreadedRegionizer.ThreadedRegion<TickRegions.TickRegionData, TickRegions.TickRegionSectionData> region =
 +                    TickRegionScheduler.getCurrentRegion();
 +
 +            if (region == null){
 +                region = ((ServerLevel) entity.level()).regioniser.getRegionAtUnsynchronised(entity.getBlockX() >> 4,entity.getBlockZ() >> 4);
++            }
++
++            if (region != null && region.getData() != null && region.getData().getRegionStats() != null) {
++                region.getData().getRegionStats().updateFrom(TickRegionScheduler.getCurrentRegionizedWorldData());
++            } else {
++                System.err.println("Failed to update region stats: region data is null.");
 +            }
 +
 +            region.getData().getRegionStats().updateFrom(TickRegionScheduler.getCurrentRegionizedWorldData());
@@ -388,12 +417,15 @@ index bfb39cbf1ba58d02da7e35300eb95872747506e8..ae64e6701860f898da57435b97f03269
 +                region = chunk.level.regioniser.getRegionAtUnsynchronised(chunk.locX,chunk.locZ);
 +            }
 +
-+            region.getData().getRegionStats().updateFrom(TickRegionScheduler.getCurrentRegionizedWorldData());
-+        }
-         static void updateCurrentRegion() {
-             TickRegionScheduler.getCurrentRegion().getData().getRegionStats().updateFrom(TickRegionScheduler.getCurrentRegionizedWorldData());
++            if (region != null && region.getData() != null && region.getData().getRegionStats() != null) {
++                region.getData().getRegionStats().updateFrom(TickRegionScheduler.getCurrentRegionizedWorldData());
++            } else {
++                System.err.println("Failed to update region stats: region data is null.");
++            }
          }
-@@ -215,11 +238,11 @@ public final class TickRegions implements ThreadedRegionizer.RegionCallbacks<Tic
+     }
+ 
+@@ -215,11 +245,11 @@ public final class TickRegions implements ThreadedRegionizer.RegionCallbacks<Tic
              return this.holderManagerRegionData;
          }
  
@@ -407,7 +439,7 @@ index bfb39cbf1ba58d02da7e35300eb95872747506e8..ae64e6701860f898da57435b97f03269
              T ret = (T)this.regionizedData.get(regionizedData);
  
              if (ret != null) {
-@@ -229,6 +252,10 @@ public final class TickRegions implements ThreadedRegionizer.RegionCallbacks<Tic
+@@ -229,6 +259,10 @@ public final class TickRegions implements ThreadedRegionizer.RegionCallbacks<Tic
              ret = regionizedData.createNewValue();
              this.regionizedData.put(regionizedData, ret);
  
@@ -491,7 +523,7 @@ index b936d50e8c3668783d4b8d9d65b33706787f7791..c61fce5ec6f7afb5cc35bf93ad729371
 +        final org.bukkit.entity.Entity bukkitEntity = this.getBukkitEntity(); // force bukkit entity to be created before TPing
 +
 +        if (!this.preventMoving && this instanceof ServerPlayer) {
-+            if (!new PlayerTeleportEvent((org.bukkit.entity.Player) bukkitEntity,bukkitEntity.getLocation(), MCUtil.toLocation(destination,pos)).callEvent()){
++            if (!new PlayerTeleportEvent((org.bukkit.entity.Player) bukkitEntity,bukkitEntity.getLocation(), MCUtil.toLocation(destination, pos)).callEvent()) {
 +                return false;
 +            }
 +        }
@@ -512,7 +544,7 @@ index b936d50e8c3668783d4b8d9d65b33706787f7791..c61fce5ec6f7afb5cc35bf93ad729371
              }
 +            // LightingLuminol Start
 +            TeleportTransition info;
-+            if (this instanceof ServerPlayer){
++            if (this instanceof ServerPlayer) {
 +                final org.bukkit.entity.Player bukkitPlayer = ((ServerPlayer) this).getBukkitEntity();
 +                PlayerTeleportEvent.TeleportCause cause = PlayerTeleportEvent.TeleportCause.UNKNOWN;
 +
