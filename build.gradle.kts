@@ -65,7 +65,6 @@ subprojects {
         options.encoding = Charsets.UTF_8.name()
         options.release = 21
         options.isFork = true
-        options.forkOptions.memoryMaximumSize = "6g" // Prevent OOM during building
     }
     tasks.withType<Javadoc> {
         options.encoding = Charsets.UTF_8.name()
@@ -80,7 +79,7 @@ subprojects {
             events(TestLogEvent.STANDARD_OUT)
         }
     }
-
+/*
     extensions.configure<PublishingExtension> {
         repositories {
             maven("https://repo.menthamc.com/repository/maven-snapshots/") {
@@ -92,7 +91,7 @@ subprojects {
             }
         }
     }
-
+*/
      tasks.withType<Javadoc> {
         options {
             (this as StandardJavadocDocletOptions).apply {
