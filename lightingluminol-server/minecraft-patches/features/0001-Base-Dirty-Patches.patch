@@ -5,7 +5,7 @@ Subject: [PATCH] Base Dirty Patches
 
 
 diff --git a/io/papermc/paper/threadedregions/RegionizedServer.java b/io/papermc/paper/threadedregions/RegionizedServer.java
-index 8e91ec81128bdbd5f78e1f04fe17bcbd6e5dc280..aa1d94ec69ccfafda2adf0e7d0f46ae4c6a2bf94 100644
+index e1842ab8f20271a8b20ab8462b09a4745a612a9a..0502fd0dc6404b60dc9887c1edc02bc2bcdccfb1 100644
 --- a/io/papermc/paper/threadedregions/RegionizedServer.java
 +++ b/io/papermc/paper/threadedregions/RegionizedServer.java
 @@ -20,6 +20,7 @@ import net.minecraft.server.level.ServerLevel;
@@ -25,7 +25,7 @@ index 8e91ec81128bdbd5f78e1f04fe17bcbd6e5dc280..aa1d94ec69ccfafda2adf0e7d0f46ae4
          }
      }
  
-@@ -305,6 +306,9 @@ public final class RegionizedServer {
+@@ -306,6 +307,9 @@ public final class RegionizedServer {
          // scheduler
          ((FoliaGlobalRegionScheduler)Bukkit.getGlobalRegionScheduler()).tick();
  
@@ -451,10 +451,10 @@ index bfb39cbf1ba58d02da7e35300eb95872747506e8..0d6e28f1d21e6cf23f67e132764c5143
          }
  
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index b487adb2b104b14346bf7373f07c8d48c239feb4..3d30884d6ac0d178d0b4d69361f6f506d10e2df7 100644
+index 2ed2f4cca3a81117c0beaf7a11bbbe8156f6a9ce..404cc206475aed01732ad436e895fe144ed54d0d 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -2223,7 +2223,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2224,7 +2224,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
      public int getTickCount() {
@@ -502,7 +502,7 @@ index 87377bba2ebdc0eba5b7b212d971994c35ca0b62..41ce21f8b16abe2f1617130c5c44fe08
      //final EntityTickList entityTickList = new EntityTickList(); // Folia - region threading
      private final ServerWaypointManager waypointManager;
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index b936d50e8c3668783d4b8d9d65b33706787f7791..c61fce5ec6f7afb5cc35bf93ad729371a882c89c 100644
+index dc3d29b7d1590ba366755fef51e4254d901d0da8..777f1812bbe218034c80c6bd69676e2f5108d81e 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -1,5 +1,8 @@
@@ -514,7 +514,7 @@ index b936d50e8c3668783d4b8d9d65b33706787f7791..c61fce5ec6f7afb5cc35bf93ad729371
  import com.google.common.collect.ImmutableList;
  import com.google.common.collect.Lists;
  import com.google.common.collect.Sets;
-@@ -4341,7 +4344,15 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4340,7 +4343,15 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          if (!this.canTeleportAsync()) {
              return false;
          }
@@ -531,7 +531,7 @@ index b936d50e8c3668783d4b8d9d65b33706787f7791..c61fce5ec6f7afb5cc35bf93ad729371
          if ((teleportFlags & TELEPORT_FLAG_UNMOUNT) == 0L) {
              for (Entity entity : this.getIndirectPassengers()) {
                  if (!entity.canTeleportAsync()) {
-@@ -4808,12 +4819,40 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4807,12 +4818,40 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          ca.spottedleaf.concurrentutil.completable.CallbackCompletable<TeleportTransition> portalInfoCompletable
              = new ca.spottedleaf.concurrentutil.completable.CallbackCompletable<>();
  

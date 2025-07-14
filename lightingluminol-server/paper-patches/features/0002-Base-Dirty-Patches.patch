@@ -92,7 +92,7 @@ index 2e876b918672e8ef3b5197b7e6b1597247fdeaa1..6c4e25e5e21044c0fa9728e475b28f64
  
                  if (lastRet == null) {
 diff --git a/src/main/java/ca/spottedleaf/moonrise/common/util/TickThread.java b/src/main/java/ca/spottedleaf/moonrise/common/util/TickThread.java
-index 4efa1c057ae6cfdea7889c372bd62dc14637daa0..5fda80262e4437409d6060c7225d76a7a10267d2 100644
+index 881a82e0115b6bc2aac29ec5d35168faceb597da..a730423bf74c470ae09a7deb293a5537ee65897b 100644
 --- a/src/main/java/ca/spottedleaf/moonrise/common/util/TickThread.java
 +++ b/src/main/java/ca/spottedleaf/moonrise/common/util/TickThread.java
 @@ -49,8 +49,8 @@ public class TickThread extends Thread {
@@ -620,10 +620,10 @@ index 7e86a3c17e080c02442f17ab1ed7667b897a6486..3945c5dbf2cfcbfd7b0aadff626566f2
          Preconditions.checkArgument(newValue != null, "GameRule value cannot be null");
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index d2588d6f9b55b3a18c0427875b6c5cdb791d6dec..11916cdd66d3b22c6c6740c5d83d8f044c482969 100644
+index 14f106d9d058d230a62ac86cf26ba1317640a3bf..354c7bbabd89de28a11eedf1d85003b694584df3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -1358,7 +1358,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
+@@ -1465,7 +1465,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
      public boolean teleport(Location location, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, io.papermc.paper.entity.TeleportFlag... flags) {
          // Folia start - region threading
          if (true) {
