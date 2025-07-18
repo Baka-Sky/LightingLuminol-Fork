@@ -51,7 +51,7 @@
      // Luminol start - Dependenices insert
      implementation("com.electronwill.night-config:toml:3.8.2") // Night config
      implementation("com.github.luben:zstd-jni:1.5.4-1")
-@@ -264,14 +_,14 @@
+@@ -261,14 +_,14 @@
          val gitBranch = git.exec(providers, "rev-parse", "--abbrev-ref", "HEAD").get().trim()
          attributes(
              "Main-Class" to "org.bukkit.craftbukkit.Main",
@@ -62,7 +62,7 @@
 -            "Specification-Title" to "Luminol",
 +            "Specification-Title" to "LightingLuminol",
              "Specification-Version" to project.version,
-             "Specification-Vendor" to "Luminol Team",
+             "Specification-Vendor" to "LuminolMC org",
 -            "Brand-Id" to "luminolmc:luminol",
 -            "Brand-Name" to "Luminol",
 +            "Brand-Id" to "luminolmc:lightingluminol",
@@ -70,12 +70,12 @@
              "Build-Number" to (build ?: ""),
              "Build-Time" to buildTime.toString(),
              "Git-Branch" to gitBranch,
-@@ -435,7 +_,7 @@
+@@ -432,7 +_,7 @@
  }
  
  fill {
--    project("luminol") // Luminol
-+    project("lightingluminol") // Luminol // LightingLuminol
+-    project("luminol")
++    project("lightingluminol")
      versionFamily(paperweight.minecraftVersion.map { it.split(".", "-").takeWhile { part -> part.toIntOrNull() != null }.take(2).joinToString(".") })
      version(paperweight.minecraftVersion)
  
