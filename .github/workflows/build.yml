@@ -1,10 +1,12 @@
-name: LightingLuminol CI - ver/1.21.8
+name: LightingLuminol CI
 
 on:
-    push:
-      branches: [ "ver/1.21.8" ]
-    pull_request:
-      branches: [ "ver/1.21.8" ]
+  push:
+    branches:
+      - "**"
+  pull_request:
+    branches:
+      - "**"
 
 permissions: write-all
 
@@ -15,47 +17,46 @@ jobs:
     steps:
       - name: Checkout Git Repository
         uses: actions/checkout@v4
-        
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
-        
+
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '22'
-          
+          java-version: '21'
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
-        
+
       - name: Configure Git User Details
         run: git config --global user.email "ci@luminolmc.com" && git config --global user.name "LuminolMC CI"
-        
-      - name: Apply Patches
-        run: ./gradlew applyAllPatches
-        
+
+      - name: Apply All Patches
+        run: ./gradlew --refresh-dependencies applyAllPatches
+
       - name: CreateJar
-        run: ./gradlew createMojmapPaperclipJar
-        
+        run: ./gradlew --refresh-dependencies createMojmapPaperclipJar
+
       - name: Publish to repo
         if: github.event_name != 'pull_request'
         continue-on-error: true
-        run: |
-          ./gradlew publish -PpublishDevBundle=true
+        run: ./gradlew --refresh-dependencies generateDevelopmentBundle publish -PpublishDevBundle=true
         env:
           MAVEN_REPO_USER: ${{ secrets.MAVEN_REPO_USER }}
           MAVEN_REPO_PASSWORD: ${{ secrets.MAVEN_REPO_PASSWORD }}
-          
+
       - name: Upload Artifact
         uses: "actions/upload-artifact@v4"
         with:
           name: "${{ env.project_id_b }} CI Artifacts"
           path: "lightingluminol-server/build/libs/*-paperclip-*-mojmap.jar"
-          
+
       - name: SetENV
         if: github.event_name != 'pull_request'
         run: sh scripts/SetENV.sh
-        
+
       - name: Create Release
         if: github.event_name != 'pull_request'
         uses: ncipollo/release-action@v1.16.0

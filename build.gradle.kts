@@ -87,8 +87,8 @@ subprojects {
             maven("https://repo.menthamc.com/repository/maven-snapshots/") {
                 name = "MenthaMC"
                 credentials(PasswordCredentials::class) {
-                    username = System.getenv("MAVEN_REPO_USER")
-                    password = System.getenv("MAVEN_REPO_PASSWORD")
+                    username = System.getenv("PRIVATE_MAVEN_REPO_USERNAME")
+                    password = System.getenv("PRIVATE_MAVEN_REPO_PASSWORD")
                 }
             }
         }
