@@ -71,7 +71,7 @@ dependencies {
 可[查看 Contributing](./docs/CONTRIBUTING.md)
 
 ## BStats
-![bStats](https://bstats.org/signatures/server-implementation/Luminol.svg "bStats")
+![bStats](https://bstats.org/signatures/server-implementation/LightingLuminol.svg "bStats")
 
 ## 请给我们一个 ⭐Star！
 > 你的每一个免费的 ⭐Star 就是我们每一个前进的动力。
