@@ -451,10 +451,10 @@ index bfb39cbf1ba58d02da7e35300eb95872747506e8..0d6e28f1d21e6cf23f67e132764c5143
          }
  
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index 2ed2f4cca3a81117c0beaf7a11bbbe8156f6a9ce..404cc206475aed01732ad436e895fe144ed54d0d 100644
+index 100e8fdc52c201d386e3c779d19f6b5abde39820..781eb65648334aaae80bec66df4a835256f5b176 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -2224,7 +2224,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2227,7 +2227,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
      public int getTickCount() {
@@ -502,7 +502,7 @@ index 87377bba2ebdc0eba5b7b212d971994c35ca0b62..41ce21f8b16abe2f1617130c5c44fe08
      //final EntityTickList entityTickList = new EntityTickList(); // Folia - region threading
      private final ServerWaypointManager waypointManager;
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 2f733a3f75f9fe637864158a31d7507eac121d45..dea21e0228cacd4bd9868eb123f662a48b482fb4 100644
+index c3702df38422c13df1c189463a0dfcc3ee44f072..24b437974ad7c85e06cb1f78096a0128e217b910 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -1,5 +1,8 @@
@@ -574,7 +574,7 @@ index 2f733a3f75f9fe637864158a31d7507eac121d45..dea21e0228cacd4bd9868eb123f662a4
                  TicketType.TELEPORT_HOLD_TICKET, initialPositionChunk,
                  ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkHolderManager.MAX_TICKET_LEVEL,
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index 93d722d437121e605cee0e168ac17ee9bef0610e..ada3617640d07d6bfe8a3814fb0d9f884885fe83 100644
+index 921d8c947b9401513d6168af4240f93d32296c7c..99527e914d21c96a09fa71d97c250ca840589d1a 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
 @@ -11,6 +11,8 @@ import java.util.function.Consumer;
