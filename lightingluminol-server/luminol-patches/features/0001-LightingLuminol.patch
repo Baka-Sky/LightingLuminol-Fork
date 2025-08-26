@@ -5,11 +5,11 @@ Subject: [PATCH] LightingLuminol
 
 
 diff --git a/src/main/java/me/earthme/luminol/config/modules/misc/ServerModNameConfig.java b/src/main/java/me/earthme/luminol/config/modules/misc/ServerModNameConfig.java
-index ded1f0667327a70a923ebda55c41b1c9094d3e37..642503df29c631d6a28bd88d3e561ec9c075d439 100644
+index f164e41975adee8b68dbcb400007681c0b66a4f8..b48e9b0b7dae52eba6187261f0c07f9e7ff7f1bc 100644
 --- a/src/main/java/me/earthme/luminol/config/modules/misc/ServerModNameConfig.java
 +++ b/src/main/java/me/earthme/luminol/config/modules/misc/ServerModNameConfig.java
-@@ -6,7 +6,7 @@ import me.earthme.luminol.config.flags.ConfigInfo;
- 
+@@ -8,7 +8,7 @@ import me.earthme.luminol.enums.EnumConfigCategory;
+ @ConfigClassInfo(configAttribution = EnumConfigCategory.MISC, mainName = "server_mod_name")
  public class ServerModNameConfig implements IConfigModule {
      @ConfigInfo(baseName = "name")
 -    public static String serverModName = "Luminol";
