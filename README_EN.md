@@ -1,68 +1,136 @@
-<!-- [!CAUTION]
-> Be aware that this project may have memory leakage issues and use with caution
--->
-<img src="./public/image/LightingLuminol_LL方_白_字.png" alt="Logo" align="right" width="250">
+<div align="center">
+  <img src="./public/image/LightingLuminol_LL方_白_字.png" alt="LightingLuminol Logo" width="300">
+  
+  # LightingLuminol
+  
+  *LightingLuminol is a Luminol fork with many useful optimizations, configurable vanilla features, and more API supports, aims to run more bukkit plugins on folia*
+  
+  ![Created At](https://img.shields.io/github/created-at/LuminolMC/LightingLuminol?style=for-the-badge&color=blue)
+  [![License](https://img.shields.io/github/license/LuminolMC/LightingLuminol?style=for-the-badge&color=green)](LICENSE.md)
+  [![Issues](https://img.shields.io/github/issues/LuminolMC/LightingLuminol?style=for-the-badge&color=orange)](https://github.com/LuminolMC/LightingLuminol/issues)
+  
+  ![Commit Activity](https://img.shields.io/github/commit-activity/w/LuminolMC/LightingLuminol?style=for-the-badge&color=purple)
+  ![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/LuminolMC/LightingLuminol?style=for-the-badge&color=yellow)
+  ![GitHub all releases](https://img.shields.io/github/downloads/LuminolMC/LightingLuminol/total?style=for-the-badge&color=red)
+  
+  ![Repo contributors](https://img.shields.io/github/contributors/LuminolMC/LightingLuminol?style=for-the-badge&color=brightgreen)
+  
+  **English** | [中文](./README.md)
+</div>
 
-# LightingLuminol
+---
 
-<h4>LightingLuminol is a Luminol fork with many useful optimizations, configurable vanilla features, and more API supports, aims to run more bukkit plugins on folia</h4>
+## ✨ Core Features
 
-[![License](https://img.shields.io/github/license/LuminolMC/LightingLuminol?style=flat-square)](LICENSE.md)
-[![Issues](https://img.shields.io/github/issues/LuminolMC/LightingLuminol?style=flat-square)](https://github.com/LuminolMC/Luminol/issues)
-![Commit Activity](https://img.shields.io/github/commit-activity/w/LuminolMC/LightingLuminol?style=flat-square)
-![GitHub all releases](https://img.shields.io/github/downloads/LuminolMC/LightingLuminol/total?style=flat-square)
+- 🔌 **Partial Bukkit Plugin Support** - Supports select Bukkit plugins
+- ⚙️ **Configurable Vanilla Features** - Flexible configuration options supporting custom server names, performance parameters and more
+- 📊 **TpsBar Support** - Built-in performance monitoring with real-time server performance metrics display
+- 🛠️ **Enhanced Plugin Development API Support** - Extended API interfaces providing richer development support for plugin developers (continuously improving)
 
-**English** | [中文](./README.md)
+## 📥 Download
 
-## Features
- - Supported some Bukkit plugin
- - Configurable vanilla features
- - Tpsbar support
- - Useful optimizations to improve the performance of single threaded region
- - More API support for plugin development (W.I.P)
+### Stable Releases
+All release versions can be found on the [Releases](https://github.com/LuminolMC/LightingLuminol/releases) page.
 
-## Download
-Any versions are available in the [release](https://github.com/LuminolMC/LightingLuminol/releases), also you can build it by yourself through [the following steps](./README_EN.md#Build).
+### Development Builds
+If you want to experience the latest features, you can build it yourself following the steps below.
 
-## Build
-To build a paperclip jar, you need to run the following command. You can find the jar in build/libs(Note: JDK21 is needed)
- ```shell
- ./gradlew applyPatches && ./gradlew createMojmapPaperclipJar
+### Build Steps
+
+```bash
+# Clone the project
+git clone https://github.com/LuminolMC/LightingLuminol.git
+cd LightingLuminol
+
+# Apply patches and build Paperclip JAR
+./gradlew applyAllPatches && ./gradlew createMojmapPaperclipJar
 ```
-<!-- ## Using API
-For gradle:
+
+After building, you can find the generated JAR file in the `lightingluminol-server/build/libs` directory.
+
+## 🔌 API Usage
+
+### Gradle Configuration
+
 ```kotlin
-dependencies {
-    compileOnly("me.earthme.luminol:luminol-api:1.20.4-R0.1-SNAPSHOT")
+repositories {
+    maven {
+        url = "https://repo.menthamc.org/repository/maven-public/"
+    }
 }
- ```
-For maven
+
+dependencies {
+    compileOnly("me.earthme.lightingluminol:lightingluminol-api:$VERSION")
+}
+```
+
+### Maven Configuration
+
 ```xml
-<dependency>
-  <groupId>me.earthme.luminol</groupId>
-  <artifactId>luminol-api</artifactId>
-  <version>1.20.4-R0.1-SNAPSHOT</version>
-</dependency> 
-```-->
+<repositories>
+    <repository>
+        <id>menthamc</id>
+        <url>https://repo.menthamc.org/repository/maven-public/</url>
+    </repository>
+</repositories>
 
-## Contact
-> If you are interested in this project or have any issue, feel free to ask us.
+<dependencies>
+    <dependency>
+        <groupId>me.earthme.lightingluminol</groupId>
+        <artifactId>lightingluminol-api</artifactId>
+        <version>$VERSION</version>
+        <scope>provided</scope>
+    </dependency>
+</dependencies>
+```
 
-QQ Group: [368632360](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=MfosKhcDd8Fdxn1MREuZ8Krbf9T6jiBC&authKey=3cm6qdHohON3gHnuD63FK4k07fIbrWnY4hdyq8OmELsfjMVP1kbFTJY9mRyM2Rkj&noverify=0&group_code=368632360) | QQ Channel: [Click To Join](https://pd.qq.com/s/eq9krf9j) | Telegram: [Click To Join](https://t.me/LuminolMC) | Discord: [Click To Join](https://discord.gg/Qd7m3V6eDx)
+## 💬 Community & Support
 
-> [!WARNING]
-> **This project is not related to Leaves.Do not report any bugs about protocol support to leaves because the protocol supports are already refactored.**
+> If you're interested in this project or have any questions, feel free to ask us.
 
-## About Issue
-When you meet any problems, just ask us, we will do our best to solve it, but remember to state your problem clear and provide enough logs etc.</br>
+### Join Our Community
 
-## Pull Requests
-See [Contributing](./docs/CONTRIBUTING_EN.md)
+- **QQ Group**: [1015048616](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=QML5kIVsniPi1PlZvnjHQT_02EHsZ5Jc&authKey=%2FTCJsZC7JFQ9sxAroPCKuYnlV57Z5fyqp36ewXZk3Sn4iJ9p4MB1JKdc%2FFcX3HOM&noverify=0&group_code=1015048616)
+- **QQ Channel**: [Join Here](https://pd.qq.com/s/eq9krf9j)
+- **Telegram**: [Join Here](https://t.me/LuminolMinecraft)
+- **Discord**: [Join Here](https://discord.gg/Qd7m3V6eDx)
 
-## BStats
-![bStats](https://bstats.org/signatures/server-implementation/Luminol.svg "bStats")
+### Get Help
 
-## Please ⭐star us!
+- 📋 [Submit Issues](https://github.com/LuminolMC/LightingLuminol/issues)
+- 💬 [GitHub Discussions](https://github.com/LuminolMC/LightingLuminol/discussions)
+- 📖 [Project Documentation](./docs/)
+
+## 🐛 Bug Reports
+
+When you encounter any issues, please ask us and we'll do our best to resolve them. Please remember to:
+
+- 📝 **Describe the problem clearly** - Provide detailed information about the specific issue
+- 📋 **Provide complete logs** - Include error logs and relevant configuration information
+- 🔍 **Environment details** - Specify server version, plugin list, and other environment details
+- 🔄 **Reproduction steps** - If possible, provide specific steps to reproduce the issue
+
+## 🤝 Contributing
+
+We welcome community contributions! For detailed contribution guidelines, please see:
+
+- 📖 [Contributing Guide (English)](./docs/CONTRIBUTING_EN.md)
+- 📖 [贡献指南 (中文)](./docs/CONTRIBUTING.md)
+
+## 📊 Project Statistics
+
+### BStats Data
+
+![bStats](https://bstats.org/signatures/server-implementation/LightingLuminol.svg "bStats")
+
+---
+
+## ⭐ Give Us a Star!
+
+> Every free ⭐Star you give is the motivation for our every step forward.
+
+### Star History
+
 <a href="https://star-history.com/#LuminolMC/Luminol&LuminolMC/LightingLuminol&LuminolMC/Lophine&Date">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=LuminolMC/Luminol%2CLuminolMC/LightingLuminol%2CLuminolMC/Lophine&type=Date&theme=dark" />
@@ -70,3 +138,7 @@ See [Contributing](./docs/CONTRIBUTING_EN.md)
     <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=LuminolMC/Luminol%2CLuminolMC/LightingLuminol%2CLuminolMC/Lophine&type=Date" />
   </picture>
 </a>
+
+<div align="center">
+  <b>If this project helps you, please don't forget to give us a ⭐Star!</b>
+</div>
