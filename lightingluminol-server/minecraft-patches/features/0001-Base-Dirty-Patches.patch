@@ -680,10 +680,45 @@ index bfb39cbf1ba58d02da7e35300eb95872747506e8..03b23984ca6c654beb1720875a4243aa
  
              if (ret != null) {
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index 100e8fdc52c201d386e3c779d19f6b5abde39820..781eb65648334aaae80bec66df4a835256f5b176 100644
+index 100e8fdc52c201d386e3c779d19f6b5abde39820..ed69b9621c6fb40cf804fe8467fb56b2a09e1b81 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -2227,7 +2227,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -42,6 +42,7 @@ import java.util.Map.Entry;
+ import java.util.concurrent.CompletableFuture;
+ import java.util.concurrent.Executor;
+ import java.util.concurrent.RejectedExecutionException;
++import java.util.concurrent.atomic.AtomicBoolean;
+ import java.util.concurrent.atomic.AtomicReference;
+ import java.util.concurrent.locks.LockSupport;
+ import java.util.function.BooleanSupplier;
+@@ -782,7 +783,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         }
+         // Paper end - Configurable player collision
+ 
+-        this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
+         if (false) this.server.spark.registerCommandBeforePlugins(this.server); // Paper - spark // Luminol - Force disable builtin spark
+         if (false) this.server.spark.enableAfterPlugins(this.server); // Paper - spark // Luminol - Force disable builtin spark
+         if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.pluginsEnabled(); // Paper - Remap plugins
+@@ -794,6 +794,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         this.connection.acceptConnections();
+     }
+ 
++    private final AtomicBoolean pluginsEnabled = new AtomicBoolean(false);
++
+     public void initWorld(ServerLevel serverLevel, ServerLevelData serverLevelData, WorldData saveData, WorldOptions worldOptions) {
+         boolean isDebugWorld = saveData.isDebugWorld();
+         if (serverLevel.generator != null) {
+@@ -1630,6 +1632,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                     LOGGER.info("Initialised world '" + region.world.getWorld().getName() + "'");
+                 } // else: must be checked
+             }
++            if (!this.pluginsEnabled.getAndSet(true)) {
++                this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
++            }
+         }
+         BooleanSupplier hasTimeLeft = () -> {
+             return scheduledEnd - System.nanoTime() > targetBuffer;
+@@ -2227,7 +2232,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
      public int getTickCount() {
