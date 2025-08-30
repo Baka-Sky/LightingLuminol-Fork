@@ -1100,18 +1100,35 @@ index 7883b7973570b5f275a03c6aac4d3b4392e7fa6e..e9bfed7aa0e97dee9d83096141c3e438
          // Folia end - region threading
          Set<io.papermc.paper.entity.TeleportFlag.Relative> relativeArguments;
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-index fad85bea8643a3a88ec5c4194de7a5060e81c136..c4b57c2dbcb0726d6ffa58177d74d70cb17b81fc 100644
+index fad85bea8643a3a88ec5c4194de7a5060e81c136..18be9e13fd610051b2c04658b6bf19248fcbfb46 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-@@ -514,7 +514,7 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -514,15 +514,23 @@ public class CraftScheduler implements BukkitScheduler {
      }
  
      protected CraftTask handle(final CraftTask task, final long delay) { // Paper
 -        if (true) throw new UnsupportedOperationException(); // Folia - region threading
 +        //if (true) throw new UnsupportedOperationException(); // Folia - region threading
          // Paper start
++        Runnable taskSubmit = () -> {
          if (!this.isAsyncScheduler && !task.isSync()) {
              this.asyncScheduler.handle(task, delay);
+-            return task;
++            return;
+         }
+         // Paper end
+         task.setNextRun(this.currentTick + delay);
+         this.addTask(task);
++        };
++
++        if (net.minecraft.server.MinecraftServer.getServer().pluginEnabledCallbacks.offer(taskSubmit)) {
++            return task;
++        }
++
++        taskSubmit.run();
+         return task;
+     }
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java
 index b959fe4311fc6cbae3dcc052ef4710f8c8aefec6..80c1d5f725179d6904451271f0c9d7ccf6fd018f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java

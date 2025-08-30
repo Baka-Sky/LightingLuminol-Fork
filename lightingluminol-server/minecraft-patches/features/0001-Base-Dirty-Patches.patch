@@ -680,45 +680,100 @@ index bfb39cbf1ba58d02da7e35300eb95872747506e8..03b23984ca6c654beb1720875a4243aa
  
              if (ret != null) {
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index 100e8fdc52c201d386e3c779d19f6b5abde39820..ed69b9621c6fb40cf804fe8467fb56b2a09e1b81 100644
+index 100e8fdc52c201d386e3c779d19f6b5abde39820..1397f7d446cc89c7e9255f4d734dc45c6825ccab 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -42,6 +42,7 @@ import java.util.Map.Entry;
+@@ -41,7 +41,7 @@ import java.util.UUID;
+ import java.util.Map.Entry;
  import java.util.concurrent.CompletableFuture;
  import java.util.concurrent.Executor;
- import java.util.concurrent.RejectedExecutionException;
+-import java.util.concurrent.RejectedExecutionException;
 +import java.util.concurrent.atomic.AtomicBoolean;
  import java.util.concurrent.atomic.AtomicReference;
  import java.util.concurrent.locks.LockSupport;
  import java.util.function.BooleanSupplier;
-@@ -782,7 +783,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -114,7 +114,6 @@ import net.minecraft.util.TimeUtil;
+ import net.minecraft.util.debugchart.RemoteDebugSampleType;
+ import net.minecraft.util.debugchart.SampleLogger;
+ import net.minecraft.util.debugchart.TpsDebugDimensions;
+-import net.minecraft.util.profiling.EmptyProfileResults;
+ import net.minecraft.util.profiling.ProfileResults;
+ import net.minecraft.util.profiling.Profiler;
+ import net.minecraft.util.profiling.ProfilerFiller;
+@@ -129,7 +128,6 @@ import net.minecraft.util.profiling.metrics.profiling.ServerMetricsSamplersProvi
+ import net.minecraft.util.profiling.metrics.storage.MetricsPersister;
+ import net.minecraft.util.thread.ReentrantBlockableEventLoop;
+ import net.minecraft.world.Difficulty;
+-import net.minecraft.world.RandomSequences;
+ import net.minecraft.world.entity.ai.village.VillageSiege;
+ import net.minecraft.world.entity.npc.CatSpawner;
+ import net.minecraft.world.entity.npc.WanderingTraderSpawner;
+@@ -150,7 +148,6 @@ import net.minecraft.world.level.WorldDataConfiguration;
+ import net.minecraft.world.level.biome.BiomeManager;
+ import net.minecraft.world.level.block.Block;
+ import net.minecraft.world.level.block.entity.FuelValues;
+-import net.minecraft.world.level.border.BorderChangeListener;
+ import net.minecraft.world.level.border.WorldBorder;
+ import net.minecraft.world.level.chunk.storage.ChunkIOErrorReporter;
+ import net.minecraft.world.level.chunk.storage.RegionStorageInfo;
+@@ -161,7 +158,6 @@ import net.minecraft.world.level.levelgen.PhantomSpawner;
+ import net.minecraft.world.level.levelgen.WorldOptions;
+ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
+ import net.minecraft.world.level.storage.CommandStorage;
+-import net.minecraft.world.level.storage.DerivedLevelData;
+ import net.minecraft.world.level.storage.DimensionDataStorage;
+ import net.minecraft.world.level.storage.LevelData;
+ import net.minecraft.world.level.storage.LevelResource;
+@@ -782,8 +778,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
          // Paper end - Configurable player collision
  
 -        this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
-         if (false) this.server.spark.registerCommandBeforePlugins(this.server); // Paper - spark // Luminol - Force disable builtin spark
+-        if (false) this.server.spark.registerCommandBeforePlugins(this.server); // Paper - spark // Luminol - Force disable builtin spark
++        /*if (false) this.server.spark.registerCommandBeforePlugins(this.server); // Paper - spark // Luminol - Force disable builtin spark
          if (false) this.server.spark.enableAfterPlugins(this.server); // Paper - spark // Luminol - Force disable builtin spark
          if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.pluginsEnabled(); // Paper - Remap plugins
-@@ -794,6 +794,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-         this.connection.acceptConnections();
+         io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setValid(); // Paper - reset invalid state for event fire below
+@@ -791,9 +786,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         this.server.getCommandMap().registerServerAliases(); // Paper - relocate initial CommandMap#registerServerAliases() call
+         ((org.bukkit.craftbukkit.help.SimpleHelpMap) this.server.getHelpMap()).initializeCommands();
+         this.server.getPluginManager().callEvent(new org.bukkit.event.server.ServerLoadEvent(org.bukkit.event.server.ServerLoadEvent.LoadType.STARTUP));
+-        this.connection.acceptConnections();
++        this.connection.acceptConnections();*/
      }
  
-+    private final AtomicBoolean pluginsEnabled = new AtomicBoolean(false);
++    private final AtomicBoolean pluginsEnableCallbackExecuted = new AtomicBoolean(false);
++    public final ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue<Runnable> pluginEnabledCallbacks = new ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue<>();
 +
      public void initWorld(ServerLevel serverLevel, ServerLevelData serverLevelData, WorldData saveData, WorldOptions worldOptions) {
          boolean isDebugWorld = saveData.isDebugWorld();
          if (serverLevel.generator != null) {
-@@ -1630,6 +1632,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-                     LOGGER.info("Initialised world '" + region.world.getWorld().getName() + "'");
-                 } // else: must be checked
+@@ -1617,6 +1615,24 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                 return;
              }
-+            if (!this.pluginsEnabled.getAndSet(true)) {
-+                this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
-+            }
          }
-         BooleanSupplier hasTimeLeft = () -> {
-             return scheduledEnd - System.nanoTime() > targetBuffer;
-@@ -2227,7 +2232,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
++        if (!this.pluginsEnableCallbackExecuted.getAndSet(true)) {
++            this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
++
++            if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.pluginsEnabled(); // Paper - Remap plugins
++            io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setValid(); // Paper - reset invalid state for event fire below
++            io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callReloadableRegistrarEvent(io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.COMMANDS, io.papermc.paper.command.brigadier.PaperCommands.INSTANCE, org.bukkit.plugin.Plugin.class, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL); // Paper - call commands event for regular plugins
++            this.server.getCommandMap().registerServerAliases(); // Paper - relocate initial CommandMap#registerServerAliases() call
++            ((org.bukkit.craftbukkit.help.SimpleHelpMap) this.server.getHelpMap()).initializeCommands();
++            this.server.getPluginManager().callEvent(new org.bukkit.event.server.ServerLoadEvent(org.bukkit.event.server.ServerLoadEvent.LoadType.STARTUP));
++            this.connection.acceptConnections();
++
++            io.papermc.paper.threadedregions.RegionizedServer.getInstance().addTask(() -> {
++                Runnable task;
++                while ((task = this.pluginEnabledCallbacks.pollOrBlockAdds()) != null) {
++                    task.run();
++                }
++            });
++        }
+ 
+ 
+         // Folia start - region threading
+@@ -2227,7 +2243,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
      public int getTickCount() {
@@ -837,7 +892,7 @@ index 619cbb1a9296c814bbdad0780df91c8db01bc5cd..a21bab0a78fccb92ccee074921b49ec2
  
      @Override
 diff --git a/net/minecraft/server/level/ServerChunkCache.java b/net/minecraft/server/level/ServerChunkCache.java
-index 05bad0366bd36b8134290a0cceb4d4dfcbbd0544..74133bacf1841b367799361f126e399a15db68e6 100644
+index 05bad0366bd36b8134290a0cceb4d4dfcbbd0544..b05195d892615694f057d27d75ce4c2e950cb2a0 100644
 --- a/net/minecraft/server/level/ServerChunkCache.java
 +++ b/net/minecraft/server/level/ServerChunkCache.java
 @@ -117,7 +117,7 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
@@ -877,6 +932,19 @@ index 05bad0366bd36b8134290a0cceb4d4dfcbbd0544..74133bacf1841b367799361f126e399a
              }
              // Folia end - region threading
              // Paper start - rewrite chunk system
+@@ -919,7 +927,11 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+             if (serverChunkCache.runDistanceManagerUpdates()) {
+                 return true;
+             } else {
+-                return io.papermc.paper.threadedregions.TickRegionScheduler.getCurrentRegion().getData().getTaskQueueData().executeChunkTask(); // Folia - region threading
++                var region = io.papermc.paper.threadedregions.TickRegionScheduler.getCurrentRegion();
++                if (region == null) {
++                    return false;
++                }
++                return region.getData().getTaskQueueData().executeChunkTask(); // Folia - region threading
+             }
+             // Paper end - rewrite chunk system
+         }
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
 index eb3aef1f5198592eda5dafe84b91271e861b4135..df102d3d4ea21e01e6c6b89ac5101f152fb318ee 100644
 --- a/net/minecraft/server/level/ServerLevel.java
