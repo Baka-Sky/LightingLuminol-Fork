@@ -28,8 +28,6 @@ public class ReferenceCountedRegionizedWorldDataPool {
 
     public ReferenceCountedRegionizedWorldDataPool(@NotNull ServerLevel world) {
         this.world = world;
-
-
     }
 
     private long computeCoord(long actualCoord) {

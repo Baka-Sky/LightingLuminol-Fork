@@ -936,7 +936,7 @@ index ee7bdc3adbeb04cf6ca630282f31a21e52bdb215..da31a33bbee97c1674ab9f936df3a5c2
                  return true;
                  // CraftBukkit end
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 8ec753fe9c84ffe1188f7e7ebb6895cf4bba9e39..251774412d4b70c90734137e453715bc65090294 100644
+index 8ec753fe9c84ffe1188f7e7ebb6895cf4bba9e39..531232eb6cd5e38429d252ff852b5b6e1c2d7f2a 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -1,5 +1,8 @@
@@ -1023,6 +1023,21 @@ index 8ec753fe9c84ffe1188f7e7ebb6895cf4bba9e39..251774412d4b70c90734137e453715bc
              originWorld.moonrise$getChunkTaskScheduler().chunkHolderManager.removeTicketAtLevel(
                  TicketType.TELEPORT_HOLD_TICKET, initialPositionChunk,
                  ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkHolderManager.MAX_TICKET_LEVEL,
+@@ -6272,7 +6318,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     // Paper end - Folia schedulers
+     // Paper start - optimise Folia entity scheduler
+     public final void registerScheduler() {
+-        this.getBukkitEntity().taskScheduler.registerTo(io.papermc.paper.threadedregions.TickRegionScheduler.getCurrentRegionizedWorldData().entitySchedulerTickList); // Folia - region threading
++        var ref = this.level.worldDataPool.getAndHeldReference(this);
++        var worldData = ref.left();
++        try {
++        this.getBukkitEntity().taskScheduler.registerTo(worldData.entitySchedulerTickList); // Folia - region threading
++        }finally {
++        this.level.worldDataPool.releaseReference(this, ref.right());
++        }
+     }
+     // Paper end - optimise Folia entity scheduler
+ 
 diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
 index 567d63ae589705e13403814b36e35d00c241a69e..2456b9f4b69bf3bc94da49b9255229e27d68f2bb 100644
 --- a/net/minecraft/world/entity/LivingEntity.java
