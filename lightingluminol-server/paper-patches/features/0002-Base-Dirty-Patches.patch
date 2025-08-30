@@ -4,6 +4,138 @@ Date: Sat, 31 May 2025 23:12:45 +0800
 Subject: [PATCH] Base Dirty Patches
 
 
+diff --git a/src/main/java/ca/spottedleaf/moonrise/common/list/IteratorSafeOrderedReferenceSet.java b/src/main/java/ca/spottedleaf/moonrise/common/list/IteratorSafeOrderedReferenceSet.java
+index ece6db7b9a0dfd535141c0c756947c4898140503..23e5132b248c681808b582ffa6cfa05cdab17eda 100644
+--- a/src/main/java/ca/spottedleaf/moonrise/common/list/IteratorSafeOrderedReferenceSet.java
++++ b/src/main/java/ca/spottedleaf/moonrise/common/list/IteratorSafeOrderedReferenceSet.java
+@@ -98,7 +98,7 @@ public final class IteratorSafeOrderedReferenceSet<E> {
+         return 1.0 - ((double)this.indexMap.size() / (double)this.listSize);
+     }
+ 
+-    public int createRawIterator() {
++    public synchronized int createRawIterator() {
+         ++this.iteratorCount;
+         if (this.indexMap.isEmpty()) {
+             return Integer.MAX_VALUE;
+@@ -107,7 +107,7 @@ public final class IteratorSafeOrderedReferenceSet<E> {
+         }
+     }
+ 
+-    public int advanceRawIterator(final int index) {
++    public synchronized int advanceRawIterator(final int index) {
+         final E[] elements = this.listElements;
+         int ret = index + 1;
+         for (int len = this.listSize; ret < len; ++ret) {
+@@ -119,7 +119,7 @@ public final class IteratorSafeOrderedReferenceSet<E> {
+         return Integer.MAX_VALUE;
+     }
+ 
+-    public void finishRawIterator() {
++    public synchronized void finishRawIterator() {
+         if (--this.iteratorCount == 0) {
+             if (this.getFragFactor() >= this.maxFragFactor) {
+                 this.defrag();
+@@ -127,7 +127,7 @@ public final class IteratorSafeOrderedReferenceSet<E> {
+         }
+     }
+ 
+-    public boolean remove(final E element) {
++    public synchronized boolean remove(final E element) {
+         final int index = this.indexMap.removeInt(element);
+         if (index >= 0) {
+             if (this.firstInvalidIndex < 0 || index < this.firstInvalidIndex) {
+@@ -146,11 +146,11 @@ public final class IteratorSafeOrderedReferenceSet<E> {
+         return false;
+     }
+ 
+-    public boolean contains(final E element) {
++    public synchronized boolean contains(final E element) {
+         return this.indexMap.containsKey(element);
+     }
+ 
+-    public boolean add(final E element) {
++    public synchronized boolean add(final E element) {
+         final int listSize = this.listSize;
+ 
+         final int previous = this.indexMap.putIfAbsent(element, listSize);
+@@ -225,34 +225,34 @@ public final class IteratorSafeOrderedReferenceSet<E> {
+         //this.check();
+     }
+ 
+-    public int size() {
++    public synchronized int size() {
+         // always returns the correct amount - listSize can be different
+         return this.indexMap.size();
+     }
+ 
+-    public IteratorSafeOrderedReferenceSet.Iterator<E> iterator() {
++    public synchronized IteratorSafeOrderedReferenceSet.Iterator<E> iterator() {
+         return this.iterator(0);
+     }
+ 
+-    public IteratorSafeOrderedReferenceSet.Iterator<E> iterator(final int flags) {
++    public synchronized IteratorSafeOrderedReferenceSet.Iterator<E> iterator(final int flags) {
+         ++this.iteratorCount;
+         return new BaseIterator<>(this, true, (flags & ITERATOR_FLAG_SEE_ADDITIONS) != 0 ? Integer.MAX_VALUE : this.listSize);
+     }
+ 
+-    public java.util.Iterator<E> unsafeIterator() {
++    public synchronized java.util.Iterator<E> unsafeIterator() {
+         return this.unsafeIterator(0);
+     }
+-    public java.util.Iterator<E> unsafeIterator(final int flags) {
++    public synchronized java.util.Iterator<E> unsafeIterator(final int flags) {
+         return new BaseIterator<>(this, false, (flags & ITERATOR_FLAG_SEE_ADDITIONS) != 0 ? Integer.MAX_VALUE : this.listSize);
+     }
+ 
+-    public static interface Iterator<E> extends java.util.Iterator<E> {
++    public interface Iterator<E> extends java.util.Iterator<E> {
+ 
+         public void finishedIterating();
+ 
+     }
+ 
+-    private static final class BaseIterator<E> implements IteratorSafeOrderedReferenceSet.Iterator<E> {
++    private final class BaseIterator<E> implements IteratorSafeOrderedReferenceSet.Iterator<E> {
+ 
+         private final IteratorSafeOrderedReferenceSet<E> set;
+         private final boolean canFinish;
+@@ -269,7 +269,7 @@ public final class IteratorSafeOrderedReferenceSet<E> {
+         }
+ 
+         @Override
+-        public boolean hasNext() {
++        public synchronized boolean hasNext() {
+             if (this.finished) {
+                 return false;
+             }
+@@ -293,7 +293,7 @@ public final class IteratorSafeOrderedReferenceSet<E> {
+         }
+ 
+         @Override
+-        public E next() {
++        public synchronized E next() {
+             if (!this.hasNext()) {
+                 throw new NoSuchElementException();
+             }
+@@ -306,7 +306,7 @@ public final class IteratorSafeOrderedReferenceSet<E> {
+         }
+ 
+         @Override
+-        public void remove() {
++        public synchronized void remove() {
+             final E lastReturned = this.lastReturned;
+             if (lastReturned == null) {
+                 throw new IllegalStateException();
+@@ -316,7 +316,7 @@ public final class IteratorSafeOrderedReferenceSet<E> {
+         }
+ 
+         @Override
+-        public void finishedIterating() {
++        public synchronized void finishedIterating() {
+             if (this.finished || !this.canFinish) {
+                 throw new IllegalStateException();
+             }
 diff --git a/src/main/java/ca/spottedleaf/moonrise/common/list/ReferenceList.java b/src/main/java/ca/spottedleaf/moonrise/common/list/ReferenceList.java
 index 2e876b918672e8ef3b5197b7e6b1597247fdeaa1..6c4e25e5e21044c0fa9728e475b28f6478783037 100644
 --- a/src/main/java/ca/spottedleaf/moonrise/common/list/ReferenceList.java
