@@ -4,6 +4,189 @@ Date: Sat, 31 May 2025 23:07:10 +0800
 Subject: [PATCH] Base Dirty Patches
 
 
+diff --git a/ca/spottedleaf/moonrise/paper/util/BaseChunkSystemHooks.java b/ca/spottedleaf/moonrise/paper/util/BaseChunkSystemHooks.java
+index 5f26fd89704aa3fd9c37a1d68a7c4c65ce1e7a5d..bcdc1d302815babd8f5642e08c03abd96520eb66 100644
+--- a/ca/spottedleaf/moonrise/paper/util/BaseChunkSystemHooks.java
++++ b/ca/spottedleaf/moonrise/paper/util/BaseChunkSystemHooks.java
+@@ -103,14 +103,26 @@ public abstract class BaseChunkSystemHooks implements ca.spottedleaf.moonrise.co
+ 
+     @Override
+     public void onChunkBorder(final LevelChunk chunk, final ChunkHolder holder) {
+-        chunk.getLevel().getCurrentWorldData().addChunk(chunk); // Folia - region threading
++        var ref = chunk.level.worldDataPool.getAndHeldReference(chunk.getPos().x, chunk.getPos().z);
++        var worldData = ref.left();
++        try {
++        worldData.addChunk(chunk); // Folia - region threading
+         chunk.loadCallback();
++        }finally {
++        chunk.level.worldDataPool.releaseReference(chunk.getPos().x, chunk.getPos().z, ref.right());
++        }
+     }
+ 
+     @Override
+     public void onChunkNotBorder(final LevelChunk chunk, final ChunkHolder holder) {
+-        chunk.getLevel().getCurrentWorldData().removeChunk(chunk); // Folia - region threading
++        var ref = chunk.level.worldDataPool.getAndHeldReference(chunk.getPos().x, chunk.getPos().z);
++        var worldData = ref.left();
++        try {
++        worldData.removeChunk(chunk); // Folia - region threading
+         chunk.unloadCallback();
++        }finally {
++        chunk.level.worldDataPool.releaseReference(chunk.getPos().x, chunk.getPos().z, ref.right());
++        }
+     }
+ 
+     @Override
+@@ -121,30 +133,54 @@ public abstract class BaseChunkSystemHooks implements ca.spottedleaf.moonrise.co
+ 
+     @Override
+     public void onChunkTicking(final LevelChunk chunk, final ChunkHolder holder) {
+-        chunk.getLevel().getCurrentWorldData().addTickingChunk(chunk); // Folia - region threading
++        var ref = chunk.level.worldDataPool.getAndHeldReference(chunk.getPos().x, chunk.getPos().z);
++        var worldData = ref.left();
++        try {
++        worldData.addTickingChunk(chunk); // Folia - region threading
+         if (!((ChunkSystemLevelChunk)chunk).moonrise$isPostProcessingDone()) {
+             chunk.postProcessGeneration((ServerLevel)chunk.getLevel());
+         }
+         ((ServerLevel)chunk.getLevel()).startTickingChunk(chunk);
+         ((ServerLevel)chunk.getLevel()).getChunkSource().chunkMap.tickingGenerated.incrementAndGet();
++        }finally {
++        chunk.level.worldDataPool.releaseReference(chunk.getPos().x, chunk.getPos().z, ref.right());
++        }
+     }
+ 
+     @Override
+     public void onChunkNotTicking(final LevelChunk chunk, final ChunkHolder holder) {
++        var ref = chunk.level.worldDataPool.getAndHeldReference(chunk.getPos().x, chunk.getPos().z);
++        var worldData = ref.left();
++        try {
+         chunk.getChunkHot().clear(); // KioCG
+-        chunk.getLevel().getCurrentWorldData().removeTickingChunk(chunk); // Folia - region threading
++        worldData.removeTickingChunk(chunk); // Folia - region threading
++        }finally {
++        chunk.level.worldDataPool.releaseReference(chunk.getPos().x, chunk.getPos().z, ref.right());
++        }
+     }
+ 
+     @Override
+     public void onChunkEntityTicking(final LevelChunk chunk, final ChunkHolder holder) {
+-        chunk.getLevel().getCurrentWorldData().addEntityTickingChunk(chunk); // Folia - region threading
++        var ref = chunk.level.worldDataPool.getAndHeldReference(chunk.getPos().x, chunk.getPos().z);
++        var worldData = ref.left();
++        try {
++        worldData.addEntityTickingChunk(chunk); // Folia - region threading
+         ((ChunkTickServerLevel)(ServerLevel)chunk.getLevel()).moonrise$markChunkForPlayerTicking(chunk); // Moonrise - chunk tick iteration
++        }finally {
++        chunk.level.worldDataPool.releaseReference(chunk.getPos().x, chunk.getPos().z, ref.right());
++        }
+     }
+ 
+     @Override
+     public void onChunkNotEntityTicking(final LevelChunk chunk, final ChunkHolder holder) {
+-        chunk.getLevel().getCurrentWorldData().removeEntityTickingChunk(chunk); // Folia - region threading
++        var ref = chunk.level.worldDataPool.getAndHeldReference(chunk.getPos().x, chunk.getPos().z);
++        var worldData = ref.left();
++        try {
++        worldData.removeEntityTickingChunk(chunk); // Folia - region threading
+         ((ChunkTickServerLevel)(ServerLevel)chunk.getLevel()).moonrise$removeChunkForPlayerTicking(chunk); // Moonrise - chunk tick iteration
++        }finally {
++        chunk.level.worldDataPool.releaseReference(chunk.getPos().x, chunk.getPos().z, ref.right());
++        }
+     }
+ 
+     @Override
+diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/EntityLookup.java b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/EntityLookup.java
+index 20941198b3a1227381c0a9039898a6506344a588..b58d2c3c810379e6369207e90c41a6abb5bce886 100644
+--- a/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/EntityLookup.java
++++ b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/EntityLookup.java
+@@ -1005,7 +1005,12 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
+             this.entity.setLevelCallback(NoOpCallback.INSTANCE);
+ 
+             // only AFTER full removal callbacks, so that thread checking will work. // Folia - region threading
+-            EntityLookup.this.world.getCurrentWorldData().removeEntity(entity); // Folia - region threading
++            var ref = EntityLookup.this.world.worldDataPool.getAndHeldReference(entity);
++            try {
++            ref.left().removeEntity(entity); // Folia - region threading
++            }finally {
++            EntityLookup.this.world.worldDataPool.releaseReference(entity, ref.right());
++            }
+         }
+     }
+ 
+diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/server/ServerEntityLookup.java b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/server/ServerEntityLookup.java
+index e3a49083e75116622bd95fb17533730a6fb36752..f634bf6de2a051415ef9f3d18a63ca0b23e1b551 100644
+--- a/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/server/ServerEntityLookup.java
++++ b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/server/ServerEntityLookup.java
+@@ -89,39 +89,63 @@ public final class ServerEntityLookup extends EntityLookup {
+ 
+     @Override
+     protected void addEntityCallback(final Entity entity) {
+-        this.world.getCurrentWorldData().addEntity(entity); // Folia - region threading
++        var ref = this.world.worldDataPool.getAndHeldReference(entity);
++        var worldData = ref.left();
++        try {
++        worldData.addEntity(entity); // Folia - region threading
+         if (entity instanceof ServerPlayer player) {
+-            ((ChunkSystemServerLevel)this.serverWorld).moonrise$getNearbyPlayers().addPlayer(player);
++            worldData.getNearbyPlayers().addPlayer(player);
+         }
+         if (entity instanceof ThrownEnderpearl enderpearl) {
+             this.addEnderPearl(CoordinateUtils.getChunkKey(enderpearl.chunkPosition()), enderpearl.getId()); // Folia - region threading
+         }
+         entity.registerScheduler(); // Paper - optimise Folia entity scheduler
++        }finally {
++        this.world.worldDataPool.releaseReference(entity, ref.right());
++        }
+     }
+ 
+     @Override
+     protected void removeEntityCallback(final Entity entity) {
++        var ref = this.world.worldDataPool.getAndHeldReference(entity);
++        var worldData = ref.left();
++        try {
+         if (entity instanceof ServerPlayer player) {
+-            ((ChunkSystemServerLevel)this.serverWorld).moonrise$getNearbyPlayers().removePlayer(player);
++            worldData.getNearbyPlayers().removePlayer(player);
+         }
+         if (entity instanceof ThrownEnderpearl enderpearl) {
+             this.removeEnderPearl(CoordinateUtils.getChunkKey(enderpearl.chunkPosition()), enderpearl.getId()); // Folia - region threading
+         }
+         entity.getBukkitEntity().taskScheduler.registerTo(null); // Folia - region threading
++        }finally {
++        this.world.worldDataPool.releaseReference(entity, ref.right());
++        }
+     }
+ 
+     @Override
+     protected void entityStartLoaded(final Entity entity) {
++        var ref = this.world.worldDataPool.getAndHeldReference(entity);
++        var worldData = ref.left();
++        try {
+         // Moonrise start - entity tracker
+-        this.world.getCurrentWorldData().trackerEntities.add(entity); // Folia - region threading
++        worldData.trackerEntities.add(entity); // Folia - region threading
+         // Moonrise end - entity tracker
++        }finally {
++        this.world.worldDataPool.releaseReference(entity, ref.right());
++        }
+     }
+ 
+     @Override
+     protected void entityEndLoaded(final Entity entity) {
++        var ref = this.world.worldDataPool.getAndHeldReference(entity);
++        var worldData = ref.left();
++        try {
+         // Moonrise start - entity tracker
+-        this.world.getCurrentWorldData().trackerEntities.remove(entity); // Folia - region threading
++        worldData.trackerEntities.remove(entity); // Folia - region threading
+         // Moonrise end - entity tracker
++        }finally {
++        this.world.worldDataPool.releaseReference(entity, ref.right());
++        }
+     }
+ 
+     @Override
 diff --git a/io/papermc/paper/threadedregions/RegionizedServer.java b/io/papermc/paper/threadedregions/RegionizedServer.java
 index e1842ab8f20271a8b20ab8462b09a4745a612a9a..0502fd0dc6404b60dc9887c1edc02bc2bcdccfb1 100644
 --- a/io/papermc/paper/threadedregions/RegionizedServer.java
@@ -35,8 +218,21 @@ index e1842ab8f20271a8b20ab8462b09a4745a612a9a..0502fd0dc6404b60dc9887c1edc02bc2
          // commands
          ((DedicatedServer)MinecraftServer.getServer()).handleConsoleInputs();
  
+diff --git a/io/papermc/paper/threadedregions/RegionizedTaskQueue.java b/io/papermc/paper/threadedregions/RegionizedTaskQueue.java
+index 2147f3647d47e9a45e0e3017026523ee0f355e48..33aba7ab105db6f82c3fef3ccb66bd61552738de 100644
+--- a/io/papermc/paper/threadedregions/RegionizedTaskQueue.java
++++ b/io/papermc/paper/threadedregions/RegionizedTaskQueue.java
+@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
+ 
+ public final class RegionizedTaskQueue {
+ 
+-    private static final TicketType<Unit> TASK_QUEUE_TICKET = ChunkSystemTicketType.create("task_queue_ticket", (a, b) -> 0);
++    public static final TicketType<Unit> TASK_QUEUE_TICKET = ChunkSystemTicketType.create("task_queue_ticket", (a, b) -> 0);
+ 
+     public PrioritisedExecutor.PrioritisedTask createChunkTask(final ServerLevel world, final int chunkX, final int chunkZ,
+                                                                final Runnable run) {
 diff --git a/io/papermc/paper/threadedregions/RegionizedWorldData.java b/io/papermc/paper/threadedregions/RegionizedWorldData.java
-index 37ea987cf51917fe5b52b8a9bb887ee49de99a20..3410a1651d51ff24113b34a736638ce571e0b831 100644
+index 37ea987cf51917fe5b52b8a9bb887ee49de99a20..44c7183b8f62115ba0e22f303a40593e24570b58 100644
 --- a/io/papermc/paper/threadedregions/RegionizedWorldData.java
 +++ b/io/papermc/paper/threadedregions/RegionizedWorldData.java
 @@ -6,12 +6,12 @@ import ca.spottedleaf.moonrise.common.misc.NearbyPlayers;
@@ -68,133 +264,7 @@ index 37ea987cf51917fe5b52b8a9bb887ee49de99a20..3410a1651d51ff24113b34a736638ce5
                  into.navigatingMobs.add(iterator.next());
              }
              for (final Iterator<Entity> iterator = from.trackerEntities.iterator(); iterator.hasNext();) {
-@@ -163,6 +163,7 @@ public final class RegionizedWorldData {
-             for (final Iterator<LevelChunk> iterator = from.chunks.iterator(); iterator.hasNext();) {
-                 into.chunks.add(iterator.next());
-             }
-+            from.world.worldDataSwitcher.resetRandomIdx();
-             // redstone torches
-             if (from.redstoneUpdateInfos != null && !from.redstoneUpdateInfos.isEmpty()) {
-                 if (into.redstoneUpdateInfos == null) {
-@@ -229,7 +230,7 @@ public final class RegionizedWorldData {
-                 final ChunkPos pos = player.chunkPosition();
-                 // Note: It is impossible for an entity in the world to _not_ be in an entity chunk, which means
-                 // the chunk holder must _exist_, and so the region section exists.
--                regionToData.get(CoordinateUtils.getChunkKey(pos.x >> chunkToRegionShift, pos.z >> chunkToRegionShift))
-+                from.world.worldDataSwitcher.randomIfNull(regionToData, regionToData.get(CoordinateUtils.getChunkKey(pos.x >> chunkToRegionShift, pos.z >> chunkToRegionShift)))
-                     .connections.add(conn);
-             }
-             // entities
-@@ -237,15 +238,16 @@ public final class RegionizedWorldData {
-                 final ChunkPos pos = player.chunkPosition();
-                 // Note: It is impossible for an entity in the world to _not_ be in an entity chunk, which means
-                 // the chunk holder must _exist_, and so the region section exists.
--                final RegionizedWorldData into = regionToData.get(CoordinateUtils.getChunkKey(pos.x >> chunkToRegionShift, pos.z >> chunkToRegionShift));
-+                final RegionizedWorldData into = from.world.worldDataSwitcher.randomIfNull(regionToData, regionToData.get(CoordinateUtils.getChunkKey(pos.x >> chunkToRegionShift, pos.z >> chunkToRegionShift)));
-                 into.localPlayers.add(player);
-                 into.nearbyPlayers.addPlayer(player);
-             }
-+            from.world.worldDataSwitcher.resetRandomIdx();
-             for (final Entity entity : from.allEntities) {
-                 final ChunkPos pos = entity.chunkPosition();
-                 // Note: It is impossible for an entity in the world to _not_ be in an entity chunk, which means
-                 // the chunk holder must _exist_, and so the region section exists.
--                final RegionizedWorldData into = regionToData.get(CoordinateUtils.getChunkKey(pos.x >> chunkToRegionShift, pos.z >> chunkToRegionShift));
-+                final RegionizedWorldData into = from.world.worldDataSwitcher.randomIfNull(regionToData, regionToData.get(CoordinateUtils.getChunkKey(pos.x >> chunkToRegionShift, pos.z >> chunkToRegionShift)));
-                 into.allEntities.add(entity);
-                 // Note: entityTickList is a subset of allEntities
-                 if (from.entityTickList.contains(entity)) {
-@@ -267,13 +269,14 @@ public final class RegionizedWorldData {
-                 }
-                 entity.getBukkitEntity().taskScheduler.registerTo(into.entitySchedulerTickList);
-             }
-+            from.world.worldDataSwitcher.resetRandomIdx();
-             // block ticking
-             for (final BlockEventData blockEventData : from.blockEvents) {
-                 final BlockPos pos = blockEventData.pos();
-                 final int chunkX = pos.getX() >> 4;
-                 final int chunkZ = pos.getZ() >> 4;
- 
--                final RegionizedWorldData into = regionToData.get(CoordinateUtils.getChunkKey(chunkX >> chunkToRegionShift, chunkZ >> chunkToRegionShift));
-+                final RegionizedWorldData into = from.world.worldDataSwitcher.randomIfNull(regionToData, regionToData.get(CoordinateUtils.getChunkKey(chunkX >> chunkToRegionShift, chunkZ >> chunkToRegionShift)));
-                 // Unlike entities, the chunk holder is not guaranteed to exist for block events, because the block events
-                 // is just some list. So if it unloads, I guess it's just lost.
-                 if (into != null) {
-@@ -281,6 +284,7 @@ public final class RegionizedWorldData {
-                 }
-             }
- 
-+            from.world.worldDataSwitcher.resetRandomIdx();
-             final Long2ReferenceOpenHashMap<LevelTicks<Block>> levelTicksBlockRegionData = new Long2ReferenceOpenHashMap<>(regionToData.size(), 0.75f);
-             final Long2ReferenceOpenHashMap<LevelTicks<Fluid>> levelTicksFluidRegionData = new Long2ReferenceOpenHashMap<>(regionToData.size(), 0.75f);
- 
-@@ -314,12 +318,13 @@ public final class RegionizedWorldData {
-                 final int chunkX = pos.getX() >> 4;
-                 final int chunkZ = pos.getZ() >> 4;
- 
--                final RegionizedWorldData into = regionToData.get(CoordinateUtils.getChunkKey(chunkX >> chunkToRegionShift, chunkZ >> chunkToRegionShift));
-+                final RegionizedWorldData into = from.world.worldDataSwitcher.randomIfNull(regionToData, regionToData.get(CoordinateUtils.getChunkKey(chunkX >> chunkToRegionShift, chunkZ >> chunkToRegionShift)));
-                 if (into != null) {
-                     into.pendingBlockEntityTickers.add(tileEntity);
-                 } // else: when a chunk unloads, it does not actually _remove_ the tile entity from the list, it just gets
-                   //       marked as removed. So if there is no section, it's probably removed!
-             }
-+            from.world.worldDataSwitcher.resetRandomIdx();
-             for (final TickingBlockEntity tileEntity : from.blockEntityTickers) {
-                 //final BlockPos pos = tileEntity.getPos();
-                 // Luminol start - Fix region threading with lithium
-@@ -336,12 +341,13 @@ public final class RegionizedWorldData {
-                 final int chunkX = pos.getX() >> 4;
-                 final int chunkZ = pos.getZ() >> 4;
- 
--                final RegionizedWorldData into = regionToData.get(CoordinateUtils.getChunkKey(chunkX >> chunkToRegionShift, chunkZ >> chunkToRegionShift));
-+                final RegionizedWorldData into = from.world.worldDataSwitcher.randomIfNull(regionToData, regionToData.get(CoordinateUtils.getChunkKey(chunkX >> chunkToRegionShift, chunkZ >> chunkToRegionShift)));
-                 if (into != null) {
-                     into.blockEntityTickers.add(tileEntity);
-                 } // else: when a chunk unloads, it does not actually _remove_ the tile entity from the list, it just gets
-                   //       marked as removed. So if there is no section, it's probably removed!
-             }
-+            from.world.worldDataSwitcher.resetRandomIdx();
-             // time
-             for (final RegionizedWorldData regionizedWorldData : dataSet) {
-                 regionizedWorldData.redstoneTime = from.redstoneTime;
-@@ -352,15 +358,16 @@ public final class RegionizedWorldData {
-                 final ChunkPos pos = chunk.getPos();
- 
-                 // Impossible for get() to return null, as the chunk is entity ticking - thus the chunk holder is loaded
--                regionToData.get(CoordinateUtils.getChunkKey(pos.x >> chunkToRegionShift, pos.z >> chunkToRegionShift))
-+                from.world.worldDataSwitcher.randomIfNull(regionToData, regionToData.get(CoordinateUtils.getChunkKey(pos.x >> chunkToRegionShift, pos.z >> chunkToRegionShift)))
-                     .entityTickingChunks.add(chunk);
-             }
-+            from.world.worldDataSwitcher.resetRandomIdx();
-             for (final Iterator<LevelChunk> iterator = from.tickingChunks.iterator(); iterator.hasNext();) {
-                 final LevelChunk chunk = iterator.next();
-                 final ChunkPos pos = chunk.getPos();
- 
-                 // Impossible for get() to return null, as the chunk is entity ticking - thus the chunk holder is loaded
--                regionToData.get(CoordinateUtils.getChunkKey(pos.x >> chunkToRegionShift, pos.z >> chunkToRegionShift))
-+                from.world.worldDataSwitcher.randomIfNull(regionToData, regionToData.get(CoordinateUtils.getChunkKey(pos.x >> chunkToRegionShift, pos.z >> chunkToRegionShift)))
-                     .tickingChunks.add(chunk);
-             }
-             for (final Iterator<LevelChunk> iterator = from.chunks.iterator(); iterator.hasNext();) {
-@@ -377,7 +384,7 @@ public final class RegionizedWorldData {
-                 for (final net.minecraft.world.level.block.RedstoneTorchBlock.Toggle info : from.redstoneUpdateInfos) {
-                     final BlockPos pos = info.pos;
- 
--                    final RegionizedWorldData worldData = regionToData.get(CoordinateUtils.getChunkKey((pos.getX() >> 4) >> chunkToRegionShift, (pos.getZ() >> 4) >> chunkToRegionShift));
-+                    final RegionizedWorldData worldData = from.world.worldDataSwitcher.randomIfNull(regionToData, regionToData.get(CoordinateUtils.getChunkKey((pos.getX() >> 4) >> chunkToRegionShift, (pos.getZ() >> 4) >> chunkToRegionShift)));
-                     if (worldData != null) {
-                         if (worldData.redstoneUpdateInfos == null) {
-                             worldData.redstoneUpdateInfos = new ArrayDeque<>();
-@@ -386,6 +393,7 @@ public final class RegionizedWorldData {
-                     } // else: chunk unloaded
-                 }
-             }
-+            from.world.worldDataSwitcher.resetRandomIdx();
-             // mob spawning
-             for (final RegionizedWorldData regionizedWorldData : dataSet) {
-                 regionizedWorldData.catSpawnerNextTick = from.catSpawnerNextTick;
-@@ -414,7 +422,7 @@ public final class RegionizedWorldData {
+@@ -414,7 +414,7 @@ public final class RegionizedWorldData {
      private RegionizedServer.WorldLevelData tickData;
  
      // connections
@@ -203,7 +273,7 @@ index 37ea987cf51917fe5b52b8a9bb887ee49de99a20..3410a1651d51ff24113b34a736638ce5
  
      // misc. fields
      private boolean isHandlingTick;
-@@ -428,7 +436,7 @@ public final class RegionizedWorldData {
+@@ -428,7 +428,7 @@ public final class RegionizedWorldData {
      }
  
      // entities
@@ -212,7 +282,7 @@ index 37ea987cf51917fe5b52b8a9bb887ee49de99a20..3410a1651d51ff24113b34a736638ce5
      private final NearbyPlayers nearbyPlayers;
      public final io.papermc.paper.threadedregions.EntityScheduler.EntitySchedulerTickList entitySchedulerTickList = new io.papermc.paper.threadedregions.EntityScheduler.EntitySchedulerTickList();
      private final ReferenceList<Entity> allEntities = new ReferenceList<>(EMPTY_ENTITY_ARRAY);
-@@ -445,8 +453,8 @@ public final class RegionizedWorldData {
+@@ -445,8 +445,8 @@ public final class RegionizedWorldData {
      private final LevelTicks<Fluid> fluidLevelTicks;
  
      // tile entity ticking
@@ -223,7 +293,7 @@ index 37ea987cf51917fe5b52b8a9bb887ee49de99a20..3410a1651d51ff24113b34a736638ce5
      private boolean tickingBlockEntities;
  
      // time
-@@ -483,8 +491,8 @@ public final class RegionizedWorldData {
+@@ -483,8 +483,8 @@ public final class RegionizedWorldData {
      public final NeighborUpdater neighborUpdater;
      public boolean captureBlockStates = false;
      public boolean captureTreeGeneration = false;
@@ -234,7 +304,7 @@ index 37ea987cf51917fe5b52b8a9bb887ee49de99a20..3410a1651d51ff24113b34a736638ce5
      public List<ItemEntity> captureDrops;
      // Paper start
      public int wakeupInactiveRemainingAnimals;
-@@ -661,11 +669,8 @@ public final class RegionizedWorldData {
+@@ -661,11 +661,8 @@ public final class RegionizedWorldData {
      }
  
      public void addEntityTickingEntity(final Entity entity) {
@@ -247,7 +317,7 @@ index 37ea987cf51917fe5b52b8a9bb887ee49de99a20..3410a1651d51ff24113b34a736638ce5
      }
  
      public boolean hasEntityTickingEntity(final Entity entity) {
-@@ -673,11 +678,8 @@ public final class RegionizedWorldData {
+@@ -673,11 +670,8 @@ public final class RegionizedWorldData {
      }
  
      public void removeEntityTickingEntity(final Entity entity) {
@@ -260,7 +330,7 @@ index 37ea987cf51917fe5b52b8a9bb887ee49de99a20..3410a1651d51ff24113b34a736638ce5
      }
  
      public void forEachTickingEntity(final Consumer<Entity> action) {
-@@ -692,14 +694,11 @@ public final class RegionizedWorldData {
+@@ -692,14 +686,11 @@ public final class RegionizedWorldData {
      }
  
      public void addEntity(final Entity entity) {
@@ -276,7 +346,7 @@ index 37ea987cf51917fe5b52b8a9bb887ee49de99a20..3410a1651d51ff24113b34a736638ce5
          }
      }
  
-@@ -708,28 +707,19 @@ public final class RegionizedWorldData {
+@@ -708,28 +699,19 @@ public final class RegionizedWorldData {
      }
  
      public void removeEntity(final Entity entity) {
@@ -306,7 +376,7 @@ index 37ea987cf51917fe5b52b8a9bb887ee49de99a20..3410a1651d51ff24113b34a736638ce5
          this.navigatingMobs.remove(mob);
      }
  
-@@ -807,12 +797,12 @@ public final class RegionizedWorldData {
+@@ -807,12 +789,12 @@ public final class RegionizedWorldData {
      // ticking chunks
      public void addEntityTickingChunk(final LevelChunk chunk) {
          this.entityTickingChunks.add(chunk);
@@ -321,7 +391,7 @@ index 37ea987cf51917fe5b52b8a9bb887ee49de99a20..3410a1651d51ff24113b34a736638ce5
      }
  
      public ReferenceList<LevelChunk> getEntityTickingChunks() {
-@@ -821,12 +811,12 @@ public final class RegionizedWorldData {
+@@ -821,12 +803,12 @@ public final class RegionizedWorldData {
  
      public void addTickingChunk(final LevelChunk chunk) {
          this.tickingChunks.add(chunk);
@@ -336,7 +406,7 @@ index 37ea987cf51917fe5b52b8a9bb887ee49de99a20..3410a1651d51ff24113b34a736638ce5
      }
  
      public ReferenceList<LevelChunk> getTickingChunks() {
-@@ -835,12 +825,12 @@ public final class RegionizedWorldData {
+@@ -835,12 +817,12 @@ public final class RegionizedWorldData {
  
      public void addChunk(final LevelChunk chunk) {
          this.chunks.add(chunk);
@@ -352,7 +422,7 @@ index 37ea987cf51917fe5b52b8a9bb887ee49de99a20..3410a1651d51ff24113b34a736638ce5
  
      public ReferenceList<LevelChunk> getChunks() {
 diff --git a/io/papermc/paper/threadedregions/TickRegionScheduler.java b/io/papermc/paper/threadedregions/TickRegionScheduler.java
-index c485d5b3ba95f2a969bdf0dab9654ac284976f8d..67abe9c4d63fd88e509c7db37c8cd835ad129181 100644
+index c485d5b3ba95f2a969bdf0dab9654ac284976f8d..1ae10063f8647d3da06f39ce2191222fc741c5bf 100644
 --- a/io/papermc/paper/threadedregions/TickRegionScheduler.java
 +++ b/io/papermc/paper/threadedregions/TickRegionScheduler.java
 @@ -241,9 +241,9 @@ public final class TickRegionScheduler {
@@ -367,16 +437,8 @@ index c485d5b3ba95f2a969bdf0dab9654ac284976f8d..67abe9c4d63fd88e509c7db37c8cd835
          private RegionizedWorldData currentTickingWorldRegionizedData;
          private SchedulerThreadPool.SchedulableTick currentTickingTask;
          // Folia start - profiler
-@@ -364,6 +364,7 @@ public final class TickRegionScheduler {
-                 // don't release region for another tick
-                 return null;
-             } finally {
-+                if (this.region != null) { this.region.region.regioniser.world.worldDataSwitcher.onTickFinished(); }
-                 WATCHDOG_THREAD.removeTick(runningTick); // Folia - watchdog
-                 final long tickEnd = System.nanoTime();
-                 final long cpuEnd = MEASURE_CPU_TIME ? THREAD_MX_BEAN.getCurrentThreadCpuTime() : 0L;
 diff --git a/io/papermc/paper/threadedregions/TickRegions.java b/io/papermc/paper/threadedregions/TickRegions.java
-index bfb39cbf1ba58d02da7e35300eb95872747506e8..0d6e28f1d21e6cf23f67e132764c51435e1d25de 100644
+index bfb39cbf1ba58d02da7e35300eb95872747506e8..03b23984ca6c654beb1720875a4243aa695eb3b4 100644
 --- a/io/papermc/paper/threadedregions/TickRegions.java
 +++ b/io/papermc/paper/threadedregions/TickRegions.java
 @@ -12,6 +12,8 @@ import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
@@ -441,17 +503,6 @@ index bfb39cbf1ba58d02da7e35300eb95872747506e8..0d6e28f1d21e6cf23f67e132764c5143
              T ret = (T)this.regionizedData.get(regionizedData);
  
              if (ret != null) {
-@@ -229,6 +259,10 @@ public final class TickRegions implements ThreadedRegionizer.RegionCallbacks<Tic
-             ret = regionizedData.createNewValue();
-             this.regionizedData.put(regionizedData, ret);
- 
-+            if (ret instanceof RegionizedWorldData worldData){
-+                worldData.world.worldDataSwitcher.updateCurrent(worldData);
-+            }
-+
-             return ret;
-         }
- 
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
 index 100e8fdc52c201d386e3c779d19f6b5abde39820..781eb65648334aaae80bec66df4a835256f5b176 100644
 --- a/net/minecraft/server/MinecraftServer.java
@@ -465,8 +516,117 @@ index 100e8fdc52c201d386e3c779d19f6b5abde39820..781eb65648334aaae80bec66df4a8352
      }
  
      public int getSpawnProtectionRadius() {
+diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
+index 6868b915bf3deb85783a638d4441a15fea6da2dc..e787ae9c8d36a74841c573defd0b349a6abf8a4e 100644
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -957,12 +957,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                     }
+                     ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity)entity).moonrise$setTrackedEntity(trackedEntity);
+                     // Paper end - optimise entity tracker
+-                    trackedEntity.updatePlayers(this.level.getLocalPlayers()); // Folia - region threading
++                    var ref = this.level.worldDataPool.getAndHeldReference(entity);
++                    var worldData = ref.left();
++                    try {
++                    trackedEntity.updatePlayers(worldData.getLocalPlayers()); // Folia - region threading
+                     if (entity instanceof ServerPlayer serverPlayer) {
+                         this.updatePlayerStatus(serverPlayer, true);
+ 
+                         // Folia start - region threading
+-                        for (Entity possible : this.level.getCurrentWorldData().trackerEntities) {
++                        for (Entity possible : worldData.trackerEntities) {
+                             ChunkMap.TrackedEntity trackedEntity1 = possible.moonrise$getTrackedEntity();
+                             if (trackedEntity1 == null) {
+                                 continue;
+@@ -973,6 +976,9 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                             }
+                         }
+                     }
++                    }finally {
++                    this.level.worldDataPool.releaseReference(entity, ref.right());
++                    }
+                 }
+             }
+         }
+@@ -983,8 +989,11 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         if (entity instanceof ServerPlayer serverPlayer) {
+             this.updatePlayerStatus(serverPlayer, false);
+ 
++            var ref = this.level.worldDataPool.getAndHeldReference(entity);
++            var worldData = ref.left(); // Folia - region threading
++            try {
+             // Folia start - region threading
+-            for (Entity possible : this.level.getCurrentWorldData().getLocalEntities()) {
++            for (Entity possible : worldData.getLocalEntities()) {
+                 ChunkMap.TrackedEntity trackedEntity = possible.moonrise$getTrackedEntity();
+                 if (trackedEntity == null) {
+                     continue;
+@@ -992,6 +1001,9 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                 // Folia end - region threading
+                 trackedEntity.removePlayer(serverPlayer);
+             }
++            }finally {
++            this.level.worldDataPool.releaseReference(entity, ref.right());
++            }
+             // Folia end - region threading
+         }
+ 
+diff --git a/net/minecraft/server/level/DistanceManager.java b/net/minecraft/server/level/DistanceManager.java
+index 619cbb1a9296c814bbdad0780df91c8db01bc5cd..a21bab0a78fccb92ccee074921b49ec2adfdd94f 100644
+--- a/net/minecraft/server/level/DistanceManager.java
++++ b/net/minecraft/server/level/DistanceManager.java
+@@ -58,27 +58,45 @@ public abstract class DistanceManager implements ca.spottedleaf.moonrise.patches
+ 
+     @Override
+     public final void moonrise$addPlayer(final ServerPlayer player, final SectionPos pos) {
+-        this.moonrise$getChunkMap().level.getCurrentWorldData().spawnChunkTracker.add(player, pos.x(), pos.z(), ca.spottedleaf.moonrise.patches.chunk_tick_iteration.ChunkTickConstants.PLAYER_SPAWN_TRACK_RANGE); // Folia - region threading
++        var ref = player.level().worldDataPool.getAndHeldReference(player);
++        var worldData = ref.left();
++        try {
++        worldData.spawnChunkTracker.add(player, pos.x(), pos.z(), ca.spottedleaf.moonrise.patches.chunk_tick_iteration.ChunkTickConstants.PLAYER_SPAWN_TRACK_RANGE); // Folia - region threading
+         // Note: Cannot do narrow tracking on Paper due to custom spawn range
++        }finally {
++        player.level().worldDataPool.releaseReference(player, ref.right());
++        }
+     }
+ 
+     @Override
+     public final void moonrise$removePlayer(final ServerPlayer player, final SectionPos pos) {
+-        this.moonrise$getChunkMap().level.getCurrentWorldData().spawnChunkTracker.remove(player); // Folia - region threading
++        var ref = player.level().worldDataPool.getAndHeldReference(player);
++        var worldData = ref.left();
++        try {
++        worldData.spawnChunkTracker.remove(player); // Folia - region threading
+         // Note: Cannot do narrow tracking on Paper due to custom spawn range
++        }finally {
++            player.level().worldDataPool.releaseReference(player, ref.right());
++        }
+     }
+ 
+     @Override
+     public final void moonrise$updatePlayer(final ServerPlayer player,
+                                             final SectionPos oldPos, final SectionPos newPos,
+                                             final boolean oldIgnore, final boolean newIgnore) {
++        var ref = player.level().worldDataPool.getAndHeldReference(player);
++        var worldData = ref.left();
++        try {
+         if (newIgnore) {
+-            this.moonrise$getChunkMap().level.getCurrentWorldData().spawnChunkTracker.remove(player); // Folia - region threading
++            worldData.spawnChunkTracker.remove(player); // Folia - region threading
+             // Note: Cannot do narrow tracking on Paper due to custom spawn range
+         } else {
+-            this.moonrise$getChunkMap().level.getCurrentWorldData().spawnChunkTracker.addOrUpdate(player, newPos.x(), newPos.z(), ca.spottedleaf.moonrise.patches.chunk_tick_iteration.ChunkTickConstants.PLAYER_SPAWN_TRACK_RANGE); // Folia - region threading
++            worldData.spawnChunkTracker.addOrUpdate(player, newPos.x(), newPos.z(), ca.spottedleaf.moonrise.patches.chunk_tick_iteration.ChunkTickConstants.PLAYER_SPAWN_TRACK_RANGE); // Folia - region threading
+             // Note: Cannot do narrow tracking on Paper due to custom spawn range
+         }
++        }finally {
++            player.level().worldDataPool.releaseReference(player, ref.right());
++        }
+     }
+ 
+     @Override
 diff --git a/net/minecraft/server/level/ServerChunkCache.java b/net/minecraft/server/level/ServerChunkCache.java
-index 05bad0366bd36b8134290a0cceb4d4dfcbbd0544..8604202fce68c8ec77a364947163348c749e2bb5 100644
+index 05bad0366bd36b8134290a0cceb4d4dfcbbd0544..74133bacf1841b367799361f126e399a15db68e6 100644
 --- a/net/minecraft/server/level/ServerChunkCache.java
 +++ b/net/minecraft/server/level/ServerChunkCache.java
 @@ -117,7 +117,7 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
@@ -478,7 +638,22 @@ index 05bad0366bd36b8134290a0cceb4d4dfcbbd0544..8604202fce68c8ec77a364947163348c
              ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.pushChunkWait(this.level, chunkX, chunkZ);
              this.mainThreadProcessor.managedBlock(completable::isDone);
              ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.popChunkWait();
-@@ -910,8 +910,10 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+@@ -696,7 +696,13 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+         int sectionPosZ = SectionPos.blockToSectionCoord(pos.getZ());
+         ChunkHolder visibleChunkIfPresent = this.getVisibleChunkIfPresent(ChunkPos.asLong(sectionPosX, sectionPosZ));
+         if (visibleChunkIfPresent != null && visibleChunkIfPresent.blockChanged(pos)) {
+-            this.level.getCurrentWorldData().chunkHoldersToBroadcast.add(visibleChunkIfPresent); // Folia - region threading
++            var ref = this.level.worldDataPool.getAndHeldReference(pos);
++            var worldData = ref.left();
++            try {
++            worldData.chunkHoldersToBroadcast.add(visibleChunkIfPresent); // Folia - region threading
++            }finally {
++            this.level.worldDataPool.releaseReference(pos, ref.right());
++            }
+         }
+     }
+ 
+@@ -910,8 +916,10 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
          @Override
          public boolean pollTask() {
              // Folia start - region threading
@@ -492,7 +667,7 @@ index 05bad0366bd36b8134290a0cceb4d4dfcbbd0544..8604202fce68c8ec77a364947163348c
              // Folia end - region threading
              // Paper start - rewrite chunk system
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index eb3aef1f5198592eda5dafe84b91271e861b4135..6058953df4b233a0f105a265e248ca57d11f361e 100644
+index eb3aef1f5198592eda5dafe84b91271e861b4135..df102d3d4ea21e01e6c6b89ac5101f152fb318ee 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -181,6 +181,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
@@ -503,8 +678,265 @@ index eb3aef1f5198592eda5dafe84b91271e861b4135..6058953df4b233a0f105a265e248ca57
      private int lastSpawnChunkRadius;
      //final EntityTickList entityTickList = new EntityTickList(); // Folia - region threading
      private final ServerWaypointManager waypointManager;
+@@ -1694,12 +1695,18 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+             // LOGGER.warn("Tried to add entity {} but it was marked as removed already", EntityType.getKey(entity.getType())); // CraftBukkit - remove warning
+             return false;
+         } else {
++            var ref = this.worldDataPool.getAndHeldReference(entity);
++            var worldData = ref.left(); // Folia - region threading
++            try {
+             if (entity instanceof net.minecraft.world.entity.item.ItemEntity itemEntity && itemEntity.getItem().isEmpty()) return false; // Paper - Prevent empty items from being added
+             // Paper start - capture all item additions to the world
+-            if (this.getCurrentWorldData().captureDrops != null && entity instanceof net.minecraft.world.entity.item.ItemEntity) { // Folia - region threading
+-                this.getCurrentWorldData().captureDrops.add((net.minecraft.world.entity.item.ItemEntity) entity); // Folia - region threading
++            if (worldData.captureDrops != null && entity instanceof net.minecraft.world.entity.item.ItemEntity) { // Folia - region threading
++                worldData.captureDrops.add((net.minecraft.world.entity.item.ItemEntity) entity); // Folia - region threading
+                 return true;
+             }
++            }finally {
++            this.worldDataPool.releaseReference(entity, ref.right());
++            }
+             // Paper end - capture all item additions to the world
+             // SPIGOT-6415: Don't call spawn event when reason is null. For example when an entity teleports to a new world.
+             if (spawnReason != null && !org.bukkit.craftbukkit.event.CraftEventFactory.doEntityAddEventCalling(this, entity, spawnReason)) {
+@@ -1888,7 +1895,10 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+ 
+     @Override
+     public void sendBlockUpdated(BlockPos pos, BlockState oldState, BlockState newState, int flags) {
+-        final io.papermc.paper.threadedregions.RegionizedWorldData regionizedWorldData = this.getCurrentWorldData(); // Folia - region threading
++        var ref = this.worldDataPool.getAndHeldReference(pos);
++        var worldData = ref.left(); // Folia - region threading
++        try {
++        final io.papermc.paper.threadedregions.RegionizedWorldData regionizedWorldData = worldData; // Folia - region threading
+         if (false && this.isUpdatingNavigations) { // Folia - region threading
+             String string = "recursive call to sendBlockUpdated";
+             Util.logAndPauseIfInIde("recursive call to sendBlockUpdated", new IllegalStateException("recursive call to sendBlockUpdated"));
+@@ -1931,38 +1941,71 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+             }
+         }
+         } // Paper - option to disable pathfinding updates
++        }finally {
++        this.worldDataPool.releaseReference(pos, ref.right());
++        }
+     }
+ 
+     @Override
+     public void updateNeighborsAt(BlockPos pos, Block block) {
++        var ref = this.worldDataPool.getAndHeldReference(pos);
++        var worldData = ref.left();
++        try {
+         // CraftBukkit start
+-        if (this.getCurrentWorldData().populating) { // Folia - region threading
++        if (worldData.populating) { // Folia - region threading
+             return;
+         }
+         // CraftBukkit end
+-        if (this.getCurrentWorldData().captureBlockStates) { return; } // Paper - Cancel all physics during placement // Folia - region threading
++        if (worldData.captureBlockStates) { return; } // Paper - Cancel all physics during placement // Folia - region threading
+         this.updateNeighborsAt(pos, block, ExperimentalRedstoneUtils.initialOrientation(this, null, null));
++        }finally {
++        this.worldDataPool.releaseReference(pos, ref.right());
++        }
+     }
+ 
+     @Override
+     public void updateNeighborsAt(BlockPos pos, Block block, @Nullable Orientation orientation) {
+-        if (this.getCurrentWorldData().captureBlockStates) { return; } // Paper - Cancel all physics during placement // Folia - region threading
+-        this.getCurrentWorldData().neighborUpdater.updateNeighborsAtExceptFromFacing(pos, block, null, orientation); // Folia - region threading
++        var ref = this.worldDataPool.getAndHeldReference(pos);
++        var worldData = ref.left();
++        try {
++        if (worldData.captureBlockStates) { return; } // Paper - Cancel all physics during placement // Folia - region threading
++        worldData.neighborUpdater.updateNeighborsAtExceptFromFacing(pos, block, null, orientation); // Folia - region threading
++        }finally {
++        this.worldDataPool.releaseReference(pos, ref.right());
++        }
+     }
+ 
+     @Override
+     public void updateNeighborsAtExceptFromFacing(BlockPos pos, Block block, Direction facing, @Nullable Orientation orientation) {
+-        this.getCurrentWorldData().neighborUpdater.updateNeighborsAtExceptFromFacing(pos, block, facing, orientation); // Folia - region threading
++        var ref = this.worldDataPool.getAndHeldReference(pos);
++        var worldData = ref.left();
++        try {
++        worldData.neighborUpdater.updateNeighborsAtExceptFromFacing(pos, block, facing, orientation); // Folia - region threading
++        }finally {
++        this.worldDataPool.releaseReference(pos, ref.right());
++        }
+     }
+ 
+     @Override
+     public void neighborChanged(BlockPos pos, Block block, @Nullable Orientation orientation) {
+-        this.getCurrentWorldData().neighborUpdater.neighborChanged(pos, block, orientation); // Folia - region threading
++        var ref = this.worldDataPool.getAndHeldReference(pos);
++        var worldData = ref.left();
++        try {
++        worldData.neighborUpdater.neighborChanged(pos, block, orientation); // Folia - region threading
++        }finally {
++        this.worldDataPool.releaseReference(pos, ref.right());
++        }
+     }
+ 
+     @Override
+     public void neighborChanged(BlockState state, BlockPos pos, Block block, @Nullable Orientation orientation, boolean movedByPiston) {
+-        this.getCurrentWorldData().neighborUpdater.neighborChanged(state, pos, block, orientation, movedByPiston); // Folia - region threading
++        var ref = this.worldDataPool.getAndHeldReference(pos);
++        var worldData = ref.left();
++        try {
++        worldData.neighborUpdater.neighborChanged(state, pos, block, orientation, movedByPiston); // Folia - region threading
++        }finally {
++        this.worldDataPool.releaseReference(pos, ref.right());
++        }
+     }
+ 
+     @Override
+@@ -2068,7 +2111,13 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+ 
+     @Override
+     public void blockEvent(BlockPos pos, Block block, int eventID, int eventParam) {
+-        this.getCurrentWorldData().pushBlockEvent(new BlockEventData(pos, block, eventID, eventParam)); // Folia - regionised ticking
++        var ref = this.worldDataPool.getAndHeldReference(pos);
++        var worldData = ref.left();
++        try {
++        worldData.pushBlockEvent(new BlockEventData(pos, block, eventID, eventParam)); // Folia - regionised ticking
++        }finally {
++        this.worldDataPool.releaseReference(pos, ref.right());
++        }
+     }
+ 
+     private void runBlockEvents() {
+@@ -2804,24 +2853,39 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+ 
+         @Override
+         public void onTickingStart(Entity entity) {
++            var ref = ServerLevel.this.worldDataPool.getAndHeldReference(entity);
++            var worldData = ref.left();
++            try {
+             if (entity instanceof net.minecraft.world.entity.Marker && !paperConfig().entities.markers.tick) return; // Paper - Configurable marker ticking
+-            ServerLevel.this.getCurrentWorldData().addEntityTickingEntity(entity); // Folia - region threading
++            worldData.addEntityTickingEntity(entity); // Folia - region threading
++            }finally {
++            ServerLevel.this.worldDataPool.releaseReference(entity, ref.right());
++            }
+         }
+ 
+         @Override
+         public void onTickingEnd(Entity entity) {
+-            ServerLevel.this.getCurrentWorldData().removeEntityTickingEntity(entity); // Folia - region threading
++            var ref = ServerLevel.this.worldDataPool.getAndHeldReference(entity);
++            var worldData = ref.left();
++            try {
++            worldData.removeEntityTickingEntity(entity); // Folia - region threading
+             // Paper start - Reset pearls when they stop being ticked
+             if (ServerLevel.this.paperConfig().fixes.disableUnloadedChunkEnderpearlExploit && ServerLevel.this.paperConfig().misc.legacyEnderPearlBehavior && entity instanceof net.minecraft.world.entity.projectile.ThrownEnderpearl pearl) {
+                 pearl.setOwner(null);
+             }
+             // Paper end - Reset pearls when they stop being ticked
++            }finally {
++            ServerLevel.this.worldDataPool.releaseReference(entity, ref.right());
++            }
+         }
+ 
+         @Override
+         public void onTrackingStart(Entity entity) {
+             org.spigotmc.AsyncCatcher.catchOp("entity register"); // Spigot
+-            ServerLevel.this.getCurrentWorldData().addLoadedEntity(entity); // Folia - region threading
++            var ref = ServerLevel.this.worldDataPool.getAndHeldReference(entity);
++            var worldData = ref.left();
++            try {
++            worldData.addLoadedEntity(entity); // Folia - region threading
+             // ServerLevel.this.getChunkSource().addEntity(entity); // Paper - ignore and warn about illegal addEntity calls instead of crashing server; moved down below valid=true
+             if (entity instanceof ServerPlayer serverPlayer) {
+                 ServerLevel.this.players.add(serverPlayer);
+@@ -2844,7 +2908,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+                     );
+                 }
+ 
+-                ServerLevel.this.getCurrentWorldData().addNavigatingMob(mob); // Folia - region threading
++                worldData.addNavigatingMob(mob); // Folia - region threading
+             }
+ 
+             if (entity instanceof EnderDragon enderDragon) {
+@@ -2867,12 +2931,18 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+             }
+             // Paper end - Entity origin API
+             new com.destroystokyo.paper.event.entity.EntityAddToWorldEvent(entity.getBukkitEntity(), ServerLevel.this.getWorld()).callEvent(); // Paper - fire while valid
++            }finally {
++            ServerLevel.this.worldDataPool.releaseReference(entity, ref.right());
++            }
+         }
+ 
+         @Override
+         public void onTrackingEnd(Entity entity) {
+             org.spigotmc.AsyncCatcher.catchOp("entity unregister"); // Spigot
+-            ServerLevel.this.getCurrentWorldData().removeLoadedEntity(entity); // Folia - region threading
++            var ref = ServerLevel.this.worldDataPool.getAndHeldReference(entity);
++            var worldData = ref.left();
++            try {
++            worldData.removeLoadedEntity(entity); // Folia - region threading
+             // Spigot start // TODO I don't think this is needed anymore
+             if (entity instanceof Player player) {
+                 for (final ServerLevel level : ServerLevel.this.getServer().getAllLevels()) {
+@@ -2924,7 +2994,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+                     );
+                 }
+ 
+-                ServerLevel.this.getCurrentWorldData().removeNavigatingMob(mob); // Folia - region threading
++                worldData.removeNavigatingMob(mob); // Folia - region threading
+             }
+ 
+             if (entity instanceof EnderDragon enderDragon) {
+@@ -2944,6 +3014,9 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+             }
+             // CraftBukkit end
+             new com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent(entity.getBukkitEntity(), ServerLevel.this.getWorld()).callEvent(); // Paper - fire while valid
++            }finally {
++            ServerLevel.this.worldDataPool.releaseReference(entity, ref.right());
++            }
+         }
+ 
+         @Override
+diff --git a/net/minecraft/server/level/ServerPlayerGameMode.java b/net/minecraft/server/level/ServerPlayerGameMode.java
+index ee7bdc3adbeb04cf6ca630282f31a21e52bdb215..da31a33bbee97c1674ab9f936df3a5c28f6ab1ab 100644
+--- a/net/minecraft/server/level/ServerPlayerGameMode.java
++++ b/net/minecraft/server/level/ServerPlayerGameMode.java
+@@ -364,9 +364,12 @@ public class ServerPlayerGameMode {
+             } else if (this.player.blockActionRestricted(this.level, pos, this.gameModeForPlayer)) {
+                 return false;
+             } else {
++                var ref = this.level.worldDataPool.getAndHeldReference(this.player);
++                var worldData = ref.left();
++                try {
+                 // CraftBukkit start
+                 org.bukkit.block.BlockState state = bblock.getState();
+-                this.level.getCurrentWorldData().captureDrops = new java.util.ArrayList<>(); // Folia - region threading
++                worldData.captureDrops = new java.util.ArrayList<>(); // Folia - region threading
+                 // CraftBukkit end
+                 BlockState blockState1 = block.playerWillDestroy(this.level, pos, blockState, this.player);
+                 boolean flag = this.level.removeBlock(pos, false);
+@@ -392,8 +395,8 @@ public class ServerPlayerGameMode {
+                     // return true; // CraftBukkit
+                 }
+                 // CraftBukkit start
+-                java.util.List<net.minecraft.world.entity.item.ItemEntity> itemsToDrop = this.level.getCurrentWorldData().captureDrops; // Paper - capture all item additions to the world  // Folia - region threading
+-                this.level.getCurrentWorldData().captureDrops = null; // Paper - capture all item additions to the world; Remove this earlier so that we can actually drop stuff  // Folia - region threading
++                java.util.List<net.minecraft.world.entity.item.ItemEntity> itemsToDrop = worldData.captureDrops; // Paper - capture all item additions to the world  // Folia - region threading
++                worldData.captureDrops = null; // Paper - capture all item additions to the world; Remove this earlier so that we can actually drop stuff  // Folia - region threading
+                 if (event.isDropItems()) {
+                     org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDropItemEvent(bblock, state, this.player, itemsToDrop); // Paper - capture all item additions to the world
+                 }
+@@ -409,6 +412,9 @@ public class ServerPlayerGameMode {
+                     }
+                 }
+                 // Paper end - Trigger bee_nest_destroyed trigger in the correct place
++                }finally {
++                this.level.worldDataPool.releaseReference(this.player, ref.right());
++                }
+ 
+                 return true;
+                 // CraftBukkit end
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 8ec753fe9c84ffe1188f7e7ebb6895cf4bba9e39..84db3533f42c9c365e82b402ef5a1a4c4d0703dd 100644
+index 8ec753fe9c84ffe1188f7e7ebb6895cf4bba9e39..251774412d4b70c90734137e453715bc65090294 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -1,5 +1,8 @@
@@ -516,7 +948,23 @@ index 8ec753fe9c84ffe1188f7e7ebb6895cf4bba9e39..84db3533f42c9c365e82b402ef5a1a4c
  import com.google.common.collect.ImmutableList;
  import com.google.common.collect.Lists;
  import com.google.common.collect.Sets;
-@@ -4352,7 +4355,15 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -1509,7 +1512,14 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+         if (pos.lengthSqr() <= 1.0E-7) {
+             return pos;
+         } else {
+-            long gameTime = this.level().getRedstoneGameTime(); // Folia - region threading
++            long gameTime;
++            var ref = this.level.worldDataPool.getAndHeldReference(this);
++            var worldData = ref.left();
++            try {
++            gameTime = worldData.getRedstoneGameTime(); // Folia - region threading
++            }finally {
++            this.level.worldDataPool.releaseReference(this, ref.right());
++            }
+             if (gameTime != this.pistonDeltasGameTime) {
+                 Arrays.fill(this.pistonDeltas, 0.0);
+                 this.pistonDeltasGameTime = gameTime;
+@@ -4352,7 +4362,15 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          if (!this.canTeleportAsync()) {
              return false;
          }
@@ -533,7 +981,7 @@ index 8ec753fe9c84ffe1188f7e7ebb6895cf4bba9e39..84db3533f42c9c365e82b402ef5a1a4c
          if ((teleportFlags & TELEPORT_FLAG_UNMOUNT) == 0L) {
              for (Entity entity : this.getIndirectPassengers()) {
                  if (!entity.canTeleportAsync()) {
-@@ -4819,12 +4830,40 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4819,12 +4837,40 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          ca.spottedleaf.concurrentutil.completable.CallbackCompletable<TeleportTransition> portalInfoCompletable
              = new ca.spottedleaf.concurrentutil.completable.CallbackCompletable<>();
  
@@ -575,38 +1023,1496 @@ index 8ec753fe9c84ffe1188f7e7ebb6895cf4bba9e39..84db3533f42c9c365e82b402ef5a1a4c
              originWorld.moonrise$getChunkTaskScheduler().chunkHolderManager.removeTicketAtLevel(
                  TicketType.TELEPORT_HOLD_TICKET, initialPositionChunk,
                  ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkHolderManager.MAX_TICKET_LEVEL,
+diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
+index 567d63ae589705e13403814b36e35d00c241a69e..2456b9f4b69bf3bc94da49b9255229e27d68f2bb 100644
+--- a/net/minecraft/world/entity/LivingEntity.java
++++ b/net/minecraft/world/entity/LivingEntity.java
+@@ -1562,7 +1562,13 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+             boolean flag2 = !flag; // CraftBukkit - Ensure to return false if damage is blocked
+             if (flag2) {
+                 this.lastDamageSource = damageSource;
+-                this.lastDamageStamp = this.level().getRedstoneGameTime(); // Folia - region threading
++                var ref = this.level().worldDataPool.getAndHeldReference(this);
++                var worldData = ref.left();
++                try {
++                this.lastDamageStamp = worldData.getRedstoneGameTime(); // Folia - region threading
++                }finally {
++                this.level().worldDataPool.releaseReference(this, ref.right());
++                }
+ 
+                 for (MobEffectInstance mobEffectInstance : this.getActiveEffects()) {
+                     mobEffectInstance.onMobHurt(level, this, damageSource, amount);
+@@ -1792,9 +1798,15 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+ 
+     @Nullable
+     public DamageSource getLastDamageSource() {
+-        if (this.level().getRedstoneGameTime() - this.lastDamageStamp > 40L || this.lastDamageStamp == Long.MIN_VALUE) { // Folia - region threading
++        var ref = this.level().worldDataPool.getAndHeldReference(this);
++        var worldData = ref.left();
++        try {
++        if (worldData.getRedstoneGameTime() - this.lastDamageStamp > 40L || this.lastDamageStamp == Long.MIN_VALUE) { // Folia - region threading
+             this.lastDamageSource = null;
+         }
++        }finally {
++        this.level().worldDataPool.releaseReference(this, ref.right());
++        }
+ 
+         return this.lastDamageSource;
+     }
+@@ -2631,7 +2643,13 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         }
+ 
+         this.lastDamageSource = damageSource;
+-        this.lastDamageStamp = this.level().getRedstoneGameTime(); // Folia - region threading
++        var ref = this.level().worldDataPool.getAndHeldReference(this);
++        var worldData = ref.left();
++        try {
++        this.lastDamageStamp = worldData.getRedstoneGameTime(); // Folia - region threading
++        }finally {
++        this.level().worldDataPool.releaseReference(this, ref.right());
++        }
+     }
+ 
+     @Override
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index 3a46cb424c8ea26386ed013cfc13aba36852a402..6370e581501190a66574dad2acc328a4c38b8edc 100644
+index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e855e2625c 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
-@@ -11,6 +11,8 @@ import java.util.function.Consumer;
+@@ -1,16 +1,53 @@
+ package net.minecraft.world.level;
+ 
++import alternate.current.wire.WireHandler;
++import ca.spottedleaf.concurrentutil.map.ConcurrentLong2ReferenceChainedHashTable;
++import ca.spottedleaf.leafprofiler.LProfilerRegistry;
++import ca.spottedleaf.leafprofiler.RegionizedProfiler;
++import ca.spottedleaf.moonrise.common.PlatformHooks;
++import ca.spottedleaf.moonrise.common.util.CoordinateUtils;
++import ca.spottedleaf.moonrise.common.util.TickThread;
++import ca.spottedleaf.moonrise.common.util.WorldUtil;
++import ca.spottedleaf.moonrise.patches.block_counting.BlockCountingChunkSection;
++import ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel;
++import ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkData;
++import ca.spottedleaf.moonrise.patches.chunk_system.level.entity.ChunkEntitySlices;
++import ca.spottedleaf.moonrise.patches.chunk_system.level.entity.EntityLookup;
++import ca.spottedleaf.moonrise.patches.chunk_system.level.entity.dfl.DefaultEntityLookup;
++import ca.spottedleaf.moonrise.patches.chunk_system.world.ChunkSystemEntityGetter;
++import ca.spottedleaf.moonrise.patches.collisions.CollisionUtil;
++import ca.spottedleaf.moonrise.patches.collisions.block.CollisionBlockState;
++import ca.spottedleaf.moonrise.patches.collisions.shape.CollisionVoxelShape;
++import com.destroystokyo.paper.event.block.BlockDestroyEvent;
++import com.destroystokyo.paper.event.server.ServerExceptionEvent;
++import com.destroystokyo.paper.exception.ServerInternalException;
+ import com.google.common.collect.Lists;
+ import com.mojang.serialization.Codec;
+ import java.io.IOException;
+-import java.util.Collection;
+-import java.util.Iterator;
+-import java.util.List;
+-import java.util.UUID;
++import java.util.*;
++import java.util.concurrent.ConcurrentHashMap;
++import java.util.concurrent.Executor;
++import java.util.concurrent.atomic.AtomicLong;
+ import java.util.function.Consumer;
++import java.util.function.Function;
  import java.util.function.Predicate;
  import java.util.stream.Collectors;
  import javax.annotation.Nullable;
 +
 +import dev.bacteriawa.RegonizedWorldDataSwitcher;
++import io.papermc.paper.antixray.ChunkPacketBlockController;
++import io.papermc.paper.antixray.ChunkPacketBlockControllerAntiXray;
++import io.papermc.paper.configuration.WorldConfiguration;
++import io.papermc.paper.threadedregions.RegionizedData;
++import io.papermc.paper.threadedregions.RegionizedServer;
++import io.papermc.paper.threadedregions.RegionizedWorldData;
++import io.papermc.paper.threadedregions.TickRegionScheduler;
++import io.papermc.paper.threadedregions.util.ThreadLocalRandomSource;
++import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
++import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
++import me.earthme.luminol.config.modules.experiment.DisableEntityCatchConfig;
++import me.earthme.luminol.config.modules.optimizations.LeavesSleepingBlockEntityConfig;
++import meow.bacteriawa.lightingluminol.core.ReferenceCountedRegionizedWorldDataPool;
  import net.minecraft.CrashReport;
  import net.minecraft.CrashReportCategory;
  import net.minecraft.ReportedException;
-@@ -813,16 +815,19 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
-     );
-     public volatile io.papermc.paper.threadedregions.RegionizedServer.WorldLevelData tickData;
-     public final java.util.concurrent.ConcurrentHashMap.KeySetView<net.minecraft.server.level.ChunkHolder, Boolean> needsChangeBroadcasting = java.util.concurrent.ConcurrentHashMap.newKeySet();
-+    public final RegonizedWorldDataSwitcher worldDataSwitcher = new RegonizedWorldDataSwitcher();
+@@ -23,11 +60,13 @@ import net.minecraft.core.particles.ParticleOptions;
+ import net.minecraft.core.particles.ParticleTypes;
+ import net.minecraft.core.registries.BuiltInRegistries;
+ import net.minecraft.core.registries.Registries;
++import net.minecraft.network.chat.Component;
+ import net.minecraft.network.protocol.Packet;
++import net.minecraft.network.protocol.game.*;
+ import net.minecraft.resources.ResourceKey;
+ import net.minecraft.resources.ResourceLocation;
+ import net.minecraft.server.MinecraftServer;
+-import net.minecraft.server.level.FullChunkStatus;
++import net.minecraft.server.level.*;
+ import net.minecraft.sounds.SoundEvent;
+ import net.minecraft.sounds.SoundEvents;
+ import net.minecraft.sounds.SoundSource;
+@@ -43,8 +82,10 @@ import net.minecraft.world.damagesource.DamageSource;
+ import net.minecraft.world.damagesource.DamageSources;
+ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.entity.EntitySelector;
++import net.minecraft.world.entity.EntityType;
+ import net.minecraft.world.entity.boss.EnderDragonPart;
+ import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
++import net.minecraft.world.entity.decoration.ArmorStand;
+ import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.item.alchemy.PotionBrewing;
+@@ -59,11 +100,12 @@ import net.minecraft.world.level.block.entity.BlockEntity;
+ import net.minecraft.world.level.block.entity.FuelValues;
+ import net.minecraft.world.level.block.entity.TickingBlockEntity;
+ import net.minecraft.world.level.block.state.BlockState;
++import net.minecraft.world.level.border.BorderChangeListener;
+ import net.minecraft.world.level.border.WorldBorder;
+-import net.minecraft.world.level.chunk.ChunkAccess;
+-import net.minecraft.world.level.chunk.LevelChunk;
++import net.minecraft.world.level.chunk.*;
+ import net.minecraft.world.level.chunk.status.ChunkStatus;
+ import net.minecraft.world.level.dimension.DimensionType;
++import net.minecraft.world.level.dimension.LevelStem;
+ import net.minecraft.world.level.entity.EntityTypeTest;
+ import net.minecraft.world.level.entity.LevelEntityGetter;
+ import net.minecraft.world.level.entity.UUIDLookup;
+@@ -78,23 +120,38 @@ import net.minecraft.world.level.redstone.Orientation;
+ import net.minecraft.world.level.saveddata.maps.MapId;
+ import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
+ import net.minecraft.world.level.storage.LevelData;
++import net.minecraft.world.level.storage.PrimaryLevelData;
+ import net.minecraft.world.level.storage.WritableLevelData;
+ import net.minecraft.world.phys.AABB;
++import net.minecraft.world.phys.BlockHitResult;
++import net.minecraft.world.phys.HitResult;
+ import net.minecraft.world.phys.Vec3;
++import net.minecraft.world.phys.shapes.BooleanOp;
++import net.minecraft.world.phys.shapes.CollisionContext;
++import net.minecraft.world.phys.shapes.Shapes;
+ import net.minecraft.world.phys.shapes.VoxelShape;
+ import net.minecraft.world.scores.Scoreboard;
  
-     public io.papermc.paper.threadedregions.RegionizedWorldData getCurrentWorldData() {
-         final io.papermc.paper.threadedregions.RegionizedWorldData ret = io.papermc.paper.threadedregions.TickRegionScheduler.getCurrentRegionizedWorldData();
+ // CraftBukkit start
+-import java.util.Map;
+-import net.minecraft.server.level.ServerLevel;
++import org.bukkit.Bukkit;
++import org.bukkit.World;
+ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.craftbukkit.CraftWorld;
++import org.bukkit.craftbukkit.block.CapturedBlockState;
++import org.bukkit.craftbukkit.block.CraftBlock;
+ import org.bukkit.craftbukkit.block.CraftBlockState;
+ import org.bukkit.craftbukkit.block.data.CraftBlockData;
++import org.bukkit.craftbukkit.util.CraftSpawnCategory;
+ import org.bukkit.entity.SpawnCategory;
++import org.bukkit.event.block.BlockPhysicsEvent;
++import org.bukkit.event.entity.EntityRemoveEvent;
++import org.bukkit.event.player.PlayerKickEvent;
++import org.bukkit.generator.BiomeProvider;
++import org.bukkit.generator.ChunkGenerator;
++import org.spigotmc.SpigotWorldConfig;
+ // CraftBukkit end
+ 
+-public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCloseable, ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel, ca.spottedleaf.moonrise.patches.chunk_system.world.ChunkSystemEntityGetter { // Paper - rewrite chunk system // Paper - optimise collisions
++public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCloseable, ChunkSystemLevel, ChunkSystemEntityGetter { // Paper - rewrite chunk system // Paper - optimise collisions
+     public static final Codec<ResourceKey<Level>> RESOURCE_KEY_CODEC = ResourceKey.codec(Registries.DIMENSION);
+     public static final ResourceKey<Level> OVERWORLD = ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("overworld"));
+     public static final ResourceKey<Level> NETHER = ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("the_nether"));
+@@ -119,7 +176,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     public float rainLevel;
+     protected float oThunderLevel;
+     public float thunderLevel;
+-    public final RandomSource random = io.papermc.paper.threadedregions.util.ThreadLocalRandomSource.INSTANCE; // Paper - replace random // Folia - region threading
++    public final RandomSource random = ThreadLocalRandomSource.INSTANCE; // Paper - replace random // Folia - region threading
+     @Deprecated
+     private final RandomSource threadSafeRandom = RandomSource.createThreadSafe();
+     private final Holder<DimensionType> dimensionTypeRegistration;
+@@ -130,22 +187,22 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     private final ResourceKey<Level> dimension;
+     private final RegistryAccess registryAccess;
+     private final DamageSources damageSources;
+-    private final java.util.concurrent.atomic.AtomicLong subTickCount = new java.util.concurrent.atomic.AtomicLong(); //private long subTickCount; // Folia - region threading
++    private final AtomicLong subTickCount = new AtomicLong(); //private long subTickCount; // Folia - region threading
+ 
+     // CraftBukkit start
+-    public final io.papermc.paper.antixray.ChunkPacketBlockController chunkPacketBlockController; // Paper - Anti-Xray
++    public final ChunkPacketBlockController chunkPacketBlockController; // Paper - Anti-Xray
+     private final CraftWorld world;
+     public boolean pvpMode;
+-    public @Nullable org.bukkit.generator.ChunkGenerator generator;
++    public @Nullable ChunkGenerator generator;
+ 
+     // Folia - region threading - moved to regionised data
+-    public final it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<SpawnCategory> ticksPerSpawnCategory = new it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<>();
++    public final Object2LongOpenHashMap<SpawnCategory> ticksPerSpawnCategory = new Object2LongOpenHashMap<>();
+     // Folia - region threading - moved to regionised data
+     // Folia - region threading
+-    public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
++    public final SpigotWorldConfig spigotConfig; // Spigot
+     // Paper start - add paper world config
+-    private final io.papermc.paper.configuration.WorldConfiguration paperConfig;
+-    public io.papermc.paper.configuration.WorldConfiguration paperConfig() {
++    private final WorldConfiguration paperConfig;
++    public WorldConfiguration paperConfig() {
+         return this.paperConfig;
+     }
+     // Paper end - add paper world config
+@@ -160,7 +217,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     }
+ 
+     public CraftServer getCraftServer() {
+-        return (CraftServer) org.bukkit.Bukkit.getServer();
++        return (CraftServer) Bukkit.getServer();
+     }
+     // Paper start - Use getChunkIfLoadedImmediately
+     @Override
+@@ -170,7 +227,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     // Paper end - Use getChunkIfLoadedImmediately
+     // Paper start - per world ticks per spawn
+     private int getTicksPerSpawn(SpawnCategory spawnCategory) {
+-        final int perWorld = this.paperConfig().entities.spawning.ticksPerSpawn.getInt(org.bukkit.craftbukkit.util.CraftSpawnCategory.toNMS(spawnCategory));
++        final int perWorld = this.paperConfig().entities.spawning.ticksPerSpawn.getInt(CraftSpawnCategory.toNMS(spawnCategory));
+         if (perWorld >= 0) {
+             return perWorld;
+         }
+@@ -178,14 +235,14 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     }
+     // Paper end
+ 
+-    public abstract ResourceKey<net.minecraft.world.level.dimension.LevelStem> getTypeKey();
++    public abstract ResourceKey<LevelStem> getTypeKey();
+ 
+     // Paper start - rewrite chunk system
+-    private ca.spottedleaf.moonrise.patches.chunk_system.level.entity.EntityLookup entityLookup;
+-    private final ca.spottedleaf.concurrentutil.map.ConcurrentLong2ReferenceChainedHashTable<ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkData> chunkData = new ca.spottedleaf.concurrentutil.map.ConcurrentLong2ReferenceChainedHashTable<>();
++    private EntityLookup entityLookup;
++    private final ConcurrentLong2ReferenceChainedHashTable<ChunkData> chunkData = new ConcurrentLong2ReferenceChainedHashTable<>();
+ 
+     @Override
+-    public final ca.spottedleaf.moonrise.patches.chunk_system.level.entity.EntityLookup moonrise$getEntityLookup() {
++    public final EntityLookup moonrise$getEntityLookup() {
+         return this.entityLookup;
+     }
+     // Folia start - profiler
+@@ -193,8 +250,8 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     // Folia end - profiler
+ 
+     @Override
+-    public final void moonrise$setEntityLookup(final ca.spottedleaf.moonrise.patches.chunk_system.level.entity.EntityLookup entityLookup) {
+-        if (this.entityLookup != null && !(this.entityLookup instanceof ca.spottedleaf.moonrise.patches.chunk_system.level.entity.dfl.DefaultEntityLookup)) {
++    public final void moonrise$setEntityLookup(final EntityLookup entityLookup) {
++        if (this.entityLookup != null && !(this.entityLookup instanceof DefaultEntityLookup)) {
+             throw new IllegalStateException("Entity lookup already initialised");
+         }
+         this.entityLookup = entityLookup;
+@@ -203,9 +260,9 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     @Override
+     public final <T extends Entity> List<T> getEntitiesOfClass(final Class<T> entityClass, final AABB boundingBox, final Predicate<? super T> predicate) {
+         Profiler.get().incrementCounter("getEntities");
+-        final List<T> ret = new java.util.ArrayList<>();
++        final List<T> ret = new ArrayList<>();
+ 
+-        ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel)this).moonrise$getEntityLookup().getEntities(entityClass, null, boundingBox, ret, predicate);
++        ((ChunkSystemLevel)this).moonrise$getEntityLookup().getEntities(entityClass, null, boundingBox, ret, predicate);
+ 
+         return ret;
+     }
+@@ -213,9 +270,9 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     @Override
+     public final List<Entity> moonrise$getHardCollidingEntities(final Entity entity, final AABB box, final Predicate<? super Entity> predicate) {
+         Profiler.get().incrementCounter("getEntities");
+-        final List<Entity> ret = new java.util.ArrayList<>();
++        final List<Entity> ret = new ArrayList<>();
+ 
+-        ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel)this).moonrise$getEntityLookup().getHardCollidingEntities(entity, box, ret, predicate);
++        ((ChunkSystemLevel)this).moonrise$getEntityLookup().getHardCollidingEntities(entity, box, ret, predicate);
+ 
+         return ret;
+     }
+@@ -241,20 +298,20 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     }
+ 
+     @Override
+-    public final ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkData moonrise$getChunkData(final long chunkKey) {
++    public final ChunkData moonrise$getChunkData(final long chunkKey) {
+         return this.chunkData.get(chunkKey);
+     }
+ 
+     @Override
+-    public final ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkData moonrise$getChunkData(final int chunkX, final int chunkZ) {
+-        return this.chunkData.get(ca.spottedleaf.moonrise.common.util.CoordinateUtils.getChunkKey(chunkX, chunkZ));
++    public final ChunkData moonrise$getChunkData(final int chunkX, final int chunkZ) {
++        return this.chunkData.get(CoordinateUtils.getChunkKey(chunkX, chunkZ));
+     }
+ 
+     @Override
+-    public final ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkData moonrise$requestChunkData(final long chunkKey) {
+-        return this.chunkData.compute(chunkKey, (final long keyInMap, final ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkData valueInMap) -> {
++    public final ChunkData moonrise$requestChunkData(final long chunkKey) {
++        return this.chunkData.compute(chunkKey, (final long keyInMap, final ChunkData valueInMap) -> {
+             if (valueInMap == null) {
+-                final ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkData ret = new ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkData();
++                final ChunkData ret = new ChunkData();
+                 ret.increaseRef();
+                 return ret;
+             }
+@@ -265,15 +322,15 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     }
+ 
+     @Override
+-    public final ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkData moonrise$releaseChunkData(final long chunkKey) {
+-        return this.chunkData.compute(chunkKey, (final long keyInMap, final ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkData chunkData) -> {
++    public final ChunkData moonrise$releaseChunkData(final long chunkKey) {
++        return this.chunkData.compute(chunkKey, (final long keyInMap, final ChunkData chunkData) -> {
+             return chunkData.decreaseRef() == 0 ? null : chunkData;
+         });
+     }
+ 
+     @Override
+     public boolean moonrise$areChunksLoaded(final int fromX, final int fromZ, final int toX, final int toZ) {
+-        final net.minecraft.world.level.chunk.ChunkSource chunkSource = this.getChunkSource();
++        final ChunkSource chunkSource = this.getChunkSource();
+ 
+         for (int currZ = fromZ; currZ <= toZ; ++currZ) {
+             for (int currX = fromX; currX <= toX; ++currX) {
+@@ -319,13 +376,13 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     @Override
+     public boolean isUnobstructed(final Entity entity) {
+         final AABB boundingBox = entity.getBoundingBox();
+-        if (ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.isEmpty(boundingBox)) {
++        if (CollisionUtil.isEmpty(boundingBox)) {
+             return true;
+         }
+ 
+         final List<Entity> entities = this.getEntities(
+             entity,
+-            boundingBox.inflate(-ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON, -ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON, -ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON),
++            boundingBox.inflate(-CollisionUtil.COLLISION_EPSILON, -CollisionUtil.COLLISION_EPSILON, -CollisionUtil.COLLISION_EPSILON),
+             null
+         );
+ 
+@@ -343,20 +400,20 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     }
+ 
+ 
+-    private static net.minecraft.world.phys.BlockHitResult miss(final ClipContext clipContext) {
++    private static BlockHitResult miss(final ClipContext clipContext) {
+         final Vec3 to = clipContext.getTo();
+         final Vec3 from = clipContext.getFrom();
+ 
+-        return net.minecraft.world.phys.BlockHitResult.miss(to, Direction.getApproximateNearest(from.x - to.x, from.y - to.y, from.z - to.z), BlockPos.containing(to.x, to.y, to.z));
++        return BlockHitResult.miss(to, Direction.getApproximateNearest(from.x - to.x, from.y - to.y, from.z - to.z), BlockPos.containing(to.x, to.y, to.z));
+     }
+ 
+     private static final FluidState AIR_FLUIDSTATE = Fluids.EMPTY.defaultFluidState();
+ 
+-    private static net.minecraft.world.phys.BlockHitResult fastClip(final Vec3 from, final Vec3 to, final Level level,
++    private static BlockHitResult fastClip(final Vec3 from, final Vec3 to, final Level level,
+                                                                     final ClipContext clipContext) {
+-        final double adjX = ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON * (from.x - to.x);
+-        final double adjY = ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON * (from.y - to.y);
+-        final double adjZ = ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON * (from.z - to.z);
++        final double adjX = CollisionUtil.COLLISION_EPSILON * (from.x - to.x);
++        final double adjY = CollisionUtil.COLLISION_EPSILON * (from.y - to.y);
++        final double adjZ = CollisionUtil.COLLISION_EPSILON * (from.z - to.z);
+ 
+         if (adjX == 0.0 && adjY == 0.0 && adjZ == 0.0) {
+             return miss(clipContext);
+@@ -395,13 +452,13 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+         double normalizedCurrY = normalizedDiffY * (diffY > 0.0 ? (1.0 - Mth.frac(fromYAdj)) : Mth.frac(fromYAdj));
+         double normalizedCurrZ = normalizedDiffZ * (diffZ > 0.0 ? (1.0 - Mth.frac(fromZAdj)) : Mth.frac(fromZAdj));
+ 
+-        net.minecraft.world.level.chunk.LevelChunkSection[] lastChunk = null;
+-        net.minecraft.world.level.chunk.PalettedContainer<net.minecraft.world.level.block.state.BlockState> lastSection = null;
++        LevelChunkSection[] lastChunk = null;
++        PalettedContainer<BlockState> lastSection = null;
+         int lastChunkX = Integer.MIN_VALUE;
+         int lastChunkY = Integer.MIN_VALUE;
+         int lastChunkZ = Integer.MIN_VALUE;
+ 
+-        final int minSection = ca.spottedleaf.moonrise.common.util.WorldUtil.getMinSection(level);
++        final int minSection = WorldUtil.getMinSection(level);
+ 
+         for (;;) {
+             currPos.set(currX, currY, currZ);
+@@ -429,14 +486,14 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+             if (lastSection != null && !(blockState = lastSection.get((currX & 15) | ((currZ & 15) << 4) | ((currY & 15) << (4+4)))).isAir()) {
+                 final VoxelShape blockCollision = clipContext.getBlockShape(blockState, level, currPos);
+ 
+-                final net.minecraft.world.phys.BlockHitResult blockHit = blockCollision.isEmpty() ? null : level.clipWithInteractionOverride(from, to, currPos, blockCollision, blockState);
++                final BlockHitResult blockHit = blockCollision.isEmpty() ? null : level.clipWithInteractionOverride(from, to, currPos, blockCollision, blockState);
+ 
+                 final VoxelShape fluidCollision;
+                 final FluidState fluidState;
+                 if (clipContext.fluid != ClipContext.Fluid.NONE && (fluidState = blockState.getFluidState()) != AIR_FLUIDSTATE) {
+                     fluidCollision = clipContext.getFluidShape(fluidState, level, currPos);
+ 
+-                    final net.minecraft.world.phys.BlockHitResult fluidHit = fluidCollision.clip(from, to, currPos);
++                    final BlockHitResult fluidHit = fluidCollision.clip(from, to, currPos);
+ 
+                     if (fluidHit != null) {
+                         if (blockHit == null) {
+@@ -484,7 +541,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+      * @author Spottedleaf
+      */
+     @Override
+-    public net.minecraft.world.phys.BlockHitResult clip(final ClipContext clipContext) {
++    public BlockHitResult clip(final ClipContext clipContext) {
+         // can only do this in this class, as not everything that implements BlockGetter can retrieve chunks
+         return fastClip(clipContext.getFrom(), clipContext.getTo(), (Level)(Object)this, clipContext);
+     }
+@@ -495,8 +552,8 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+      */
+     @Override
+     public boolean collidesWithSuffocatingBlock(final Entity entity, final AABB box) {
+-        return ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.getCollisionsForBlocksOrWorldBorder((Level)(Object)this, entity, box, null, null,
+-            ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_FLAG_CHECK_ONLY,
++        return CollisionUtil.getCollisionsForBlocksOrWorldBorder((Level)(Object)this, entity, box, null, null,
++            CollisionUtil.COLLISION_FLAG_CHECK_ONLY,
+             (final BlockState state, final BlockPos pos) -> {
+                 return state.isSuffocating((Level)(Object)Level.this, pos);
+             }
+@@ -504,7 +561,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     }
+ 
+     private static VoxelShape inflateAABBToVoxel(final AABB aabb, final double x, final double y, final double z) {
+-        return net.minecraft.world.phys.shapes.Shapes.create(
++        return Shapes.create(
+             aabb.minX - x,
+             aabb.minY - y,
+             aabb.minZ - z,
+@@ -520,10 +577,10 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+      * @author Spottedleaf
+      */
+     @Override
+-    public java.util.Optional<net.minecraft.world.phys.Vec3> findFreePosition(final Entity entity, final VoxelShape boundsShape, final Vec3 fromPosition,
+-                                                                              final double rangeX, final double rangeY, final double rangeZ) {
++    public Optional<Vec3> findFreePosition(final Entity entity, final VoxelShape boundsShape, final Vec3 fromPosition,
++                                           final double rangeX, final double rangeY, final double rangeZ) {
+         if (boundsShape.isEmpty()) {
+-            return java.util.Optional.empty();
++            return Optional.empty();
+         }
+ 
+         final double expandByX = rangeX * 0.5;
+@@ -533,12 +590,12 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+         // note: it is useless to look at shapes outside of range / 2.0
+         final AABB collectionVolume = boundsShape.bounds().inflate(expandByX, expandByY, expandByZ);
+ 
+-        final List<AABB> aabbs = new java.util.ArrayList<>();
+-        final List<VoxelShape> voxels = new java.util.ArrayList<>();
++        final List<AABB> aabbs = new ArrayList<>();
++        final List<VoxelShape> voxels = new ArrayList<>();
+ 
+-        ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.getCollisionsForBlocksOrWorldBorder(
++        CollisionUtil.getCollisionsForBlocksOrWorldBorder(
+             (Level)(Object)this, entity, collectionVolume, voxels, aabbs,
+-            ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_FLAG_CHECK_BORDER,
++            CollisionUtil.COLLISION_FLAG_CHECK_BORDER,
+             null
+         );
+ 
+@@ -558,7 +615,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+         }
+ 
+         // expand AABBs
+-        final VoxelShape first = aabbs.isEmpty() ? net.minecraft.world.phys.shapes.Shapes.empty() : inflateAABBToVoxel(aabbs.get(0), expandByX, expandByY, expandByZ);
++        final VoxelShape first = aabbs.isEmpty() ? Shapes.empty() : inflateAABBToVoxel(aabbs.get(0), expandByX, expandByY, expandByZ);
+         final VoxelShape[] rest = new VoxelShape[Math.max(0, aabbs.size() - 1)];
+ 
+         for (int i = 1, len = aabbs.size(); i < len; ++i) {
+@@ -566,11 +623,11 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+         }
+ 
+         // use optimized implementation of ORing the shapes together
+-        final VoxelShape joined = net.minecraft.world.phys.shapes.Shapes.or(first, rest);
++        final VoxelShape joined = Shapes.or(first, rest);
+ 
+         // find free space
+         // can use unoptimized join here (instead of join()), as closestPointTo uses toAabbs()
+-        final VoxelShape freeSpace = net.minecraft.world.phys.shapes.Shapes.joinUnoptimized(boundsShape, joined, net.minecraft.world.phys.shapes.BooleanOp.ONLY_FIRST);
++        final VoxelShape freeSpace = Shapes.joinUnoptimized(boundsShape, joined, BooleanOp.ONLY_FIRST);
+ 
+         return freeSpace.closestPointTo(fromPosition);
+     }
+@@ -580,20 +637,20 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+      * @author Spottedleaf
+      */
+     @Override
+-    public java.util.Optional<net.minecraft.core.BlockPos> findSupportingBlock(final Entity entity, final AABB aabb) {
+-        final int minSection = ca.spottedleaf.moonrise.common.util.WorldUtil.getMinSection((Level)(Object)this);
++    public Optional<BlockPos> findSupportingBlock(final Entity entity, final AABB aabb) {
++        final int minSection = WorldUtil.getMinSection((Level)(Object)this);
+ 
+-        final int minBlockX = Mth.floor(aabb.minX - ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON) - 1;
+-        final int maxBlockX = Mth.floor(aabb.maxX + ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON) + 1;
++        final int minBlockX = Mth.floor(aabb.minX - CollisionUtil.COLLISION_EPSILON) - 1;
++        final int maxBlockX = Mth.floor(aabb.maxX + CollisionUtil.COLLISION_EPSILON) + 1;
+ 
+-        final int minBlockY = Math.max((minSection << 4) - 1, Mth.floor(aabb.minY - ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON) - 1);
+-        final int maxBlockY = Math.min((ca.spottedleaf.moonrise.common.util.WorldUtil.getMaxSection((Level)(Object)this) << 4) + 16, Mth.floor(aabb.maxY + ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON) + 1);
++        final int minBlockY = Math.max((minSection << 4) - 1, Mth.floor(aabb.minY - CollisionUtil.COLLISION_EPSILON) - 1);
++        final int maxBlockY = Math.min((WorldUtil.getMaxSection((Level)(Object)this) << 4) + 16, Mth.floor(aabb.maxY + CollisionUtil.COLLISION_EPSILON) + 1);
+ 
+-        final int minBlockZ = Mth.floor(aabb.minZ - ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON) - 1;
+-        final int maxBlockZ = Mth.floor(aabb.maxZ + ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON) + 1;
++        final int minBlockZ = Mth.floor(aabb.minZ - CollisionUtil.COLLISION_EPSILON) - 1;
++        final int maxBlockZ = Mth.floor(aabb.maxZ + CollisionUtil.COLLISION_EPSILON) + 1;
+ 
+         final BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
+-        final ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.LazyEntityCollisionContext collisionShape = new ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.LazyEntityCollisionContext(entity);
++        final CollisionUtil.LazyEntityCollisionContext collisionShape = new CollisionUtil.LazyEntityCollisionContext(entity);
+         BlockPos selected = null;
+         double selectedDistance = Double.MAX_VALUE;
+         final Vec3 entityPos = entity.position();
+@@ -601,7 +658,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+         // special cases:
+         if (minBlockY > maxBlockY) {
+             // no point in checking
+-            return java.util.Optional.empty();
++            return Optional.empty();
+         }
+ 
+         final int minChunkX = minBlockX >> 4;
+@@ -613,7 +670,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+         final int minChunkZ = minBlockZ >> 4;
+         final int maxChunkZ = maxBlockZ >> 4;
+ 
+-        final net.minecraft.world.level.chunk.ChunkSource chunkSource = this.getChunkSource();
++        final ChunkSource chunkSource = this.getChunkSource();
+ 
+         for (int currChunkZ = minChunkZ; currChunkZ <= maxChunkZ; ++currChunkZ) {
+             for (int currChunkX = minChunkX; currChunkX <= maxChunkX; ++currChunkX) {
+@@ -623,7 +680,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+                     continue;
+                 }
+ 
+-                final net.minecraft.world.level.chunk.LevelChunkSection[] sections = chunk.getSections();
++                final LevelChunkSection[] sections = chunk.getSections();
+ 
+                 // bound y
+                 for (int currChunkY = minChunkY; currChunkY <= maxChunkY; ++currChunkY) {
+@@ -631,16 +688,16 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+                     if (sectionIdx < 0 || sectionIdx >= sections.length) {
+                         continue;
+                     }
+-                    final net.minecraft.world.level.chunk.LevelChunkSection section = sections[sectionIdx];
++                    final LevelChunkSection section = sections[sectionIdx];
+                     if (section.hasOnlyAir()) {
+                         // empty
+                         continue;
+                     }
+ 
+-                    final boolean hasSpecial = ((ca.spottedleaf.moonrise.patches.block_counting.BlockCountingChunkSection)section).moonrise$hasSpecialCollidingBlocks();
++                    final boolean hasSpecial = ((BlockCountingChunkSection)section).moonrise$hasSpecialCollidingBlocks();
+                     final int sectionAdjust = !hasSpecial ? 1 : 0;
+ 
+-                    final net.minecraft.world.level.chunk.PalettedContainer<net.minecraft.world.level.block.state.BlockState> blocks = section.states;
++                    final PalettedContainer<BlockState> blocks = section.states;
+ 
+                     final int minXIterate = currChunkX == minChunkX ? (minBlockX & 15) + sectionAdjust : 0;
+                     final int maxXIterate = currChunkX == maxChunkX ? (maxBlockX & 15) - sectionAdjust : 15;
+@@ -674,11 +731,11 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+ 
+                                 final BlockState blockData = blocks.get(localBlockIndex);
+ 
+-                                if (((ca.spottedleaf.moonrise.patches.collisions.block.CollisionBlockState)blockData).moonrise$emptyContextCollisionShape()) {
++                                if (((CollisionBlockState)blockData).moonrise$emptyContextCollisionShape()) {
+                                     continue;
+                                 }
+ 
+-                                VoxelShape blockCollision = ((ca.spottedleaf.moonrise.patches.collisions.block.CollisionBlockState)blockData).moonrise$getConstantContextCollisionShape();
++                                VoxelShape blockCollision = ((CollisionBlockState)blockData).moonrise$getConstantContextCollisionShape();
+ 
+                                 if (edgeCount == 0 || ((edgeCount != 1 || blockData.hasLargeCollisionShape()) && (edgeCount != 2 || blockData.getBlock() == Blocks.MOVING_PISTON))) {
+                                     if (blockCollision == null) {
+@@ -692,9 +749,9 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+                                     // avoid VoxelShape#move by shifting the entity collision shape instead
+                                     final AABB shiftedAABB = aabb.move(-(double)blockX, -(double)blockY, -(double)blockZ);
+ 
+-                                    final AABB singleAABB = ((ca.spottedleaf.moonrise.patches.collisions.shape.CollisionVoxelShape)blockCollision).moonrise$getSingleAABBRepresentation();
++                                    final AABB singleAABB = ((CollisionVoxelShape)blockCollision).moonrise$getSingleAABBRepresentation();
+                                     if (singleAABB != null) {
+-                                        if (!ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.voxelShapeIntersect(singleAABB, shiftedAABB)) {
++                                        if (!CollisionUtil.voxelShapeIntersect(singleAABB, shiftedAABB)) {
+                                             continue;
+                                         }
+ 
+@@ -703,7 +760,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+                                         continue;
+                                     }
+ 
+-                                    if (!ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.voxelShapeIntersectNoEmpty(blockCollision, shiftedAABB)) {
++                                    if (!CollisionUtil.voxelShapeIntersectNoEmpty(blockCollision, shiftedAABB)) {
+                                         continue;
+                                     }
+ 
+@@ -718,7 +775,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+             }
+         }
+ 
+-        return java.util.Optional.ofNullable(selected);
++        return Optional.ofNullable(selected);
+     }
+     // Paper end - optimise collisions
+     // Paper start - getblock optimisations - cache world height/sections
+@@ -806,18 +863,19 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     }
+     // Paper end - optimise random ticking
+     // Folia start - region ticking
+-    public final io.papermc.paper.threadedregions.RegionizedData<io.papermc.paper.threadedregions.RegionizedWorldData> worldRegionData
+-        = new io.papermc.paper.threadedregions.RegionizedData<>(
+-        (ServerLevel)this, () -> new io.papermc.paper.threadedregions.RegionizedWorldData((ServerLevel)Level.this),
+-        io.papermc.paper.threadedregions.RegionizedWorldData.REGION_CALLBACK
++    public final RegionizedData<RegionizedWorldData> worldRegionData
++        = new RegionizedData<>(
++        (ServerLevel)this, () -> new RegionizedWorldData((ServerLevel)Level.this),
++        RegionizedWorldData.REGION_CALLBACK
+     );
+-    public volatile io.papermc.paper.threadedregions.RegionizedServer.WorldLevelData tickData;
+-    public final java.util.concurrent.ConcurrentHashMap.KeySetView<net.minecraft.server.level.ChunkHolder, Boolean> needsChangeBroadcasting = java.util.concurrent.ConcurrentHashMap.newKeySet();
++    public volatile RegionizedServer.WorldLevelData tickData;
++    public final ConcurrentHashMap.KeySetView<ChunkHolder, Boolean> needsChangeBroadcasting = ConcurrentHashMap.newKeySet();
++    public final ReferenceCountedRegionizedWorldDataPool worldDataPool = new ReferenceCountedRegionizedWorldDataPool(((ServerLevel) this));
+ 
+-    public io.papermc.paper.threadedregions.RegionizedWorldData getCurrentWorldData() {
+-        final io.papermc.paper.threadedregions.RegionizedWorldData ret = io.papermc.paper.threadedregions.TickRegionScheduler.getCurrentRegionizedWorldData();
++    public RegionizedWorldData getCurrentWorldData() {
++        final RegionizedWorldData ret = TickRegionScheduler.getCurrentRegionizedWorldData();
          if (ret == null) {
 -            return ret;
-+            return this.worldDataSwitcher.getLastMatch();
++            return null;
          }
          Level world = ret.world;
          if (world != this) {
--            throw new IllegalStateException("World mismatch: expected " + this.getWorld().getName() + " but got " + world.getWorld().getName());
-+            //throw new IllegalStateException("World mismatch: expected " + this.getWorld().getName() + " but got " + world.getWorld().getName());
-+            return this.worldDataSwitcher.getLastMatch();
-         }
-+        this.worldDataSwitcher.updateCurrent(ret);
-         return ret;
+@@ -827,7 +885,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      }
  
+     @Override
+-    public List<net.minecraft.server.level.ServerPlayer> getLocalPlayers() {
++    public List<ServerPlayer> getLocalPlayers() {
+         return this.getCurrentWorldData().getLocalPlayers();
+     }
+     // Folia end - region ticking
+@@ -841,12 +899,12 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+         boolean isDebug,
+         long biomeZoomSeed,
+         int maxChainedNeighborUpdates,
+-        @Nullable org.bukkit.generator.ChunkGenerator generator, // Paper
+-        @Nullable org.bukkit.generator.BiomeProvider biomeProvider, // Paper
+-        org.bukkit.World.Environment environment, // Paper
+-        java.util.function.Function<org.spigotmc.SpigotWorldConfig, // Spigot - create per world config
+-        io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator, // Paper - create paper world config
+-        java.util.concurrent.Executor executor // Paper - Anti-Xray
++        @Nullable ChunkGenerator generator, // Paper
++        @Nullable BiomeProvider biomeProvider, // Paper
++        World.Environment environment, // Paper
++        Function<SpigotWorldConfig, // Spigot - create per world config
++        WorldConfiguration> paperWorldConfigCreator, // Paper - create paper world config
++        Executor executor // Paper - Anti-Xray
+     ) {
+         // Paper start - getblock optimisations - cache world height/sections
+         final DimensionType dimType = dimensionTypeRegistration.value();
+@@ -857,13 +915,13 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+         this.maxSectionY = this.maxY >> 4;
+         this.sectionsCount = this.maxSectionY - this.minSectionY + 1;
+         // Paper end - getblock optimisations - cache world height/sections
+-        this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) levelData).getLevelName()); // Spigot
++        this.spigotConfig = new SpigotWorldConfig(((PrimaryLevelData) levelData).getLevelName()); // Spigot
+         this.paperConfig = paperWorldConfigCreator.apply(this.spigotConfig); // Paper - create paper world config
+         this.generator = generator;
+         this.world = new CraftWorld((ServerLevel) this, generator, biomeProvider, environment);
+ 
+         for (SpawnCategory spawnCategory : SpawnCategory.values()) {
+-            if (org.bukkit.craftbukkit.util.CraftSpawnCategory.isValidForLimits(spawnCategory)) {
++            if (CraftSpawnCategory.isValidForLimits(spawnCategory)) {
+                 this.ticksPerSpawnCategory.put(spawnCategory, this.getTicksPerSpawn(spawnCategory));
+             }
+         }
+@@ -899,30 +957,30 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+         // CraftBukkit start
+         this.getWorldBorder().world = (ServerLevel) this;
+         // From PlayerList.setPlayerFileData
+-        this.getWorldBorder().addListener(new net.minecraft.world.level.border.BorderChangeListener() {
++        this.getWorldBorder().addListener(new BorderChangeListener() {
+             @Override
+             public void onBorderSizeSet(WorldBorder border, double size) {
+-                Level.this.getCraftServer().getHandle().broadcastAll(new net.minecraft.network.protocol.game.ClientboundSetBorderSizePacket(border), border.world);
++                Level.this.getCraftServer().getHandle().broadcastAll(new ClientboundSetBorderSizePacket(border), border.world);
+             }
+ 
+             @Override
+             public void onBorderSizeLerping(WorldBorder border, double fromSize, double toSize, long time) {
+-                Level.this.getCraftServer().getHandle().broadcastAll(new net.minecraft.network.protocol.game.ClientboundSetBorderLerpSizePacket(border), border.world);
++                Level.this.getCraftServer().getHandle().broadcastAll(new ClientboundSetBorderLerpSizePacket(border), border.world);
+             }
+ 
+             @Override
+             public void onBorderCenterSet(WorldBorder border, double centerX, double centerZ) {
+-                Level.this.getCraftServer().getHandle().broadcastAll(new net.minecraft.network.protocol.game.ClientboundSetBorderCenterPacket(border), border.world);
++                Level.this.getCraftServer().getHandle().broadcastAll(new ClientboundSetBorderCenterPacket(border), border.world);
+             }
+ 
+             @Override
+             public void onBorderSetWarningTime(WorldBorder border, int warningTime) {
+-                Level.this.getCraftServer().getHandle().broadcastAll(new net.minecraft.network.protocol.game.ClientboundSetBorderWarningDelayPacket(border), border.world);
++                Level.this.getCraftServer().getHandle().broadcastAll(new ClientboundSetBorderWarningDelayPacket(border), border.world);
+             }
+ 
+             @Override
+             public void onBorderSetWarningBlocks(WorldBorder border, int warningBlockDistance) {
+-                Level.this.getCraftServer().getHandle().broadcastAll(new net.minecraft.network.protocol.game.ClientboundSetBorderWarningDistancePacket(border), border.world);
++                Level.this.getCraftServer().getHandle().broadcastAll(new ClientboundSetBorderWarningDistancePacket(border), border.world);
+             }
+ 
+             @Override
+@@ -932,19 +990,19 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+             public void onBorderSetDamageSafeZOne(WorldBorder border, double safeZoneRadius) {}
+         });
+         // CraftBukkit end
+-        this.chunkPacketBlockController = this.paperConfig().anticheat.antiXray.enabled ? new io.papermc.paper.antixray.ChunkPacketBlockControllerAntiXray(this, executor) : io.papermc.paper.antixray.ChunkPacketBlockController.NO_OPERATION_INSTANCE; // Paper - Anti-Xray
+-        this.entityLookup = new ca.spottedleaf.moonrise.patches.chunk_system.level.entity.dfl.DefaultEntityLookup(this); // Paper - rewrite chunk system
++        this.chunkPacketBlockController = this.paperConfig().anticheat.antiXray.enabled ? new ChunkPacketBlockControllerAntiXray(this, executor) : ChunkPacketBlockController.NO_OPERATION_INSTANCE; // Paper - Anti-Xray
++        this.entityLookup = new DefaultEntityLookup(this); // Paper - rewrite chunk system
+         // Folia start - profiler
+-        this.tickTimerId = ca.spottedleaf.leafprofiler.LProfilerRegistry.GLOBAL_REGISTRY.getOrCreateTimer("Tick World: " + dimension.location().toString());
++        this.tickTimerId = LProfilerRegistry.GLOBAL_REGISTRY.getOrCreateTimer("Tick World: " + dimension.location().toString());
+         // Folia end - profiler
+     }
+ 
+     // Paper start - Cancel hit for vanished players
+     // ret true if no collision
+-    public final boolean checkEntityCollision(BlockState state, Entity source, net.minecraft.world.phys.shapes.CollisionContext collisionContext,
++    public final boolean checkEntityCollision(BlockState state, Entity source, CollisionContext collisionContext,
+                                               BlockPos position, boolean checkCanSee) {
+         // Copied from CollisionGetter#isUnobstructed(BlockState, BlockPos, CollisionContext) & EntityGetter#isUnobstructed(Entity, VoxelShape)
+-        net.minecraft.world.phys.shapes.VoxelShape collisionShape = state.getCollisionShape(this, position, collisionContext);
++        VoxelShape collisionShape = state.getCollisionShape(this, position, collisionContext);
+         if (collisionShape.isEmpty()) {
+             return true;
+         }
+@@ -958,8 +1016,8 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+         for (int i = 0, len = entities.size(); i < len; ++i) {
+             Entity entity = entities.get(i);
+ 
+-            if (checkCanSee && source instanceof net.minecraft.server.level.ServerPlayer && entity instanceof net.minecraft.server.level.ServerPlayer
+-                && !((net.minecraft.server.level.ServerPlayer) source).getBukkitEntity().canSee(((net.minecraft.server.level.ServerPlayer) entity).getBukkitEntity())) {
++            if (checkCanSee && source instanceof ServerPlayer && entity instanceof ServerPlayer
++                && !((ServerPlayer) source).getBukkitEntity().canSee(((ServerPlayer) entity).getBukkitEntity())) {
+                 continue;
+             }
+ 
+@@ -970,7 +1028,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+                 continue;
+             }
+ 
+-            if (net.minecraft.world.phys.shapes.Shapes.joinIsNotEmpty(collisionShape, net.minecraft.world.phys.shapes.Shapes.create(entity.getBoundingBox()), net.minecraft.world.phys.shapes.BooleanOp.AND)) {
++            if (Shapes.joinIsNotEmpty(collisionShape, Shapes.create(entity.getBoundingBox()), BooleanOp.AND)) {
+                 return false;
+             }
+         }
+@@ -991,7 +1049,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     }
+ 
+     // Paper start
+-    public net.minecraft.world.phys.BlockHitResult.Type clipDirect(Vec3 start, Vec3 end, net.minecraft.world.phys.shapes.CollisionContext context) {
++    public BlockHitResult.Type clipDirect(Vec3 start, Vec3 end, CollisionContext context) {
+         // To be patched over
+         return this.clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, context)).getType();
+     }
+@@ -1020,7 +1078,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     @Override
+     public final LevelChunk getChunk(int chunkX, int chunkZ) { // Paper - final to help inline
+         // Paper start - Perf: make sure loaded chunks get the inlined variant of this function
+-        net.minecraft.server.level.ServerChunkCache cps = ((ServerLevel)this).getChunkSource();
++        ServerChunkCache cps = ((ServerLevel)this).getChunkSource();
+         LevelChunk ifLoaded = cps.getChunkAtIfLoadedImmediately(chunkX, chunkZ);
+         if (ifLoaded != null) {
+             return ifLoaded;
+@@ -1039,9 +1097,12 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     @Override
+     @Nullable
+     public final BlockState getBlockStateIfLoaded(BlockPos pos) {
++        var ref = this.worldDataPool.getAndHeldReference(pos);
++        var worldData = ref.left();
++        try {
+         // CraftBukkit start - tree generation
+-        if (this.getCurrentWorldData().captureTreeGeneration) { // Folia - region threading
+-            CraftBlockState previous = this.getCurrentWorldData().capturedBlockStates.get(pos); // Folia - region threading
++        if (worldData.captureTreeGeneration) { // Folia - region threading
++            CraftBlockState previous = worldData.capturedBlockStates.get(pos); // Folia - region threading
+             if (previous != null) {
+                 return previous.getHandle();
+             }
+@@ -1054,6 +1115,9 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+ 
+             return chunk == null ? null : chunk.getBlockState(pos);
+         }
++        }finally {
++        this.worldDataPool.releaseReference(pos, ref.right());
++        }
+     }
+ 
+     @Override
+@@ -1105,8 +1169,11 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+ 
+     @Override
+     public boolean setBlock(BlockPos pos, BlockState state, int flags, int recursionLeft) {
+-        ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread((ServerLevel)this, pos, "Updating block asynchronously"); // Folia - region threading
+-        io.papermc.paper.threadedregions.RegionizedWorldData worldData = this.getCurrentWorldData(); // Folia - region threading
++        TickThread.ensureTickThread((ServerLevel)this, pos, "Updating block asynchronously"); // Folia - region threading
++        var ref = this.worldDataPool.getAndHeldReference(pos);
++        var worldData = ref.left();
++        try {
++        // RegionizedWorldData worldData = this.getCurrentWorldData(); // Folia - region threading
+         // CraftBukkit start - tree generation
+         if (worldData.captureTreeGeneration) { // Folia - region threading
+             // Paper start - Protect Bedrock and End Portal/Frames from being destroyed
+@@ -1115,7 +1182,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+             // Paper end - Protect Bedrock and End Portal/Frames from being destroyed
+             CraftBlockState blockstate = worldData.capturedBlockStates.get(pos); // Folia - region threading
+             if (blockstate == null) {
+-                blockstate = org.bukkit.craftbukkit.block.CapturedBlockState.getTreeBlockState(this, pos, flags);
++                blockstate = CapturedBlockState.getTreeBlockState(this, pos, flags);
+                 worldData.capturedBlockStates.put(pos.immutable(), blockstate); // Folia - region threading
+             }
+             blockstate.setData(state);
+@@ -1135,7 +1202,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+             if (worldData.captureBlockStates) { // Folia - region threading
+                 final CraftBlockState snapshot;
+                 if (!worldData.capturedBlockStates.containsKey(pos)) { // Folia - region threading
+-                    snapshot = (CraftBlockState) org.bukkit.craftbukkit.block.CraftBlock.at(this, pos).getState(); // Paper - use CB getState to get a suitable snapshot
++                    snapshot = (CraftBlockState) CraftBlock.at(this, pos).getState(); // Paper - use CB getState to get a suitable snapshot
+                     worldData.capturedBlockStates.put(pos.immutable(), snapshot); // Folia - region threading
+                     captured = true;
+                 } else {
+@@ -1201,10 +1268,16 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+                 return true;
+             }
+         }
++        }finally {
++        this.worldDataPool.releaseReference(pos, ref.right());
++        }
+     }
+ 
+     // CraftBukkit start - Split off from above in order to directly send client and physic updates
+     public void notifyAndUpdatePhysics(BlockPos pos, LevelChunk chunkAt, BlockState oldState, BlockState newState, BlockState currentState, int flags, int recursionLeft) {
++        var ref = this.worldDataPool.getAndHeldReference(pos);
++        var worldData = ref.left();
++        try {
+         BlockState state = newState;
+         BlockState blockState = oldState;
+         BlockState blockState1 = currentState;
+@@ -1230,8 +1303,8 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+                 // CraftBukkit start
+                 blockState.updateIndirectNeighbourShapes(this, pos, i, recursionLeft - 1); // Don't call an event for the old block to limit event spam
+                 boolean cancelledUpdates = false; // Paper - Fix block place logic
+-                if (((ServerLevel)this).getCurrentWorldData().hasPhysicsEvent) { // Paper - BlockPhysicsEvent // Folia - region threading
+-                    org.bukkit.event.block.BlockPhysicsEvent event = new org.bukkit.event.block.BlockPhysicsEvent(org.bukkit.craftbukkit.block.CraftBlock.at(this, pos), CraftBlockData.fromData(state));
++                if (worldData.hasPhysicsEvent) { // Paper - BlockPhysicsEvent // Folia - region threading
++                    BlockPhysicsEvent event = new BlockPhysicsEvent(CraftBlock.at(this, pos), CraftBlockData.fromData(state));
+                     cancelledUpdates = !event.callEvent(); // Paper - Fix block place logic
+                 }
+                 // CraftBukkit end
+@@ -1243,6 +1316,9 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+ 
+             this.updatePOIOnBlockStateChange(pos, blockState, blockState1);
+         }
++        }finally {
++        this.worldDataPool.releaseReference(pos, ref.right());
++        }
+     }
+     // CraftBukkit end
+     public void updatePOIOnBlockStateChange(BlockPos pos, BlockState oldState, BlockState newState) {
+@@ -1267,8 +1343,8 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+             boolean playEffect = true;
+             BlockState effectType = blockState;
+             int xp = blockState.getBlock().getExpDrop(blockState, (ServerLevel) this, pos, ItemStack.EMPTY, true);
+-            if (com.destroystokyo.paper.event.block.BlockDestroyEvent.getHandlerList().getRegisteredListeners().length > 0) {
+-                com.destroystokyo.paper.event.block.BlockDestroyEvent event = new com.destroystokyo.paper.event.block.BlockDestroyEvent(org.bukkit.craftbukkit.block.CraftBlock.at(this, pos), fluidState.createLegacyBlock().createCraftBlockData(), effectType.createCraftBlockData(), xp, dropBlock);
++            if (BlockDestroyEvent.getHandlerList().getRegisteredListeners().length > 0) {
++                BlockDestroyEvent event = new BlockDestroyEvent(CraftBlock.at(this, pos), fluidState.createLegacyBlock().createCraftBlockData(), effectType.createCraftBlockData(), xp, dropBlock);
+                 if (!event.callEvent()) {
+                     return false;
+                 }
+@@ -1323,7 +1399,13 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+ 
+     @Override
+     public void neighborShapeChanged(Direction direction, BlockPos pos, BlockPos neighborPos, BlockState neighborState, int flags, int recursionLeft) {
+-        this.getCurrentWorldData().neighborUpdater.shapeUpdate(direction, neighborState, pos, neighborPos, flags, recursionLeft); // Folia - region threading
++        var ref = this.worldDataPool.getAndHeldReference(pos);
++        var worldData = ref.left();
++        try {
++        worldData.neighborUpdater.shapeUpdate(direction, neighborState, pos, neighborPos, flags, recursionLeft); // Folia - region threading
++        }finally {
++        this.worldDataPool.releaseReference(pos, ref.right());
++        }
+     }
+ 
+     @Override
+@@ -1350,7 +1432,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     // Folia start - region threading
+     @Nullable
+     public BlockState getBlockStateFromEmptyChunkIfLoaded(BlockPos pos) {
+-        net.minecraft.server.level.ServerChunkCache chunkProvider = (net.minecraft.server.level.ServerChunkCache)this.getChunkSource();
++        ServerChunkCache chunkProvider = (ServerChunkCache)this.getChunkSource();
+         ChunkAccess chunk = chunkProvider.getChunkAtImmediately(pos.getX() >> 4, pos.getZ() >> 4);
+         if (chunk != null) {
+             return chunk.getBlockState(pos);
+@@ -1360,7 +1442,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+ 
+     @Nullable
+     public BlockState getBlockStateFromEmptyChunk(BlockPos pos) {
+-        net.minecraft.server.level.ServerChunkCache chunkProvider = (net.minecraft.server.level.ServerChunkCache)this.getChunkSource();
++        ServerChunkCache chunkProvider = (ServerChunkCache)this.getChunkSource();
+         ChunkAccess chunk = chunkProvider.getChunkAtImmediately(pos.getX() >> 4, pos.getZ() >> 4);
+         if (chunk != null) {
+             return chunk.getBlockState(pos);
+@@ -1372,13 +1454,19 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+ 
+     @Override
+     public BlockState getBlockState(BlockPos pos) {
++        var ref = this.worldDataPool.getAndHeldReference(pos);
++        var worldData = ref.left();
++        try {
+         // CraftBukkit start - tree generation
+-        if (this.getCurrentWorldData().captureTreeGeneration) { // Folia - region threading
+-            CraftBlockState previous = this.getCurrentWorldData().capturedBlockStates.get(pos); // Paper // Folia - region threading
++        if (worldData.captureTreeGeneration) { // Folia - region threading
++            CraftBlockState previous = worldData.capturedBlockStates.get(pos); // Paper // Folia - region threading
+             if (previous != null) {
+                 return previous.getHandle();
+             }
+         }
++        }finally {
++        this.worldDataPool.releaseReference(pos, ref.right());
++        }
+         // CraftBukkit end
+         if (this.isOutsideBuildHeight(pos)) {
+             return Blocks.VOID_AIR.defaultBlockState();
+@@ -1486,43 +1574,49 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     }
+ 
+     public void addBlockEntityTicker(TickingBlockEntity ticker) {
+-        ((ServerLevel)this).getCurrentWorldData().addBlockEntityTicker(ticker); // Folia - regionised ticking
++        var ref = this.worldDataPool.getAndHeldReference(ticker.getPos());
++        var worldData = ref.left();
++        try {
++        worldData.addBlockEntityTicker(ticker); // Folia - regionised ticking
++        }finally {
++        this.worldDataPool.releaseReference(ticker.getPos(), ref.right());
++        }
+     }
+ 
+     protected void tickBlockEntities() {
+-        final ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle profiler = io.papermc.paper.threadedregions.TickRegionScheduler.getProfiler(); // Folia - profiler
++        final RegionizedProfiler.Handle profiler = TickRegionScheduler.getProfiler(); // Folia - profiler
+         ProfilerFiller profilerFiller = Profiler.get();
+         profilerFiller.push("blockEntities");
+-        final io.papermc.paper.threadedregions.RegionizedWorldData regionizedWorldData = this.getCurrentWorldData(); // Folia - regionised ticking
++        final RegionizedWorldData regionizedWorldData = this.getCurrentWorldData(); // Folia - regionised ticking
+         regionizedWorldData.seTtickingBlockEntities(true); // Folia - regionised ticking
+-        profiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.TILE_ENTITY_PENDING); try { // Folia - profiler
++        profiler.startTimer(LProfilerRegistry.TILE_ENTITY_PENDING); try { // Folia - profiler
+         regionizedWorldData.pushPendingTickingBlockEntities(); // Folia - regionised ticking
+-        } finally { profiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.TILE_ENTITY_PENDING); } // Folia - profiler
++        } finally { profiler.stopTimer(LProfilerRegistry.TILE_ENTITY_PENDING); } // Folia - profiler
+         List<TickingBlockEntity> blockEntityTickers = regionizedWorldData.getBlockEntityTickers(); // Folia - regionised ticking
+ 
+-        profiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.TILE_ENTITY_TICK); try { // Folia - profiler
++        profiler.startTimer(LProfilerRegistry.TILE_ENTITY_TICK); try { // Folia - profiler
+         // Spigot start
+         boolean runsNormally = this.tickRateManager().runsNormally();
+ 
+         int tickedEntities = 0; // Paper - rewrite chunk system
+-        var toRemove = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<TickingBlockEntity>(); // Paper - Fix MC-117075; use removeAll
++        var toRemove = new ReferenceOpenHashSet<TickingBlockEntity>(); // Paper - Fix MC-117075; use removeAll
+         toRemove.add(null); // Paper - Fix MC-117075
+         for (int i = 0; i < blockEntityTickers.size(); i++) { // Paper - Disable tick limiters // Folia - regionised ticking
+             TickingBlockEntity tickingBlockEntity = blockEntityTickers.get(i); // Folia - regionised ticking
+             // Spigot end
+             if (tickingBlockEntity.isRemoved()) {
+                 toRemove.add(tickingBlockEntity); // Paper - Fix MC-117075; use removeAll
+-            } else if (runsNormally && (me.earthme.luminol.config.modules.optimizations.LeavesSleepingBlockEntityConfig.enabled ? this.shouldTickBlockPosFilterNull(tickingBlockEntity.getPos()) : this.shouldTickBlocksAt(tickingBlockEntity.getPos()))) { // Leaves - Lithium Sleeping Block Entity
++            } else if (runsNormally && (LeavesSleepingBlockEntityConfig.enabled ? this.shouldTickBlockPosFilterNull(tickingBlockEntity.getPos()) : this.shouldTickBlocksAt(tickingBlockEntity.getPos()))) { // Leaves - Lithium Sleeping Block Entity
+                 tickingBlockEntity.tick();
+                 // Paper start - rewrite chunk system
+                 if ((++tickedEntities & 7) == 0) {
+-                    ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel)(Level)(Object)this).moonrise$midTickTasks();
++                    ((ChunkSystemLevel)(Level)(Object)this).moonrise$midTickTasks();
+                 }
+                 // Paper end - rewrite chunk system
+             }
+         }
+         blockEntityTickers.removeAll(toRemove); // Paper - Fix MC-117075 // Folia - regionised ticking
+-        } finally { profiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.TILE_ENTITY_TICK); } // Folia - profiler
++        } finally { profiler.stopTimer(LProfilerRegistry.TILE_ENTITY_TICK); } // Folia - profiler
+ 
+         regionizedWorldData.seTtickingBlockEntities(false); // Folia - regionised ticking
+         profilerFiller.pop();
+@@ -1533,13 +1627,13 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+         try {
+             consumerEntity.accept(entity);
+         } catch (Throwable var6) {
+-            if (me.earthme.luminol.config.modules.experiment.DisableEntityCatchConfig.enabled) throw var6; // Luminol
++            if (DisableEntityCatchConfig.enabled) throw var6; // Luminol
+             // Paper start - Prevent block entity and entity crashes
+             final String msg = String.format("Entity threw exception at %s:%s,%s,%s", entity.level().getWorld().getName(), entity.getX(), entity.getY(), entity.getZ());
+             MinecraftServer.LOGGER.error(msg, var6);
+-            getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerInternalException(msg, var6))); // Paper - ServerExceptionEvent
+-            if (!(entity instanceof net.minecraft.server.level.ServerPlayer)) entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD); // Folia - properly disconnect players
+-            if (entity instanceof net.minecraft.server.level.ServerPlayer player) player.connection.disconnect(net.minecraft.network.chat.Component.translatable("multiplayer.disconnect.generic"), org.bukkit.event.player.PlayerKickEvent.Cause.UNKNOWN); // Folia - properly disconnect players
++            getCraftServer().getPluginManager().callEvent(new ServerExceptionEvent(new ServerInternalException(msg, var6))); // Paper - ServerExceptionEvent
++            if (!(entity instanceof ServerPlayer)) entity.discard(EntityRemoveEvent.Cause.DISCARD); // Folia - properly disconnect players
++            if (entity instanceof ServerPlayer player) player.connection.disconnect(Component.translatable("multiplayer.disconnect.generic"), PlayerKickEvent.Cause.UNKNOWN); // Folia - properly disconnect players
+             // Paper end - Prevent block entity and entity crashes
+         }
+         this.moonrise$midTickTasks(); // Paper - rewrite chunk system
+@@ -1548,15 +1642,15 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     // Paper start - Option to prevent armor stands from doing entity lookups
+     @Override
+     public boolean noCollision(@Nullable Entity entity, AABB box) {
+-        if (entity instanceof net.minecraft.world.entity.decoration.ArmorStand && !entity.level().paperConfig().entities.armorStands.doCollisionEntityLookups)
++        if (entity instanceof ArmorStand && !entity.level().paperConfig().entities.armorStands.doCollisionEntityLookups)
+             return false;
+         // Paper start - optimise collisions
+-        final int flags = entity == null ? (ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_FLAG_CHECK_BORDER | ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_FLAG_CHECK_ONLY) : ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_FLAG_CHECK_ONLY;
+-        if (ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.getCollisionsForBlocksOrWorldBorder((Level)(Object)this, entity, box, null, null, flags, null)) {
++        final int flags = entity == null ? (CollisionUtil.COLLISION_FLAG_CHECK_BORDER | CollisionUtil.COLLISION_FLAG_CHECK_ONLY) : CollisionUtil.COLLISION_FLAG_CHECK_ONLY;
++        if (CollisionUtil.getCollisionsForBlocksOrWorldBorder((Level)(Object)this, entity, box, null, null, flags, null)) {
+             return false;
+         }
+ 
+-        return !ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.getEntityHardCollisions((Level)(Object)this, entity, box, null, flags, null);
++        return !CollisionUtil.getEntityHardCollisions((Level)(Object)this, entity, box, null, flags, null);
+         // Paper end - optimise collisions
+     }
+     // Paper end - Option to prevent armor stands from doing entity lookups
+@@ -1573,7 +1667,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+         return this.shouldTickBlocksAt(ChunkPos.asLong(pos));
+     }
+ 
+-    public void explode(@Nullable Entity source, double x, double y, double z, float radius, Level.ExplosionInteraction explosionInteraction) {
++    public void explode(@Nullable Entity source, double x, double y, double z, float radius, ExplosionInteraction explosionInteraction) {
+         this.explode(
+             source,
+             Explosion.getDefaultDamageSource(this, source),
+@@ -1590,7 +1684,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+         );
+     }
+ 
+-    public void explode(@Nullable Entity source, double x, double y, double z, float radius, boolean fire, Level.ExplosionInteraction explosionInteraction) {
++    public void explode(@Nullable Entity source, double x, double y, double z, float radius, boolean fire, ExplosionInteraction explosionInteraction) {
+         this.explode(
+             source,
+             Explosion.getDefaultDamageSource(this, source),
+@@ -1614,7 +1708,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+         Vec3 pos,
+         float radius,
+         boolean fire,
+-        Level.ExplosionInteraction explosionInteraction
++        ExplosionInteraction explosionInteraction
+     ) {
+         this.explode(
+             source,
+@@ -1641,7 +1735,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+         double z,
+         float radius,
+         boolean fire,
+-        Level.ExplosionInteraction explosionInteraction
++        ExplosionInteraction explosionInteraction
+     ) {
+         this.explode(
+             source,
+@@ -1668,7 +1762,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+         double z,
+         float radius,
+         boolean fire,
+-        Level.ExplosionInteraction explosionInteraction,
++        ExplosionInteraction explosionInteraction,
+         ParticleOptions smallExplosionParticles,
+         ParticleOptions largeExplosionParticles,
+         Holder<SoundEvent> explosionSound
+@@ -1680,33 +1774,45 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     @Override
+     public BlockEntity getBlockEntity(BlockPos pos) {
+         // Folia start - region threading
+-        if (!ca.spottedleaf.moonrise.common.util.TickThread.isTickThread()) {
++        if (!TickThread.isTickThread()) {
+             return null;
+         }
+         // Folia end - region threading
+         // Paper start - Perf: Optimize capturedTileEntities lookup
+-        net.minecraft.world.level.block.entity.BlockEntity blockEntity;
+-        if (!this.getCurrentWorldData().capturedTileEntities.isEmpty() && (blockEntity = this.getCurrentWorldData().capturedTileEntities.get(pos)) != null) { // Folia - region threading
++        var ref = this.worldDataPool.getAndHeldReference(pos);
++        var worldData = ref.left();
++        try {
++        BlockEntity blockEntity;
++        if (!worldData.capturedTileEntities.isEmpty() && (blockEntity = worldData.capturedTileEntities.get(pos)) != null) { // Folia - region threading
+             return blockEntity;
+         }
+         // Paper end - Perf: Optimize capturedTileEntities lookup
+         if (this.isOutsideBuildHeight(pos)) {
+             return null;
+         } else {
+-            return !this.isClientSide && !ca.spottedleaf.moonrise.common.util.TickThread.isTickThread() // Paper - rewrite chunk system
++            return !this.isClientSide && !TickThread.isTickThread() // Paper - rewrite chunk system
+                 ? null
+                 : this.getChunkAt(pos).getBlockEntity(pos, LevelChunk.EntityCreationType.IMMEDIATE);
+         }
++        }finally {
++        this.worldDataPool.releaseReference(pos, ref.right());
++        }
+     }
+ 
+     public void setBlockEntity(BlockEntity blockEntity) {
+         BlockPos blockPos = blockEntity.getBlockPos();
+         if (!this.isOutsideBuildHeight(blockPos)) {
++            var ref = this.worldDataPool.getAndHeldReference(blockPos);
++            var worldData = ref.left();
++            try {
+             // CraftBukkit start
+-            if (this.getCurrentWorldData().captureBlockStates) { // Folia - region threading
+-                this.getCurrentWorldData().capturedTileEntities.put(blockPos.immutable(), blockEntity); // Folia - region threading
++            if (worldData.captureBlockStates) { // Folia - region threading
++                worldData.capturedTileEntities.put(blockPos.immutable(), blockEntity); // Folia - region threading
+                 return;
+             }
++            }finally {
++            this.worldDataPool.releaseReference(blockPos, ref.right());
++            }
+             // CraftBukkit end
+             this.getChunkAt(blockPos).addAndRegisterBlockEntity(blockEntity);
+         }
+@@ -1784,16 +1890,16 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+ 
+     @Override
+     public List<Entity> getEntities(@Nullable Entity entity, AABB boundingBox, Predicate<? super Entity> predicate) {
+-        ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread((ServerLevel)this, boundingBox, "Cannot getEntities asynchronously"); // Folia - region threading
++        TickThread.ensureTickThread((ServerLevel)this, boundingBox, "Cannot getEntities asynchronously"); // Folia - region threading
+         Profiler.get().incrementCounter("getEntities");
+         List<Entity> list = Lists.newArrayList();
+ 
+         // Paper start - rewrite chunk system
+-        final List<Entity> ret = new java.util.ArrayList<>();
++        final List<Entity> ret = new ArrayList<>();
+ 
+-        ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel)this).moonrise$getEntityLookup().getEntities(entity, boundingBox, ret, predicate);
++        ((ChunkSystemLevel)this).moonrise$getEntityLookup().getEntities(entity, boundingBox, ret, predicate);
+ 
+-        ca.spottedleaf.moonrise.common.PlatformHooks.get().addToGetEntities((Level)(Object)this, entity, boundingBox, predicate, ret);
++        PlatformHooks.get().addToGetEntities((Level)(Object)this, entity, boundingBox, predicate, ret);
+ 
+         return ret;
+         // Paper end - rewrite chunk system
+@@ -1814,29 +1920,29 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     public <T extends Entity> void getEntities(final EntityTypeTest<Entity, T> entityTypeTest,
+                                                final AABB boundingBox, final Predicate<? super T> predicate,
+                                                final List<? super T> into, final int maxCount) {
+-        ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(this, boundingBox, "Cannot getEntities asynchronously"); // Folia - region threading
++        TickThread.ensureTickThread(this, boundingBox, "Cannot getEntities asynchronously"); // Folia - region threading
+         Profiler.get().incrementCounter("getEntities");
+ 
+-        if (entityTypeTest instanceof net.minecraft.world.entity.EntityType<T> byType) {
++        if (entityTypeTest instanceof EntityType<T> byType) {
+             if (maxCount != Integer.MAX_VALUE) {
+-                ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel)this).moonrise$getEntityLookup().getEntities(byType, boundingBox, into, predicate, maxCount);
+-                ca.spottedleaf.moonrise.common.PlatformHooks.get().addToGetEntities((Level)(Object)this, entityTypeTest, boundingBox, predicate, into, maxCount);
++                ((ChunkSystemLevel)this).moonrise$getEntityLookup().getEntities(byType, boundingBox, into, predicate, maxCount);
++                PlatformHooks.get().addToGetEntities((Level)(Object)this, entityTypeTest, boundingBox, predicate, into, maxCount);
+                 return;
+             } else {
+-                ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel)this).moonrise$getEntityLookup().getEntities(byType, boundingBox, into, predicate);
+-                ca.spottedleaf.moonrise.common.PlatformHooks.get().addToGetEntities((Level)(Object)this, entityTypeTest, boundingBox, predicate, into, maxCount);
++                ((ChunkSystemLevel)this).moonrise$getEntityLookup().getEntities(byType, boundingBox, into, predicate);
++                PlatformHooks.get().addToGetEntities((Level)(Object)this, entityTypeTest, boundingBox, predicate, into, maxCount);
+                 return;
+             }
+         }
+ 
+         if (entityTypeTest == null) {
+             if (maxCount != Integer.MAX_VALUE) {
+-                ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel)this).moonrise$getEntityLookup().getEntities((Entity)null, boundingBox, (List)into, (Predicate)predicate, maxCount);
+-                ca.spottedleaf.moonrise.common.PlatformHooks.get().addToGetEntities((Level)(Object)this, entityTypeTest, boundingBox, predicate, into, maxCount);
++                ((ChunkSystemLevel)this).moonrise$getEntityLookup().getEntities((Entity)null, boundingBox, (List)into, (Predicate)predicate, maxCount);
++                PlatformHooks.get().addToGetEntities((Level)(Object)this, entityTypeTest, boundingBox, predicate, into, maxCount);
+                 return;
+             } else {
+-                ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel)this).moonrise$getEntityLookup().getEntities((Entity)null, boundingBox, (List)into, (Predicate)predicate);
+-                ca.spottedleaf.moonrise.common.PlatformHooks.get().addToGetEntities((Level)(Object)this, entityTypeTest, boundingBox, predicate, into, maxCount);
++                ((ChunkSystemLevel)this).moonrise$getEntityLookup().getEntities((Entity)null, boundingBox, (List)into, (Predicate)predicate);
++                PlatformHooks.get().addToGetEntities((Level)(Object)this, entityTypeTest, boundingBox, predicate, into, maxCount);
+                 return;
+             }
+         }
+@@ -1861,34 +1967,34 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+ 
+         if (base == null || base == Entity.class) {
+             if (maxCount != Integer.MAX_VALUE) {
+-                ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel)this).moonrise$getEntityLookup().getEntities((Entity)null, boundingBox, (List)into, (Predicate)modifiedPredicate, maxCount);
+-                ca.spottedleaf.moonrise.common.PlatformHooks.get().addToGetEntities((Level)(Object)this, entityTypeTest, boundingBox, predicate, into, maxCount);
++                ((ChunkSystemLevel)this).moonrise$getEntityLookup().getEntities((Entity)null, boundingBox, (List)into, (Predicate)modifiedPredicate, maxCount);
++                PlatformHooks.get().addToGetEntities((Level)(Object)this, entityTypeTest, boundingBox, predicate, into, maxCount);
+                 return;
+             } else {
+-                ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel)this).moonrise$getEntityLookup().getEntities((Entity)null, boundingBox, (List)into, (Predicate)modifiedPredicate);
+-                ca.spottedleaf.moonrise.common.PlatformHooks.get().addToGetEntities((Level)(Object)this, entityTypeTest, boundingBox, predicate, into, maxCount);
++                ((ChunkSystemLevel)this).moonrise$getEntityLookup().getEntities((Entity)null, boundingBox, (List)into, (Predicate)modifiedPredicate);
++                PlatformHooks.get().addToGetEntities((Level)(Object)this, entityTypeTest, boundingBox, predicate, into, maxCount);
+                 return;
+             }
+         } else {
+             if (maxCount != Integer.MAX_VALUE) {
+-                ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel)this).moonrise$getEntityLookup().getEntities(base, null, boundingBox, (List)into, (Predicate)modifiedPredicate, maxCount);
+-                ca.spottedleaf.moonrise.common.PlatformHooks.get().addToGetEntities((Level)(Object)this, entityTypeTest, boundingBox, predicate, into, maxCount);
++                ((ChunkSystemLevel)this).moonrise$getEntityLookup().getEntities(base, null, boundingBox, (List)into, (Predicate)modifiedPredicate, maxCount);
++                PlatformHooks.get().addToGetEntities((Level)(Object)this, entityTypeTest, boundingBox, predicate, into, maxCount);
+                 return;
+             } else {
+-                ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel)this).moonrise$getEntityLookup().getEntities(base, null, boundingBox, (List)into, (Predicate)modifiedPredicate);
+-                ca.spottedleaf.moonrise.common.PlatformHooks.get().addToGetEntities((Level)(Object)this, entityTypeTest, boundingBox, predicate, into, maxCount);
++                ((ChunkSystemLevel)this).moonrise$getEntityLookup().getEntities(base, null, boundingBox, (List)into, (Predicate)modifiedPredicate);
++                PlatformHooks.get().addToGetEntities((Level)(Object)this, entityTypeTest, boundingBox, predicate, into, maxCount);
+                 return;
+             }
+         }
+     }
+ 
+     public org.bukkit.entity.Entity[] getChunkEntities(int chunkX, int chunkZ) {
+-        ca.spottedleaf.moonrise.patches.chunk_system.level.entity.ChunkEntitySlices slices = ((ServerLevel)this).moonrise$getEntityLookup().getChunk(chunkX, chunkZ);
++        ChunkEntitySlices slices = ((ServerLevel)this).moonrise$getEntityLookup().getChunk(chunkX, chunkZ);
+         if (slices == null) {
+             return new org.bukkit.entity.Entity[0];
+         }
+ 
+-        List<org.bukkit.entity.Entity> ret = new java.util.ArrayList<>();
++        List<org.bukkit.entity.Entity> ret = new ArrayList<>();
+         for (Entity entity : slices.getAllEntities()) {
+             org.bukkit.entity.Entity bukkit = entity.getBukkitEntity();
+             if (bukkit != null && bukkit.isValid()) {
+@@ -1928,7 +2034,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     public long getGameTime() {
+         // Folia start - region threading
+         // Dumb world gen thread calls this for some reason. So, check for null.
+-        io.papermc.paper.threadedregions.RegionizedWorldData worldData = this.getCurrentWorldData();
++        RegionizedWorldData worldData = this.getCurrentWorldData();
+         return worldData == null ? this.getLevelData().getGameTime() : worldData.getTickData().nonRedstoneGameTime();
+         // Folia end - region threading
+     }
+@@ -1936,7 +2042,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     public long getDayTime() {
+         // Folia start - region threading
+         // Dumb world gen thread calls this for some reason. So, check for null.
+-        io.papermc.paper.threadedregions.RegionizedWorldData worldData = this.getCurrentWorldData();
++        RegionizedWorldData worldData = this.getCurrentWorldData();
+         return worldData == null ? this.getLevelData().getDayTime() : worldData.getTickData().dayTime();
+         // Folia end - region threading
+     }
+@@ -2057,7 +2163,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     public void updateNeighbourForOutputSignal(BlockPos pos, Block block) {
+         for (Direction direction : Direction.Plane.HORIZONTAL) {
+             BlockPos blockPos = pos.relative(direction);
+-            if (ca.spottedleaf.moonrise.common.util.TickThread.isTickThreadFor(this, blockPos, 16) && this.hasChunkAt(blockPos)) { // Folia - block updates in unloaded chunks
++            if (TickThread.isTickThreadFor(this, blockPos, 16) && this.hasChunkAt(blockPos)) { // Folia - block updates in unloaded chunks
+                 BlockState blockState = this.getBlockState(blockPos);
+                 if (blockState.is(Blocks.COMPARATOR)) {
+                     this.neighborChanged(blockState, blockPos, block, null, false);
+@@ -2174,7 +2280,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     }
+ 
+     // Paper start - optimize redstone (Alternate Current)
+-    public alternate.current.wire.WireHandler getWireHandler() {
++    public WireHandler getWireHandler() {
+         // This method is overridden in ServerLevel.
+         // Since Paper is a server platform there is no risk
+         // of this implementation being called. It is here
+@@ -2192,7 +2298,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+         TRIGGER("trigger"),
+         STANDARD("standard"); // CraftBukkit - Add STANDARD which will always use Explosion.Effect.DESTROY
+ 
+-        public static final Codec<Level.ExplosionInteraction> CODEC = StringRepresentable.fromEnum(Level.ExplosionInteraction::values);
++        public static final Codec<ExplosionInteraction> CODEC = StringRepresentable.fromEnum(ExplosionInteraction::values);
+         private final String id;
+ 
+         private ExplosionInteraction(final String id) {
+@@ -2210,7 +2316,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     public BlockEntity lithium$getLoadedExistingBlockEntity(@Nullable BlockPos pos) {
+         if (pos == null) return null;
+         if (!this.isOutsideBuildHeight(pos)) {
+-            if (ca.spottedleaf.moonrise.common.util.TickThread.isTickThreadFor(this, pos, 1)) { // Luminol - use folia thread safe check because of unable to use thread check directly & remove this.isClientSide because we only have server side
++            if (TickThread.isTickThreadFor(this, pos, 1)) { // Luminol - use folia thread safe check because of unable to use thread check directly & remove this.isClientSide because we only have server side
+                 ChunkAccess chunk = this.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()), ChunkStatus.FULL, false);
+                 if (chunk != null) {
+                     return chunk.getBlockEntity(pos);
+diff --git a/net/minecraft/world/level/ServerExplosion.java b/net/minecraft/world/level/ServerExplosion.java
+index b3e897a4afee742b5055d652ad7047a660d8ea04..6459b5519c8b84a519ea9e49ea2cffd1acbac916 100644
+--- a/net/minecraft/world/level/ServerExplosion.java
++++ b/net/minecraft/world/level/ServerExplosion.java
+@@ -483,6 +483,9 @@ public class ServerExplosion implements Explosion {
+         int floor3 = Mth.floor(this.center.y + f + 1.0);
+         int floor4 = Mth.floor(this.center.z - f - 1.0);
+         int floor5 = Mth.floor(this.center.z + f + 1.0);
++        var ref = this.level.worldDataPool.getAndHeldReference((int)this.center.x >> 4, (int)this.center.z >> 4);
++        var worldData = ref.left();
++        try {
+         List <Entity> list = this.level.getEntities(this.excludeSourceFromDamage ? this.source : null, new AABB(floor, floor2, floor4, floor1, floor3, floor5), entity -> entity.isAlive() && !entity.isSpectator()); // Paper - Fix lag from explosions processing dead entities, Allow explosions to damage source
+         for (Entity entity : list) { // Paper - used in loop
+             if (!entity.ignoreExplosion(this)) {
+@@ -498,7 +501,7 @@ public class ServerExplosion implements Explosion {
+                         d3 /= squareRoot;
+                         boolean shouldDamageEntity = this.damageCalculator.shouldDamageEntity(this, entity);
+                         float knockbackMultiplier = this.damageCalculator.getKnockbackMultiplier(entity);
+-                        float f1 = !shouldDamageEntity && knockbackMultiplier == 0.0F ? 0.0F : this.getBlockDensity(this.center, entity); // Paper - Optimize explosions
++                        float f1 = !shouldDamageEntity && knockbackMultiplier == 0.0F ? 0.0F : this.getBlockDensity(this.center, entity, worldData); // Paper - Optimize explosions
+                         if (shouldDamageEntity) {
+                             // CraftBukkit start
+ 
+@@ -561,6 +564,9 @@ public class ServerExplosion implements Explosion {
+                 }
+             }
+         }
++        }finally {
++        this.level.worldDataPool.releaseReference((int)this.center.x >> 4, (int)this.center.z >> 4, ref.right());
++        }
+     }
+ 
+     private void interactWithBlocks(List<BlockPos> blocks) {
+@@ -754,11 +760,11 @@ public class ServerExplosion implements Explosion {
+ 
+ 
+     // Paper start - Optimize explosions
+-    private float getBlockDensity(Vec3 vec3d, Entity entity) {
++    private float getBlockDensity(Vec3 vec3d, Entity entity, io.papermc.paper.threadedregions.RegionizedWorldData worldData) {
+         if (!this.level.paperConfig().environment.optimizeExplosions) {
+             return this.getSeenFraction(vec3d, entity, this.directMappedBlockCache, this.mutablePos); // Paper - collision optimisations
+         }
+-        io.papermc.paper.threadedregions.RegionizedWorldData worldData = this.level.getCurrentWorldData(); // Folia - region threading
++        // io.papermc.paper.threadedregions.RegionizedWorldData worldData = this.level.getCurrentWorldData(); // Folia - region threading
+         CacheKey key = new CacheKey(this, entity.getBoundingBox());
+         Float blockDensity = worldData.explosionDensityCache.get(key); // Folia - region threading
+         if (blockDensity == null) {
+diff --git a/net/minecraft/world/level/block/Block.java b/net/minecraft/world/level/block/Block.java
+index 644b9fab1d6729bf3964ebee0d6e9c46f89b8c46..4cbeaaf8e8e45ef435e3c0495c5d3f890c53862c 100644
+--- a/net/minecraft/world/level/block/Block.java
++++ b/net/minecraft/world/level/block/Block.java
+@@ -408,11 +408,17 @@ public class Block extends BlockBehaviour implements ItemLike {
+             ItemEntity itemEntity = itemEntitySupplier.get();
+             itemEntity.setDefaultPickUpDelay();
+             // CraftBukkit start
+-            if (level.getCurrentWorldData().captureDrops != null) { // Folia - region threading
+-                level.getCurrentWorldData().captureDrops.add(itemEntity); // Folia - region threading
++            var ref = level.worldDataPool.getAndHeldReference(itemEntity);
++            var worldData = ref.left();
++            try {
++            if (worldData.captureDrops != null) { // Folia - region threading
++                worldData.captureDrops.add(itemEntity); // Folia - region threading
+             } else {
+                 level.addFreshEntity(itemEntity);
+             }
++            }finally {
++            level.worldDataPool.releaseReference(itemEntity, ref.right());
++            }
+             // CraftBukkit end
+         }
+     }
+diff --git a/net/minecraft/world/level/block/RedStoneWireBlock.java b/net/minecraft/world/level/block/RedStoneWireBlock.java
+index 4b37335e91a51b9a58ce0bce94b61ab5afbc6486..09889f8fb30d0c57c1b062d7cd860a6602c0798b 100644
+--- a/net/minecraft/world/level/block/RedStoneWireBlock.java
++++ b/net/minecraft/world/level/block/RedStoneWireBlock.java
+@@ -289,7 +289,13 @@ public class RedStoneWireBlock extends Block {
+             if (orientation != null) {
+                 source = pos.relative(orientation.getFront().getOpposite());
+             }
+-            getTurbo(worldIn).updateSurroundingRedstone(worldIn, pos, state, source); // Folia - region threading
++            var ref = worldIn.worldDataPool.getAndHeldReference(pos);
++            var worldData = ref.left();
++            try {
++            worldData.turbo.updateSurroundingRedstone(worldIn, pos, state, source); // Folia - region threading
++            }finally {
++            worldIn.worldDataPool.releaseReference(pos, ref.right());
++            }
+             return;
+         }
+         updatePowerStrength(worldIn, pos, state, orientation, blockAdded);
+@@ -317,7 +323,13 @@ public class RedStoneWireBlock extends Block {
+                 // [Space Walker] suppress shape updates and emit those manually to
+                 // bypass the new neighbor update stack.
+                 if (level.setBlock(pos, state, Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_CLIENTS)) {
+-                    this.getTurbo(level).updateNeighborShapes(level, pos, state); // Folia - region threading
++                    var ref = level.worldDataPool.getAndHeldReference(pos);
++                    var worldData = ref.left();
++                    try {
++                    worldData.turbo.updateNeighborShapes(level, pos, state); // Folia - region threading
++                    }finally {
++                    level.worldDataPool.releaseReference(pos, ref.right());
++                    }
+                 }
+             }
+         }
+diff --git a/net/minecraft/world/level/chunk/LevelChunk.java b/net/minecraft/world/level/chunk/LevelChunk.java
+index 29788fedd54b8411c9c8872b4d83b037874fb5f0..d2a6a48b767fde8a3b6a1f498f82407e65017083 100644
+--- a/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -419,9 +419,15 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
+                 if (!section.getBlockState(i, i1, i2).is(block)) {
+                     return null;
+                 } else {
+-                    if (!this.level.isClientSide && (flags & 512) == 0 && (!this.level.getCurrentWorldData().captureBlockStates || block instanceof net.minecraft.world.level.block.BaseEntityBlock)) { // CraftBukkit - Don't place while processing the BlockPlaceEvent, unless it's a BlockContainer. Prevents blocks such as TNT from activating when cancelled. // Folia - region threading
++                    var ref = level.worldDataPool.getAndHeldReference(pos);
++                    var worldData = ref.left();
++                    try {
++                    if (!this.level.isClientSide && (flags & 512) == 0 && (!worldData.captureBlockStates || block instanceof net.minecraft.world.level.block.BaseEntityBlock)) { // CraftBukkit - Don't place while processing the BlockPlaceEvent, unless it's a BlockContainer. Prevents blocks such as TNT from activating when cancelled. // Folia - region threading
+                         state.onPlace(this.level, pos, blockState, flag1);
+                     }
++                    }finally {
++                    level.worldDataPool.releaseReference(pos, ref.right());
++                    }
+ 
+                     if (state.hasBlockEntity()) {
+                         BlockEntity blockEntity = this.getBlockEntity(pos, LevelChunk.EntityCreationType.CHECK);
+@@ -474,7 +480,10 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
+     @Nullable
+     public BlockEntity getBlockEntity(BlockPos pos, LevelChunk.EntityCreationType creationType) {
+         // CraftBukkit start
+-        BlockEntity blockEntity = this.level.getCurrentWorldData().capturedTileEntities.get(pos); // Folia - region threading
++        var ref = this.level.worldDataPool.getAndHeldReference(pos);
++        var worldData = ref.left();
++        try {
++        BlockEntity blockEntity = worldData.capturedTileEntities.get(pos); // Folia - region threading
+         if (blockEntity == null) {
+             blockEntity = this.blockEntities.get(pos);
+         }
+@@ -502,6 +511,9 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
+         }
+ 
+         return blockEntity;
++        }finally {
++        this.level.worldDataPool.releaseReference(pos, ref.right());
++        }
+     }
+ 
+     public void addAndRegisterBlockEntity(BlockEntity blockEntity) {
+@@ -662,13 +674,19 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
+ 
+                 org.bukkit.World world = this.level.getWorld();
+                 if (world != null) {
+-                    this.level.getCurrentWorldData().populating = true; // Folia - region threading
++                    var ref = this.level.worldDataPool.getAndHeldReference(this.getPos().x, this.getPos().z);
++                    var worldData = ref.left();
++                    try {
++                    worldData.populating = true; // Folia - region threading
+                     try {
+                         for (org.bukkit.generator.BlockPopulator populator : world.getPopulators()) {
+                             populator.populate(world, random, bukkitChunk);
+                         }
+                     } finally {
+-                        this.level.getCurrentWorldData().populating = false; // Folia - region threading
++                        worldData.populating = false; // Folia - region threading
++                    }
++                    }finally {
++                    this.level.worldDataPool.releaseReference(this.getPos().x, this.getPos().z, ref.right());
+                     }
+                 }
+                 server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkPopulateEvent(bukkitChunk));

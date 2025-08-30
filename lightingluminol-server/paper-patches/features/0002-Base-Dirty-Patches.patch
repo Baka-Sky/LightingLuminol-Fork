@@ -317,10 +317,18 @@ index 5d05a8a843e605b6cb6d16883d17dd73d4c21e06..dc407e9b8964960890e0bd3186358870
              this.getLogger().log(Level.SEVERE, null, ex);
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 9b9eea4babcd67a088e9400b369d168d11c06ac1..a9799c796272ea392b1b825d919749f90d11b7d7 100644
+index 9b9eea4babcd67a088e9400b369d168d11c06ac1..bd417694baa10e1172d7037df9fa06ccacd3bf51 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -408,7 +408,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -11,6 +11,7 @@ import io.papermc.paper.registry.RegistryAccess;
+ import io.papermc.paper.registry.RegistryKey;
+ import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
+ import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl;
++import io.papermc.paper.threadedregions.RegionizedWorldData;
+ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+ import java.io.File;
+ import java.nio.file.Path;
+@@ -408,7 +409,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      public boolean isChunkGenerated(int x, int z) {
          // Paper start - Fix this method
@@ -329,7 +337,7 @@ index 9b9eea4babcd67a088e9400b369d168d11c06ac1..a9799c796272ea392b1b825d919749f9
              return java.util.concurrent.CompletableFuture.supplyAsync(() -> {
                  return CraftWorld.this.isChunkGenerated(x, z);
              }, (run) -> { io.papermc.paper.threadedregions.RegionizedServer.getInstance().taskQueue.queueChunkTask(this.getHandle(), x, z, run);}).join(); // Folia - region threading
-@@ -421,7 +421,11 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -421,7 +422,11 @@ public class CraftWorld extends CraftRegionAccessor implements World {
          ca.spottedleaf.moonrise.common.PlatformHooks.get().scheduleChunkLoad(
              this.world, x, z, false, ChunkStatus.EMPTY, true, ca.spottedleaf.concurrentutil.util.Priority.NORMAL, future::complete
          );
@@ -342,7 +350,7 @@ index 9b9eea4babcd67a088e9400b369d168d11c06ac1..a9799c796272ea392b1b825d919749f9
          return future.thenApply(c -> {
              if (c != null) {
                  return c.getPersistedStatus() == ChunkStatus.FULL;
-@@ -643,20 +647,20 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -643,20 +648,20 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public boolean isChunkForceLoaded(int x, int z) {
@@ -366,7 +374,29 @@ index 9b9eea4babcd67a088e9400b369d168d11c06ac1..a9799c796272ea392b1b825d919749f9
          Set<Chunk> chunks = new HashSet<>();
  
          for (long coord : this.getHandle().getForceLoadedChunks()) {
-@@ -833,7 +837,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -781,7 +786,10 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+     @Override
+     public boolean generateTree(Location loc, TreeType type, BlockChangeDelegate delegate) {
+         ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(this.world, loc.getX(), loc.getZ(), "Cannot generate tree asynchronously"); // Folia - region threading
+-        io.papermc.paper.threadedregions.RegionizedWorldData worldData = world.getCurrentWorldData(); // Folia - region threading
++        var ref = this.world.worldDataPool.getAndHeldReference(loc.getBlockX() >> 4, loc.getBlockZ() >> 4);
++        var worldData = ref.left();
++        try {
++        // io.papermc.paper.threadedregions.RegionizedWorldData worldData = world.getCurrentWorldData(); // Folia - region threading
+         worldData.captureTreeGeneration = true; // Folia - region threading
+         worldData.captureBlockStates = true; // Folia - region threading
+         boolean grownTree = this.generateTree(loc, type);
+@@ -802,6 +810,9 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+             worldData.capturedBlockStates.clear(); // Folia - region threading
+             return false;
+         }
++        }finally {
++        this.world.worldDataPool.releaseReference(loc.getBlockX() >> 4, loc.getBlockZ() >> 4, ref.right());
++        }
+     }
+ 
+     @Override
+@@ -833,7 +844,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setTime(long time) {
@@ -375,7 +405,7 @@ index 9b9eea4babcd67a088e9400b369d168d11c06ac1..a9799c796272ea392b1b825d919749f9
          long margin = (time - this.getFullTime()) % Level.TICKS_PER_DAY;
          if (margin < 0) margin += Level.TICKS_PER_DAY;
          this.setFullTime(this.getFullTime() + margin);
-@@ -846,7 +850,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -846,7 +857,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setFullTime(long time) {
@@ -384,7 +414,7 @@ index 9b9eea4babcd67a088e9400b369d168d11c06ac1..a9799c796272ea392b1b825d919749f9
          // Notify anyone who's listening
          TimeSkipEvent event = new TimeSkipEvent(this, TimeSkipEvent.SkipReason.CUSTOM, time - this.world.getDayTime());
          this.server.getPluginManager().callEvent(event);
-@@ -1354,7 +1358,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1354,7 +1365,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setStorm(boolean hasStorm) {
@@ -393,7 +423,7 @@ index 9b9eea4babcd67a088e9400b369d168d11c06ac1..a9799c796272ea392b1b825d919749f9
          this.world.serverLevelData.setRaining(hasStorm, org.bukkit.event.weather.WeatherChangeEvent.Cause.PLUGIN); // Paper - Add cause to Weather/ThunderChangeEvents
          this.setWeatherDuration(0); // Reset weather duration (legacy behaviour)
          this.setClearWeatherDuration(0); // Reset clear weather duration (reset "/weather clear" commands)
-@@ -1367,7 +1371,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1367,7 +1378,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setWeatherDuration(int duration) {
@@ -402,7 +432,7 @@ index 9b9eea4babcd67a088e9400b369d168d11c06ac1..a9799c796272ea392b1b825d919749f9
          this.world.serverLevelData.setRainTime(duration);
      }
  
-@@ -1378,7 +1382,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1378,7 +1389,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setThundering(boolean thundering) {
@@ -411,7 +441,7 @@ index 9b9eea4babcd67a088e9400b369d168d11c06ac1..a9799c796272ea392b1b825d919749f9
          this.world.serverLevelData.setThundering(thundering, org.bukkit.event.weather.ThunderChangeEvent.Cause.PLUGIN); // Paper - Add cause to Weather/ThunderChangeEvents
          this.setThunderDuration(0); // Reset weather duration (legacy behaviour)
          this.setClearWeatherDuration(0); // Reset clear weather duration (reset "/weather clear" commands)
-@@ -1391,7 +1395,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1391,7 +1402,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setThunderDuration(int duration) {
@@ -420,7 +450,7 @@ index 9b9eea4babcd67a088e9400b369d168d11c06ac1..a9799c796272ea392b1b825d919749f9
          this.world.serverLevelData.setThunderTime(duration);
      }
  
-@@ -1402,7 +1406,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1402,7 +1413,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setClearWeatherDuration(int duration) {
@@ -429,7 +459,7 @@ index 9b9eea4babcd67a088e9400b369d168d11c06ac1..a9799c796272ea392b1b825d919749f9
          this.world.serverLevelData.setClearWeatherTime(duration);
      }
  
-@@ -1601,7 +1605,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1601,7 +1612,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setKeepSpawnInMemory(boolean keepLoaded) {
@@ -438,7 +468,7 @@ index 9b9eea4babcd67a088e9400b369d168d11c06ac1..a9799c796272ea392b1b825d919749f9
          if (keepLoaded) {
              this.setGameRule(GameRule.SPAWN_CHUNK_RADIUS, this.getGameRuleDefault(GameRule.SPAWN_CHUNK_RADIUS));
          } else {
-@@ -1675,7 +1679,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1675,7 +1686,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setHardcore(boolean hardcore) {
@@ -447,7 +477,7 @@ index 9b9eea4babcd67a088e9400b369d168d11c06ac1..a9799c796272ea392b1b825d919749f9
          this.world.serverLevelData.settings.hardcore = hardcore;
      }
  
-@@ -1688,7 +1692,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1688,7 +1699,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      @Deprecated
      public void setTicksPerAnimalSpawns(int ticksPerAnimalSpawns) {
@@ -456,7 +486,7 @@ index 9b9eea4babcd67a088e9400b369d168d11c06ac1..a9799c796272ea392b1b825d919749f9
          this.setTicksPerSpawns(SpawnCategory.ANIMAL, ticksPerAnimalSpawns);
      }
  
-@@ -1701,7 +1705,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1701,7 +1712,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      @Deprecated
      public void setTicksPerMonsterSpawns(int ticksPerMonsterSpawns) {
@@ -465,7 +495,7 @@ index 9b9eea4babcd67a088e9400b369d168d11c06ac1..a9799c796272ea392b1b825d919749f9
          this.setTicksPerSpawns(SpawnCategory.MONSTER, ticksPerMonsterSpawns);
      }
  
-@@ -1714,7 +1718,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1714,7 +1725,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      @Deprecated
      public void setTicksPerWaterSpawns(int ticksPerWaterSpawns) {
@@ -474,7 +504,7 @@ index 9b9eea4babcd67a088e9400b369d168d11c06ac1..a9799c796272ea392b1b825d919749f9
          this.setTicksPerSpawns(SpawnCategory.WATER_ANIMAL, ticksPerWaterSpawns);
      }
  
-@@ -1727,7 +1731,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1727,7 +1738,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      @Deprecated
      public void setTicksPerWaterAmbientSpawns(int ticksPerWaterAmbientSpawns) {
@@ -483,7 +513,7 @@ index 9b9eea4babcd67a088e9400b369d168d11c06ac1..a9799c796272ea392b1b825d919749f9
          this.setTicksPerSpawns(SpawnCategory.WATER_AMBIENT, ticksPerWaterAmbientSpawns);
      }
  
-@@ -1740,7 +1744,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1740,7 +1751,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      @Deprecated
      public void setTicksPerWaterUndergroundCreatureSpawns(int ticksPerWaterUndergroundCreatureSpawns) {
@@ -492,7 +522,7 @@ index 9b9eea4babcd67a088e9400b369d168d11c06ac1..a9799c796272ea392b1b825d919749f9
          this.setTicksPerSpawns(SpawnCategory.WATER_UNDERGROUND_CREATURE, ticksPerWaterUndergroundCreatureSpawns);
      }
  
-@@ -1753,13 +1757,13 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1753,13 +1764,13 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      @Deprecated
      public void setTicksPerAmbientSpawns(int ticksPerAmbientSpawns) {
@@ -508,7 +538,7 @@ index 9b9eea4babcd67a088e9400b369d168d11c06ac1..a9799c796272ea392b1b825d919749f9
          Preconditions.checkArgument(spawnCategory != null, "SpawnCategory cannot be null");
          Preconditions.checkArgument(CraftSpawnCategory.isValidForLimits(spawnCategory), "SpawnCategory.%s are not supported", spawnCategory);
  
-@@ -1776,25 +1780,25 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1776,25 +1787,25 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setMetadata(String metadataKey, MetadataValue newMetadataValue) {
@@ -538,7 +568,7 @@ index 9b9eea4babcd67a088e9400b369d168d11c06ac1..a9799c796272ea392b1b825d919749f9
          this.server.getWorldMetadata().removeMetadata(this, metadataKey, owningPlugin);
      }
  
-@@ -1807,7 +1811,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1807,7 +1818,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      @Deprecated
      public void setMonsterSpawnLimit(int limit) {
@@ -547,7 +577,7 @@ index 9b9eea4babcd67a088e9400b369d168d11c06ac1..a9799c796272ea392b1b825d919749f9
          this.setSpawnLimit(SpawnCategory.MONSTER, limit);
      }
  
-@@ -1820,7 +1824,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1820,7 +1831,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      @Deprecated
      public void setAnimalSpawnLimit(int limit) {
@@ -556,7 +586,7 @@ index 9b9eea4babcd67a088e9400b369d168d11c06ac1..a9799c796272ea392b1b825d919749f9
          this.setSpawnLimit(SpawnCategory.ANIMAL, limit);
      }
  
-@@ -1833,7 +1837,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1833,7 +1844,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      @Deprecated
      public void setWaterAnimalSpawnLimit(int limit) {
@@ -565,7 +595,7 @@ index 9b9eea4babcd67a088e9400b369d168d11c06ac1..a9799c796272ea392b1b825d919749f9
          this.setSpawnLimit(SpawnCategory.WATER_ANIMAL, limit);
      }
  
-@@ -1846,7 +1850,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1846,7 +1857,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      @Deprecated
      public void setWaterAmbientSpawnLimit(int limit) {
@@ -574,7 +604,7 @@ index 9b9eea4babcd67a088e9400b369d168d11c06ac1..a9799c796272ea392b1b825d919749f9
          this.setSpawnLimit(SpawnCategory.WATER_AMBIENT, limit);
      }
  
-@@ -1859,7 +1863,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1859,7 +1870,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      @Deprecated
      public void setWaterUndergroundCreatureSpawnLimit(int limit) {
@@ -583,7 +613,7 @@ index 9b9eea4babcd67a088e9400b369d168d11c06ac1..a9799c796272ea392b1b825d919749f9
          this.setSpawnLimit(SpawnCategory.WATER_UNDERGROUND_CREATURE, limit);
      }
  
-@@ -1872,7 +1876,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1872,7 +1883,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      @Deprecated
      public void setAmbientSpawnLimit(int limit) {
@@ -592,7 +622,7 @@ index 9b9eea4babcd67a088e9400b369d168d11c06ac1..a9799c796272ea392b1b825d919749f9
          this.setSpawnLimit(SpawnCategory.AMBIENT, limit);
      }
  
-@@ -1895,7 +1899,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1895,7 +1906,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setSpawnLimit(SpawnCategory spawnCategory, int limit) {
@@ -601,7 +631,7 @@ index 9b9eea4babcd67a088e9400b369d168d11c06ac1..a9799c796272ea392b1b825d919749f9
          Preconditions.checkArgument(spawnCategory != null, "SpawnCategory cannot be null");
          Preconditions.checkArgument(CraftSpawnCategory.isValidForLimits(spawnCategory), "SpawnCategory.%s are not supported", spawnCategory);
  
-@@ -2082,7 +2086,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -2082,7 +2093,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public boolean setGameRuleValue(String rule, String value) {
@@ -610,7 +640,7 @@ index 9b9eea4babcd67a088e9400b369d168d11c06ac1..a9799c796272ea392b1b825d919749f9
          // No null values allowed
          if (rule == null || value == null) return false;
  
-@@ -2131,7 +2135,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -2131,7 +2142,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public <T> boolean setGameRule(GameRule<T> rule, T newValue) {
@@ -619,6 +649,311 @@ index 9b9eea4babcd67a088e9400b369d168d11c06ac1..a9799c796272ea392b1b825d919749f9
          Preconditions.checkArgument(rule != null, "GameRule cannot be null");
          Preconditions.checkArgument(newValue != null, "GameRule value cannot be null");
  
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+index ed29b6250c80fadcec66c51d3af6551223c6882b..9dafe14b2f23c3403b08e1519fd47ef41750b2b9 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+@@ -1,11 +1,16 @@
+ package org.bukkit.craftbukkit.block;
+ 
++import ca.spottedleaf.moonrise.common.util.TickThread;
++import com.destroystokyo.paper.block.BlockSoundGroup;
++import com.destroystokyo.paper.block.CraftBlockSoundGroup;
+ import com.google.common.base.Preconditions;
+ import java.util.ArrayList;
+ import java.util.Collection;
+ import java.util.Collections;
+ import java.util.List;
+ import java.util.stream.Collectors;
++
++import io.papermc.paper.threadedregions.RegionizedWorldData;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Direction;
+ import net.minecraft.server.level.ServerLevel;
+@@ -15,24 +20,18 @@ import net.minecraft.world.item.BoneMealItem;
+ import net.minecraft.world.item.Items;
+ import net.minecraft.world.item.context.UseOnContext;
+ import net.minecraft.world.level.ClipContext;
++import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.LevelAccessor;
+ import net.minecraft.world.level.LightLayer;
+-import net.minecraft.world.level.block.Blocks;
+-import net.minecraft.world.level.block.RedStoneWireBlock;
+-import net.minecraft.world.level.block.SaplingBlock;
++import net.minecraft.world.level.block.*;
++import net.minecraft.world.level.material.FluidState;
+ import net.minecraft.world.phys.AABB;
+ import net.minecraft.world.phys.BlockHitResult;
+ import net.minecraft.world.phys.HitResult;
+ import net.minecraft.world.phys.Vec3;
+ import net.minecraft.world.phys.shapes.CollisionContext;
+ import net.minecraft.world.phys.shapes.VoxelShape;
+-import org.bukkit.Bukkit;
+-import org.bukkit.Chunk;
+-import org.bukkit.FluidCollisionMode;
+-import org.bukkit.Location;
+-import org.bukkit.Material;
+-import org.bukkit.TreeType;
+-import org.bukkit.World;
++import org.bukkit.*;
+ import org.bukkit.block.Biome;
+ import org.bukkit.block.Block;
+ import org.bukkit.block.BlockFace;
+@@ -40,6 +39,7 @@ import org.bukkit.block.BlockState;
+ import org.bukkit.block.PistonMoveReaction;
+ import org.bukkit.block.data.BlockData;
+ import org.bukkit.craftbukkit.CraftFluidCollisionMode;
++import org.bukkit.craftbukkit.CraftSoundGroup;
+ import org.bukkit.craftbukkit.CraftWorld;
+ import org.bukkit.craftbukkit.block.data.CraftBlockData;
+ import org.bukkit.craftbukkit.entity.CraftEntity;
+@@ -62,7 +62,7 @@ import org.bukkit.util.RayTraceResult;
+ import org.bukkit.util.Vector;
+ 
+ public class CraftBlock implements Block {
+-    private final net.minecraft.world.level.LevelAccessor world;
++    private final LevelAccessor world;
+     private final BlockPos position;
+ 
+     public CraftBlock(LevelAccessor world, BlockPos position) {
+@@ -77,13 +77,13 @@ public class CraftBlock implements Block {
+     public net.minecraft.world.level.block.state.BlockState getNMS() {
+         // Folia start - region threading
+         if (this.world instanceof ServerLevel serverWorld) {
+-            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
++            TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
+         }
+         // Folia end - region threading
+         return this.world.getBlockState(this.position);
+     }
+ 
+-    public net.minecraft.world.level.material.FluidState getNMSFluid() {
++    public FluidState getNMSFluid() {
+         return this.world.getFluidState(this.position);
+     }
+ 
+@@ -162,7 +162,7 @@ public class CraftBlock implements Block {
+     private void setData(final byte data, int flags) {
+         // Folia start - region threading
+         if (this.world instanceof ServerLevel serverWorld) {
+-            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
++            TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
+         }
+         // Folia end - region threading
+         this.world.setBlock(this.position, CraftMagicNumbers.getBlock(this.getType(), data), flags);
+@@ -208,14 +208,14 @@ public class CraftBlock implements Block {
+     public static boolean setBlockState(LevelAccessor world, BlockPos pos, net.minecraft.world.level.block.state.BlockState oldState, net.minecraft.world.level.block.state.BlockState newState, boolean applyPhysics) {
+         // Folia start - region threading
+         if (world instanceof ServerLevel serverWorld) {
+-            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(serverWorld, pos, "Cannot modify world asynchronously");
++            TickThread.ensureTickThread(serverWorld, pos, "Cannot modify world asynchronously");
+         }
+         // Folia end - region threading
+         // SPIGOT-611: need to do this to prevent glitchiness. Easier to handle this here (like /setblock) than to fix weirdness in block entity cleanup
+         if (oldState.hasBlockEntity() && newState.getBlock() != oldState.getBlock()) { // SPIGOT-3725 remove old block entity if block changes
+             // SPIGOT-4612: faster - just clear tile
+-            if (world instanceof net.minecraft.world.level.Level) {
+-                ((net.minecraft.world.level.Level) world).removeBlockEntity(pos);
++            if (world instanceof Level) {
++                ((Level) world).removeBlockEntity(pos);
+             } else {
+                 world.setBlock(pos, Blocks.AIR.defaultBlockState(), 0);
+             }
+@@ -228,7 +228,7 @@ public class CraftBlock implements Block {
+                 net.minecraft.world.level.block.Block.UPDATE_CLIENTS |
+                     net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE |
+                     net.minecraft.world.level.block.Block.UPDATE_SKIP_ON_PLACE);
+-            if (success && world instanceof net.minecraft.world.level.Level) {
++            if (success && world instanceof Level) {
+                 world.getMinecraftWorld().sendBlockUpdated(
+                     pos,
+                     oldState,
+@@ -361,7 +361,7 @@ public class CraftBlock implements Block {
+     public Biome getBiome() {
+         // Folia start - region threading
+         if (this.world instanceof ServerLevel serverWorld) {
+-            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
++            TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
+         }
+         // Folia end - region threading
+         return this.getWorld().getBiome(this.getX(), this.getY(), this.getZ());
+@@ -372,7 +372,7 @@ public class CraftBlock implements Block {
+     public Biome getComputedBiome() {
+         // Folia start - region threading
+         if (this.world instanceof ServerLevel serverWorld) {
+-            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
++            TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
+         }
+         // Folia end - region threading
+         return this.getWorld().getComputedBiome(this.getX(), this.getY(), this.getZ());
+@@ -383,7 +383,7 @@ public class CraftBlock implements Block {
+     public void setBiome(Biome bio) {
+         // Folia start - region threading
+         if (this.world instanceof ServerLevel serverWorld) {
+-            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
++            TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
+         }
+         // Folia end - region threading
+         this.getWorld().setBiome(this.getX(), this.getY(), this.getZ(), bio);
+@@ -435,7 +435,7 @@ public class CraftBlock implements Block {
+     public boolean isBlockFaceIndirectlyPowered(BlockFace face) {
+         // Folia start - region threading
+         if (this.world instanceof ServerLevel serverWorld) {
+-            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
++            TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
+         }
+         // Folia end - region threading
+         int power = this.world.getMinecraftWorld().getSignal(this.position, CraftBlock.blockFaceToNotch(face));
+@@ -452,11 +452,11 @@ public class CraftBlock implements Block {
+     public int getBlockPower(BlockFace face) {
+         // Folia start - region threading
+         if (this.world instanceof ServerLevel serverWorld) {
+-            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
++            TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
+         }
+         // Folia end - region threading
+         int power = 0;
+-        net.minecraft.world.level.Level world = this.world.getMinecraftWorld();
++        Level world = this.world.getMinecraftWorld();
+         int x = this.getX();
+         int y = this.getY();
+         int z = this.getZ();
+@@ -546,7 +546,7 @@ public class CraftBlock implements Block {
+     public boolean breakNaturally(ItemStack item, boolean triggerEffect, boolean dropExperience, boolean forceEffect) {
+         // Folia start - region threading
+         if (this.world instanceof ServerLevel serverWorld) {
+-            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
++            TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
+         }
+         // Folia end - region threading
+         // Paper end
+@@ -566,10 +566,10 @@ public class CraftBlock implements Block {
+         }
+ 
+         if ((result && triggerEffect) || (forceEffect && block != Blocks.AIR)) {
+-            if (state.getBlock() instanceof net.minecraft.world.level.block.BaseFireBlock) {
+-                this.world.levelEvent(net.minecraft.world.level.block.LevelEvent.SOUND_EXTINGUISH_FIRE, this.position, 0);
++            if (state.getBlock() instanceof BaseFireBlock) {
++                this.world.levelEvent(LevelEvent.SOUND_EXTINGUISH_FIRE, this.position, 0);
+             } else {
+-                this.world.levelEvent(net.minecraft.world.level.block.LevelEvent.PARTICLES_DESTROY_BLOCK, this.position, net.minecraft.world.level.block.Block.getId(state));
++                this.world.levelEvent(LevelEvent.PARTICLES_DESTROY_BLOCK, this.position, net.minecraft.world.level.block.Block.getId(state));
+             }
+         }
+ 
+@@ -581,9 +581,9 @@ public class CraftBlock implements Block {
+         }
+         if (result) {
+             // special cases
+-            if (block instanceof net.minecraft.world.level.block.IceBlock iceBlock) {
++            if (block instanceof IceBlock iceBlock) {
+                 iceBlock.afterDestroy(this.world.getMinecraftWorld(), this.position, nmsItem);
+-            } else if (block instanceof net.minecraft.world.level.block.TurtleEggBlock turtleEggBlock) {
++            } else if (block instanceof TurtleEggBlock turtleEggBlock) {
+                 turtleEggBlock.decreaseEggs(this.world.getMinecraftWorld(), this.position, state);
+             }
+         }
+@@ -595,7 +595,7 @@ public class CraftBlock implements Block {
+     public boolean applyBoneMeal(BlockFace face) {
+         // Folia start - region threading
+         if (this.world instanceof ServerLevel serverWorld) {
+-            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
++            TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
+         }
+         // Folia end - region threading
+         Direction direction = CraftBlock.blockFaceToNotch(face);
+@@ -603,7 +603,9 @@ public class CraftBlock implements Block {
+         ServerLevel world = this.getCraftWorld().getHandle();
+         UseOnContext context = new UseOnContext(world, null, InteractionHand.MAIN_HAND, Items.BONE_MEAL.getDefaultInstance(), new BlockHitResult(Vec3.ZERO, direction, this.getPosition(), false));
+ 
+-        io.papermc.paper.threadedregions.RegionizedWorldData worldData = world.getCurrentWorldData(); // Folia - region threading
++        var ref = ((net.minecraft.world.level.Level) this.world).worldDataPool.getAndHeldReference(face.getModX() >> 4, face.getModZ() >> 4);
++        RegionizedWorldData worldData = ref.left(); // Folia - region threading
++        try {
+         // SPIGOT-6895: Call StructureGrowEvent and BlockFertilizeEvent
+         worldData.captureTreeGeneration = true; // Folia - region threading
+         InteractionResult result = BoneMealItem.applyBonemeal(context);
+@@ -633,8 +635,10 @@ public class CraftBlock implements Block {
+                 }
+             }
+         }
+-
+         return result == InteractionResult.SUCCESS && (event == null || !event.isCancelled());
++        }finally {
++        ((net.minecraft.world.level.Level) this.world).worldDataPool.releaseReference(face.getModX() >> 4, face.getModZ() >> 4, ref.right());
++        }
+     }
+ 
+     @Override
+@@ -703,7 +707,7 @@ public class CraftBlock implements Block {
+     public RayTraceResult rayTrace(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode) {
+         // Folia start - region threading
+         if (this.world instanceof ServerLevel serverWorld) {
+-            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
++            TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
+         }
+         // Folia end - region threading
+         Preconditions.checkArgument(start != null, "Location start cannot be null");
+@@ -749,12 +753,12 @@ public class CraftBlock implements Block {
+     public boolean canPlace(BlockData data) {
+         // Folia start - region threading
+         if (this.world instanceof ServerLevel serverWorld) {
+-            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
++            TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
+         }
+         // Folia end - region threading
+         Preconditions.checkArgument(data != null, "BlockData cannot be null");
+         net.minecraft.world.level.block.state.BlockState iblockdata = ((CraftBlockData) data).getState();
+-        net.minecraft.world.level.Level world = this.world.getMinecraftWorld();
++        Level world = this.world.getMinecraftWorld();
+ 
+         return iblockdata.canSurvive(world, this.position);
+     }
+@@ -771,13 +775,13 @@ public class CraftBlock implements Block {
+ 
+     // Paper start
+     @Override
+-    public com.destroystokyo.paper.block.BlockSoundGroup getSoundGroup() {
+-        return new com.destroystokyo.paper.block.CraftBlockSoundGroup(getNMS().getBlock().defaultBlockState().getSoundType());
++    public BlockSoundGroup getSoundGroup() {
++        return new CraftBlockSoundGroup(getNMS().getBlock().defaultBlockState().getSoundType());
+     }
+ 
+     @Override
+-    public org.bukkit.SoundGroup getBlockSoundGroup() {
+-        return org.bukkit.craftbukkit.CraftSoundGroup.getSoundGroup(this.getNMS().getSoundType());
++    public SoundGroup getBlockSoundGroup() {
++        return CraftSoundGroup.getSoundGroup(this.getNMS().getSoundType());
+     }
+ 
+     @Override
+@@ -793,7 +797,7 @@ public class CraftBlock implements Block {
+     public void tick() {
+         // Folia start - region threading
+         if (this.world instanceof ServerLevel serverWorld) {
+-            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
++            TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
+         }
+         // Folia end - region threading
+         final ServerLevel level = this.world.getMinecraftWorld();
+@@ -804,7 +808,7 @@ public class CraftBlock implements Block {
+     public void fluidTick() {
+         // Folia start - region threading
+         if (this.world instanceof ServerLevel serverWorld) {
+-            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
++            TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
+         }
+         // Folia end - region threading
+         this.getNMSFluid().tick(this.world.getMinecraftWorld(), this.position, this.getNMS());
+@@ -814,7 +818,7 @@ public class CraftBlock implements Block {
+     public void randomTick() {
+         // Folia start - region threading
+         if (this.world instanceof ServerLevel serverWorld) {
+-            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
++            TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
+         }
+         // Folia end - region threading
+         final ServerLevel level = this.world.getMinecraftWorld();
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 index 7883b7973570b5f275a03c6aac4d3b4392e7fa6e..e9bfed7aa0e97dee9d83096141c3e43897bc304d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
