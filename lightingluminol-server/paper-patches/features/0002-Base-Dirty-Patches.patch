@@ -224,9 +224,18 @@ index 2e876b918672e8ef3b5197b7e6b1597247fdeaa1..6c4e25e5e21044c0fa9728e475b28f64
  
                  if (lastRet == null) {
 diff --git a/src/main/java/ca/spottedleaf/moonrise/common/util/TickThread.java b/src/main/java/ca/spottedleaf/moonrise/common/util/TickThread.java
-index 881a82e0115b6bc2aac29ec5d35168faceb597da..a730423bf74c470ae09a7deb293a5537ee65897b 100644
+index 881a82e0115b6bc2aac29ec5d35168faceb597da..b8463efa16b6db670a2a68c0c9d0e65c5bd088ec 100644
 --- a/src/main/java/ca/spottedleaf/moonrise/common/util/TickThread.java
 +++ b/src/main/java/ca/spottedleaf/moonrise/common/util/TickThread.java
+@@ -32,7 +32,7 @@ public class TickThread extends Thread {
+         return "{center=" + center + ",world=" + (world == null ? "null" : WorldUtil.getWorldName(world)) + "}";
+     }
+ 
+-    private static String getThreadContext() {
++    public static String getThreadContext() {
+         final Thread thread = Thread.currentThread();
+ 
+         if (!(thread instanceof TickThread)) {
 @@ -49,8 +49,8 @@ public class TickThread extends Thread {
      @Deprecated
      public static void ensureTickThread(final String reason) {

@@ -892,10 +892,33 @@ index 619cbb1a9296c814bbdad0780df91c8db01bc5cd..a21bab0a78fccb92ccee074921b49ec2
  
      @Override
 diff --git a/net/minecraft/server/level/ServerChunkCache.java b/net/minecraft/server/level/ServerChunkCache.java
-index 05bad0366bd36b8134290a0cceb4d4dfcbbd0544..b05195d892615694f057d27d75ce4c2e950cb2a0 100644
+index 05bad0366bd36b8134290a0cceb4d4dfcbbd0544..e7dea87ac4c54d87050a22a124de73b78d82fdfc 100644
 --- a/net/minecraft/server/level/ServerChunkCache.java
 +++ b/net/minecraft/server/level/ServerChunkCache.java
-@@ -117,7 +117,7 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+@@ -1,5 +1,6 @@
+ package net.minecraft.server.level;
+ 
++import ca.spottedleaf.moonrise.common.util.WorldUtil;
+ import com.google.common.annotations.VisibleForTesting;
+ import com.mojang.datafixers.DataFixer;
+ import com.mojang.logging.LogUtils;
+@@ -100,7 +101,14 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+     private ChunkAccess syncLoad(final int chunkX, final int chunkZ, final ChunkStatus toStatus) {
+         // Folia start - region threading
+         if (ca.spottedleaf.moonrise.common.util.TickThread.isTickThread()) {
+-            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(this.level, chunkX, chunkZ, "Cannot asynchronously load chunks");
++            if (!io.papermc.paper.threadedregions.RegionizedServer.isGlobalTickThread()) {
++                if (!ca.spottedleaf.moonrise.common.util.TickThread.isTickThreadFor(this.level, chunkX, chunkZ)) {
++                    final String ex = "Thread failed main thread check: " +
++                            "schedule chunk load off-main" + ", context=" + ca.spottedleaf.moonrise.common.util.TickThread.getThreadContext() + ", world=" + WorldUtil.getWorldName(this.level) + ", chunk_pos=" + new ChunkPos(chunkX, chunkZ);
++                    LOGGER.error(ex, new Throwable());
++                    throw new IllegalStateException(ex);
++                }
++            }
+         }
+         // Folia end - region threading
+         final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler chunkTaskScheduler = ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler();
+@@ -117,7 +125,7 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
              );
          }
  
@@ -904,7 +927,7 @@ index 05bad0366bd36b8134290a0cceb4d4dfcbbd0544..b05195d892615694f057d27d75ce4c2e
              ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.pushChunkWait(this.level, chunkX, chunkZ);
              this.mainThreadProcessor.managedBlock(completable::isDone);
              ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.popChunkWait();
-@@ -696,7 +696,13 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+@@ -696,7 +704,13 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
          int sectionPosZ = SectionPos.blockToSectionCoord(pos.getZ());
          ChunkHolder visibleChunkIfPresent = this.getVisibleChunkIfPresent(ChunkPos.asLong(sectionPosX, sectionPosZ));
          if (visibleChunkIfPresent != null && visibleChunkIfPresent.blockChanged(pos)) {
@@ -919,7 +942,7 @@ index 05bad0366bd36b8134290a0cceb4d4dfcbbd0544..b05195d892615694f057d27d75ce4c2e
          }
      }
  
-@@ -910,8 +916,10 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+@@ -910,8 +924,10 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
          @Override
          public boolean pollTask() {
              // Folia start - region threading
@@ -932,7 +955,7 @@ index 05bad0366bd36b8134290a0cceb4d4dfcbbd0544..b05195d892615694f057d27d75ce4c2e
              }
              // Folia end - region threading
              // Paper start - rewrite chunk system
-@@ -919,7 +927,11 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+@@ -919,7 +935,11 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
              if (serverChunkCache.runDistanceManagerUpdates()) {
                  return true;
              } else {
