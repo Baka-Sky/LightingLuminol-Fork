@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Bacteriawa <A3167717663@hotmail.com>
-Date: Sat, 31 May 2025 23:07:10 +0800
+Date: Thu, 4 Sep 2025 23:24:44 +0800
 Subject: [PATCH] Base Dirty Patches
 
 
@@ -298,15 +298,15 @@ index e1842ab8f20271a8b20ab8462b09a4745a612a9a..0502fd0dc6404b60dc9887c1edc02bc2
          ((DedicatedServer)MinecraftServer.getServer()).handleConsoleInputs();
  
 diff --git a/io/papermc/paper/threadedregions/RegionizedTaskQueue.java b/io/papermc/paper/threadedregions/RegionizedTaskQueue.java
-index 2147f3647d47e9a45e0e3017026523ee0f355e48..33aba7ab105db6f82c3fef3ccb66bd61552738de 100644
+index 25a0b1d56652e4455a188d0f413581638d5ef538..55cc4fadae3bfa0e8f137c7c4f0a058073dd563f 100644
 --- a/io/papermc/paper/threadedregions/RegionizedTaskQueue.java
 +++ b/io/papermc/paper/threadedregions/RegionizedTaskQueue.java
 @@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
  
  public final class RegionizedTaskQueue {
  
--    private static final TicketType<Unit> TASK_QUEUE_TICKET = ChunkSystemTicketType.create("task_queue_ticket", (a, b) -> 0);
-+    public static final TicketType<Unit> TASK_QUEUE_TICKET = ChunkSystemTicketType.create("task_queue_ticket", (a, b) -> 0);
+-    private static final TicketType<Long> TASK_QUEUE_TICKET = ChunkSystemTicketType.create("task_queue_ticket", Long::compareTo);
++    public static final TicketType<Long> TASK_QUEUE_TICKET = ChunkSystemTicketType.create("task_queue_ticket", Long::compareTo);
  
      public PrioritisedExecutor.PrioritisedTask createChunkTask(final ServerLevel world, final int chunkX, final int chunkZ,
                                                                 final Runnable run) {
@@ -680,7 +680,7 @@ index bfb39cbf1ba58d02da7e35300eb95872747506e8..03b23984ca6c654beb1720875a4243aa
  
              if (ret != null) {
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index 100e8fdc52c201d386e3c779d19f6b5abde39820..1397f7d446cc89c7e9255f4d734dc45c6825ccab 100644
+index 75027e73859c955a54034640f905cb5d91a6a2f4..02697b2d0a8dbd74b44c129b6f5117d948ba9d16 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
 @@ -41,7 +41,7 @@ import java.util.UUID;
@@ -748,7 +748,7 @@ index 100e8fdc52c201d386e3c779d19f6b5abde39820..1397f7d446cc89c7e9255f4d734dc45c
      public void initWorld(ServerLevel serverLevel, ServerLevelData serverLevelData, WorldData saveData, WorldOptions worldOptions) {
          boolean isDebugWorld = saveData.isDebugWorld();
          if (serverLevel.generator != null) {
-@@ -1617,6 +1615,24 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1618,6 +1616,24 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                  return;
              }
          }
@@ -773,7 +773,7 @@ index 100e8fdc52c201d386e3c779d19f6b5abde39820..1397f7d446cc89c7e9255f4d734dc45c
  
  
          // Folia start - region threading
-@@ -2227,7 +2243,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2228,7 +2244,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
      public int getTickCount() {
@@ -1238,7 +1238,7 @@ index ee7bdc3adbeb04cf6ca630282f31a21e52bdb215..da31a33bbee97c1674ab9f936df3a5c2
                  return true;
                  // CraftBukkit end
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 8ec753fe9c84ffe1188f7e7ebb6895cf4bba9e39..531232eb6cd5e38429d252ff852b5b6e1c2d7f2a 100644
+index 06af060f5023214ee7f32b9e0dc1fe56ff96f783..ec1f4eebc005fef83236bf413d4dd66bef2691ea 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -1,5 +1,8 @@
@@ -1341,7 +1341,7 @@ index 8ec753fe9c84ffe1188f7e7ebb6895cf4bba9e39..531232eb6cd5e38429d252ff852b5b6e
      // Paper end - optimise Folia entity scheduler
  
 diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
-index 567d63ae589705e13403814b36e35d00c241a69e..2456b9f4b69bf3bc94da49b9255229e27d68f2bb 100644
+index 0c6d48363cd65cd22b4cc0ab97be977e133b64be..f2fe10cf5fac1651519777e3f976b28a88026a73 100644
 --- a/net/minecraft/world/entity/LivingEntity.java
 +++ b/net/minecraft/world/entity/LivingEntity.java
 @@ -1562,7 +1562,13 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin

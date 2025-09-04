@@ -351,7 +351,7 @@ index 335058589eeba934105bea31a0c3aea2293a5597..db1e0d7f27ecae60ab853b4a16ec2cf1
          // Folia end - block plugins not marked as supported
          // Copied from SimplePluginManager#loadPlugins
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 5d05a8a843e605b6cb6d16883d17dd73d4c21e06..dc407e9b8964960890e0bd318635887054337981 100644
+index 4dde33c872d463bf17ba03e926de90e6988444b2..94f70ca0aabdb295c3df766d021a836233280bb4 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -1,5 +1,7 @@
