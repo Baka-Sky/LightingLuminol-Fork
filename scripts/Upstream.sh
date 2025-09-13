@@ -20,7 +20,7 @@ set -e
 PS1="$"
 
 # default for target branch/ref
-luminolBranch="main"
+luminolBranch="ver/1.21.8"
 
 # try to read the new luminolRef from git diff (if present)
 newLuminolRef=$(git diff gradle.properties | awk '/^\+[[:space:]]*luminolRef[[:space:]]*=/ {print $NF}')
