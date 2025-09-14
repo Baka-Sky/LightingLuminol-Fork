@@ -176,10 +176,129 @@ index 5f26fd89704aa3fd9c37a1d68a7c4c65ce1e7a5d..bcdc1d302815babd8f5642e08c03abd9
  
      @Override
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/EntityLookup.java b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/EntityLookup.java
-index 20941198b3a1227381c0a9039898a6506344a588..b58d2c3c810379e6369207e90c41a6abb5bce886 100644
+index 20941198b3a1227381c0a9039898a6506344a588..1ddaf71b7cc88a00c0d53627b9720440c6d1e997 100644
 --- a/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/EntityLookup.java
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/EntityLookup.java
-@@ -1005,7 +1005,12 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
+@@ -235,23 +235,24 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
+                                    final boolean created, final boolean destroyed) {
+         this.checkThread(entity, "Entity status change must only happen on the main thread");
+ 
+-        if (((ChunkSystemEntity)entity).moonrise$isUpdatingSectionStatus()) {
++        /*if (((ChunkSystemEntity)entity).moonrise$isUpdatingSectionStatus()) {
+             // recursive status update
+             LOGGER.error("Cannot recursively update entity chunk status for entity " + entity, new Throwable());
+             return;
+-        }
++        }*/
+ 
+-        final boolean entityStatusUpdateBefore = slices == null ? false : slices.startPreventingStatusUpdates();
++        /*final boolean entityStatusUpdateBefore = slices == null ? false : slices.startPreventingStatusUpdates();
+ 
+         if (entityStatusUpdateBefore) {
+             LOGGER.error("Cannot update chunk status for entity " + entity + " since entity chunk (" + slices.chunkX + "," + slices.chunkZ + ") is receiving update", new Throwable());
+             return;
+-        }
++        }*/
+ 
++        synchronized (slices) {
+         try {
+             final Boolean ticketBlockBefore = this.blockTicketUpdates();
+             try {
+-                ((ChunkSystemEntity)entity).moonrise$setUpdatingSectionStatus(true);
++                //((ChunkSystemEntity)entity).moonrise$setUpdatingSectionStatus(true);
+                 try {
+                     if (created) {
+                         if (EntityLookup.this.worldCallback != null) {
+@@ -318,15 +319,16 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
+                         }
+                     }
+                 } finally {
+-                    ((ChunkSystemEntity)entity).moonrise$setUpdatingSectionStatus(false);
++                    //((ChunkSystemEntity)entity).moonrise$setUpdatingSectionStatus(false);
+                 }
+             } finally {
+                 this.setBlockTicketUpdates(ticketBlockBefore);
+             }
+         } finally {
+-            if (slices != null) {
++            /*if (slices != null) {
+                 slices.stopPreventingStatusUpdates(false);
+-            }
++            }*/
++        }
+         }
+     }
+ 
+@@ -413,10 +415,11 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
+             return false;
+         }
+ 
+-        if (((ChunkSystemEntity)entity).moonrise$isUpdatingSectionStatus()) {
++        /*if (((ChunkSystemEntity)entity).moonrise$isUpdatingSectionStatus()) {
+             LOGGER.warn("Entity " + entity + " is currently prevented from being added/removed to world since it is processing section status updates", new Throwable());
+             return false;
+         }
++         */
+ 
+         if (!this.screenEntity(entity, fromDisk, event)) {
+             return false;
+@@ -440,6 +443,7 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
+         ((ChunkSystemEntity)entity).moonrise$setSectionY(sectionY);
+         ((ChunkSystemEntity)entity).moonrise$setSectionZ(sectionZ);
+         final ChunkEntitySlices slices = this.getOrCreateChunk(sectionX, sectionZ);
++        synchronized (slices) {
+         if (!slices.addEntity(entity, sectionY)) {
+             LOGGER.warn("Entity " + entity + " added to world '" + WorldUtil.getWorldName(this.world) + "', but was already contained in entity chunk (" + sectionX + "," + sectionZ + ")");
+         }
+@@ -449,19 +453,19 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
+         this.addEntityCallback(entity);
+ 
+         this.entityStatusChange(entity, slices, Visibility.HIDDEN, getEntityStatus(entity), false, !fromDisk, false);
+-
++        }
+         return true;
+     }
+ 
+     public boolean canRemoveEntity(final Entity entity) {
+-        if (((ChunkSystemEntity)entity).moonrise$isUpdatingSectionStatus()) {
++        /*if (((ChunkSystemEntity)entity).moonrise$isUpdatingSectionStatus()) {
+             return false;
+-        }
++        }*/
+ 
+         final int sectionX = ((ChunkSystemEntity)entity).moonrise$getSectionX();
+         final int sectionZ = ((ChunkSystemEntity)entity).moonrise$getSectionZ();
+         final ChunkEntitySlices slices = this.getChunk(sectionX, sectionZ);
+-        return slices == null || !slices.isPreventingStatusUpdates();
++        return slices == null; //|| !slices.isPreventingStatusUpdates();
+     }
+ 
+     // Folia start - region threading
+@@ -487,12 +491,13 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
+         }
+         final ChunkEntitySlices slices = this.getChunk(sectionX, sectionZ);
+         // all entities should be in a chunk
++        synchronized (slices) {
+         if (slices == null) {
+             LOGGER.warn("Cannot remove entity " + entity + " from null entity slices (" + sectionX + "," + sectionZ + ")");
+         } else {
+-            if (slices.isPreventingStatusUpdates()) {
++            /*if (slices.isPreventingStatusUpdates()) {
+                 throw new IllegalStateException("Attempting to remove entity " + entity + " from entity slices (" + sectionX + "," + sectionZ + ") that is receiving status updates");
+-            }
++            }*/
+             if (!slices.removeEntity(entity, sectionY)) {
+                 LOGGER.warn("Failed to remove entity " + entity + " from entity slices (" + sectionX + "," + sectionZ + ")");
+             }
+@@ -525,6 +530,7 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
+         if (slices != null && slices.isEmpty()) {
+             this.onEmptySlices(sectionX, sectionZ);
+         }
++        }
+     }
+ 
+     protected ChunkEntitySlices moveEntity(final Entity entity) {
+@@ -1005,7 +1011,12 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
              this.entity.setLevelCallback(NoOpCallback.INSTANCE);
  
              // only AFTER full removal callbacks, so that thread checking will work. // Folia - region threading
@@ -298,7 +417,7 @@ index e1842ab8f20271a8b20ab8462b09a4745a612a9a..0502fd0dc6404b60dc9887c1edc02bc2
          ((DedicatedServer)MinecraftServer.getServer()).handleConsoleInputs();
  
 diff --git a/io/papermc/paper/threadedregions/RegionizedTaskQueue.java b/io/papermc/paper/threadedregions/RegionizedTaskQueue.java
-index 25a0b1d56652e4455a188d0f413581638d5ef538..55cc4fadae3bfa0e8f137c7c4f0a058073dd563f 100644
+index 25a0b1d56652e4455a188d0f413581638d5ef538..95ee366ec965dca238681b65c73ba28672570b62 100644
 --- a/io/papermc/paper/threadedregions/RegionizedTaskQueue.java
 +++ b/io/papermc/paper/threadedregions/RegionizedTaskQueue.java
 @@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
@@ -310,6 +429,15 @@ index 25a0b1d56652e4455a188d0f413581638d5ef538..55cc4fadae3bfa0e8f137c7c4f0a0580
  
      public PrioritisedExecutor.PrioritisedTask createChunkTask(final ServerLevel world, final int chunkX, final int chunkZ,
                                                                 final Runnable run) {
+@@ -80,7 +80,7 @@ public final class RegionizedTaskQueue {
+             this.world = world;
+         }
+ 
+-        private boolean executeGlobalChunkTask() {
++        public boolean executeGlobalChunkTask() {
+             final Runnable run = this.globalChunkTask.poll();
+             if (run != null) {
+                 run.run();
 diff --git a/io/papermc/paper/threadedregions/RegionizedWorldData.java b/io/papermc/paper/threadedregions/RegionizedWorldData.java
 index 37ea987cf51917fe5b52b8a9bb887ee49de99a20..1ef51be48d208ac11ae7486ac6c10aca22245e9f 100644
 --- a/io/papermc/paper/threadedregions/RegionizedWorldData.java
@@ -892,7 +1020,7 @@ index 619cbb1a9296c814bbdad0780df91c8db01bc5cd..a21bab0a78fccb92ccee074921b49ec2
  
      @Override
 diff --git a/net/minecraft/server/level/ServerChunkCache.java b/net/minecraft/server/level/ServerChunkCache.java
-index 05bad0366bd36b8134290a0cceb4d4dfcbbd0544..e7dea87ac4c54d87050a22a124de73b78d82fdfc 100644
+index 05bad0366bd36b8134290a0cceb4d4dfcbbd0544..ea231978d8bd5547bd837f64d4becfe58f432151 100644
 --- a/net/minecraft/server/level/ServerChunkCache.java
 +++ b/net/minecraft/server/level/ServerChunkCache.java
 @@ -1,5 +1,6 @@
@@ -955,14 +1083,16 @@ index 05bad0366bd36b8134290a0cceb4d4dfcbbd0544..e7dea87ac4c54d87050a22a124de73b7
              }
              // Folia end - region threading
              // Paper start - rewrite chunk system
-@@ -919,7 +935,11 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+@@ -919,7 +935,13 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
              if (serverChunkCache.runDistanceManagerUpdates()) {
                  return true;
              } else {
 -                return io.papermc.paper.threadedregions.TickRegionScheduler.getCurrentRegion().getData().getTaskQueueData().executeChunkTask(); // Folia - region threading
 +                var region = io.papermc.paper.threadedregions.TickRegionScheduler.getCurrentRegion();
++                // global region running
++                // we need to process some callbacks here, or we'll get stuck on the spining waiting
 +                if (region == null) {
-+                    return false;
++                    return ServerChunkCache.this.level.taskQueueRegionData.executeGlobalChunkTask();
 +                }
 +                return region.getData().getTaskQueueData().executeChunkTask(); // Folia - region threading
              }

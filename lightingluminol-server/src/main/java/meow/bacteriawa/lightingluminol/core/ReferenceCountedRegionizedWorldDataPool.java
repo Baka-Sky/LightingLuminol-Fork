@@ -7,7 +7,6 @@ import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkHolderManage
 import io.papermc.paper.threadedregions.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.Unit;
 import net.minecraft.world.entity.Entity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -135,15 +134,15 @@ public class ReferenceCountedRegionizedWorldDataPool {
 
     // Copied from RegionizedTaskQueue for tick region alive ensuring
 
-    private void removeTicket(final long coord) {
+    private void removeTicket(final long coord, final long id) {
         this.world.moonrise$getChunkTaskScheduler().chunkHolderManager.removeTicketAtLevel(
-                TASK_QUEUE_TICKET, coord, ChunkHolderManager.MAX_TICKET_LEVEL, Unit.INSTANCE // at: TASK_QUEUE_TICKET
+                TASK_QUEUE_TICKET, coord, ChunkHolderManager.MAX_TICKET_LEVEL, id
         );
     }
 
-    private void addTicket(final long coord) {
+    private void addTicket(final long coord, final long id) {
         this.world.moonrise$getChunkTaskScheduler().chunkHolderManager.addTicketAtLevel(
-                TASK_QUEUE_TICKET, coord, ChunkHolderManager.MAX_TICKET_LEVEL, Unit.INSTANCE
+                TASK_QUEUE_TICKET, coord, ChunkHolderManager.MAX_TICKET_LEVEL, id
         );
     }
 
@@ -152,19 +151,21 @@ public class ReferenceCountedRegionizedWorldDataPool {
     }
 
     // note: only call on acquired referenceCountData
-    private void ensureTicketAdded(final long coord, final @NotNull ReferenceCountData referenceCountData) {
+    private void ensureTicketAdded(final long coord, final ReferenceCountData referenceCountData) {
         if (!referenceCountData.addedTicket) {
             // fine if multiple threads do this, no removeTicket may be called for this coord due to reference count inc
-            this.addTicket(coord);
+            this.addTicket(coord, referenceCountData.id);
             this.processTicketUpdates(coord);
             referenceCountData.addedTicket = true;
         }
     }
 
-    private void decrementReference(final @NotNull ReferenceCountData referenceCountData, final long coord) {
+    private void decrementReference(final ReferenceCountData referenceCountData, final long coord) {
         if (!referenceCountData.decreaseReferenceCount()) {
             return;
         } // else: need to remove ticket
+
+        final ReferenceCountData[] toRemoveTicket = new ReferenceCountData[1];
 
         // note: it is possible that another thread increments and then removes the reference before we can, so
         //       use ifPresent
@@ -174,12 +175,14 @@ public class ReferenceCountedRegionizedWorldDataPool {
             }
 
             // note: valueInMap may not be referenceCountData
-
-            // possible to invoke this outside of the compute call, but not required and requires additional logic
-            this.removeTicket(keyInMap);
+            toRemoveTicket[0] = valueInMap;
 
             return null;
         });
+
+        if (toRemoveTicket[0] != null) {
+            this.removeTicket(coord, toRemoveTicket[0].id);
+        }
     }
 
     private ReferenceCountData incrementReference(final long coord) {
@@ -207,6 +210,10 @@ public class ReferenceCountedRegionizedWorldDataPool {
     }
 
     public static final class ReferenceCountData {
+        private static final AtomicLong ID_GENERATOR = new AtomicLong();
+
+        private final long id = ID_GENERATOR.getAndIncrement();
+
         public final AtomicLong referenceCount = new AtomicLong(1L);
         public volatile boolean addedTicket;
 
