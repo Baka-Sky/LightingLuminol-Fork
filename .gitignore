@@ -14,5 +14,9 @@ build
 /luminol-api/build.gradle.kts
 /paper-api
 /paper-api-generator
+/luminol-api
+/luminol-server
+/lightingluminol-server/minecraft
+/folia-api
 
 .idea/
