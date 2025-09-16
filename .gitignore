@@ -16,7 +16,7 @@ build
 /paper-api-generator
 /luminol-api
 /luminol-server
-/lightingluminol-server/minecraft
+/lightingluminol-server/src/minecraft
 /folia-api
 
 .idea/

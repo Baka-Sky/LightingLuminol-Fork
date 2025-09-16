@@ -18,6 +18,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     environment: default
+    if: github.event.head_commit != null
     steps:
       - name: Checkout Git Repository
         uses: actions/checkout@v4
