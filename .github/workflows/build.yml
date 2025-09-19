@@ -7,11 +7,18 @@ on:
   pull_request:
     branches:
       - "**"
+  workflow_run:
+    workflows: ["Automatically update Luminol commit hash"]
+    types:
+      - completed
 
 permissions: write-all
 
 jobs:
   build:
+    if: |
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     environment: default
     steps:
@@ -32,18 +39,6 @@ jobs:
 
       - name: Configure Git User Details
         run: git config --global user.email "ci@luminolmc.com" && git config --global user.name "LuminolMC CI"
-
-      - name: Check for new commit
-        id: check_commit
-        run: |
-          PREV_HASH=$(git rev-parse HEAD~1)
-          CUR_HASH=$(git rev-parse HEAD)
-          echo "Previous hash: $PREV_HASH"
-          echo "Current hash: $CUR_HASH"
-          if [ "$PREV_HASH" = "$CUR_HASH" ]; then
-            echo "No new commit, skipping build."
-            exit 78
-          fi
 
       - name: Apply All Patches
         run: ./gradlew --refresh-dependencies applyAllPatches
