@@ -176,10 +176,10 @@ index 5f26fd89704aa3fd9c37a1d68a7c4c65ce1e7a5d..bcdc1d302815babd8f5642e08c03abd9
  
      @Override
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/EntityLookup.java b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/EntityLookup.java
-index 20941198b3a1227381c0a9039898a6506344a588..00807154d5865da0a420281337238f97d8e565f9 100644
+index 20941198b3a1227381c0a9039898a6506344a588..6f6d2c9b754c97bb8c1b518435d68689090b858a 100644
 --- a/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/EntityLookup.java
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/EntityLookup.java
-@@ -235,23 +235,24 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
+@@ -235,23 +235,23 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
                                     final boolean created, final boolean destroyed) {
          this.checkThread(entity, "Entity status change must only happen on the main thread");
  
@@ -200,7 +200,6 @@ index 20941198b3a1227381c0a9039898a6506344a588..00807154d5865da0a420281337238f97
 -        }
 +        }*/
  
-+        synchronized (slices) {
          try {
              final Boolean ticketBlockBefore = this.blockTicketUpdates();
              try {
@@ -209,7 +208,7 @@ index 20941198b3a1227381c0a9039898a6506344a588..00807154d5865da0a420281337238f97
                  try {
                      if (created) {
                          if (EntityLookup.this.worldCallback != null) {
-@@ -318,15 +319,16 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
+@@ -318,15 +318,15 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
                          }
                      }
                  } finally {
@@ -225,11 +224,10 @@ index 20941198b3a1227381c0a9039898a6506344a588..00807154d5865da0a420281337238f97
                  slices.stopPreventingStatusUpdates(false);
 -            }
 +            }*/
-+        }
          }
      }
  
-@@ -413,10 +415,11 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
+@@ -413,10 +413,11 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
              return false;
          }
  
@@ -242,7 +240,7 @@ index 20941198b3a1227381c0a9039898a6506344a588..00807154d5865da0a420281337238f97
  
          if (!this.screenEntity(entity, fromDisk, event)) {
              return false;
-@@ -440,6 +443,7 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
+@@ -440,6 +441,7 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
          ((ChunkSystemEntity)entity).moonrise$setSectionY(sectionY);
          ((ChunkSystemEntity)entity).moonrise$setSectionZ(sectionZ);
          final ChunkEntitySlices slices = this.getOrCreateChunk(sectionX, sectionZ);
@@ -250,7 +248,7 @@ index 20941198b3a1227381c0a9039898a6506344a588..00807154d5865da0a420281337238f97
          if (!slices.addEntity(entity, sectionY)) {
              LOGGER.warn("Entity " + entity + " added to world '" + WorldUtil.getWorldName(this.world) + "', but was already contained in entity chunk (" + sectionX + "," + sectionZ + ")");
          }
-@@ -449,19 +453,20 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
+@@ -449,19 +451,20 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
          this.addEntityCallback(entity);
  
          this.entityStatusChange(entity, slices, Visibility.HIDDEN, getEntityStatus(entity), false, !fromDisk, false);
@@ -274,7 +272,7 @@ index 20941198b3a1227381c0a9039898a6506344a588..00807154d5865da0a420281337238f97
      }
  
      // Folia start - region threading
-@@ -487,12 +492,13 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
+@@ -487,12 +490,13 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
          }
          final ChunkEntitySlices slices = this.getChunk(sectionX, sectionZ);
          // all entities should be in a chunk
@@ -290,7 +288,7 @@ index 20941198b3a1227381c0a9039898a6506344a588..00807154d5865da0a420281337238f97
              if (!slices.removeEntity(entity, sectionY)) {
                  LOGGER.warn("Failed to remove entity " + entity + " from entity slices (" + sectionX + "," + sectionZ + ")");
              }
-@@ -525,6 +531,7 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
+@@ -525,6 +529,7 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
          if (slices != null && slices.isEmpty()) {
              this.onEmptySlices(sectionX, sectionZ);
          }
@@ -298,7 +296,7 @@ index 20941198b3a1227381c0a9039898a6506344a588..00807154d5865da0a420281337238f97
      }
  
      protected ChunkEntitySlices moveEntity(final Entity entity) {
-@@ -1005,7 +1012,12 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
+@@ -1005,7 +1010,12 @@ public abstract class EntityLookup implements LevelEntityGetter<Entity> {
              this.entity.setLevelCallback(NoOpCallback.INSTANCE);
  
              // only AFTER full removal callbacks, so that thread checking will work. // Folia - region threading
