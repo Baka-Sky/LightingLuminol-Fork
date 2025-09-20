@@ -2961,3 +2961,16 @@ index 29788fedd54b8411c9c8872b4d83b037874fb5f0..d2a6a48b767fde8a3b6a1f498f82407e
                      }
                  }
                  server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkPopulateEvent(bukkitChunk));
+diff --git a/net/minecraft/world/level/redstone/CollectingNeighborUpdater.java b/net/minecraft/world/level/redstone/CollectingNeighborUpdater.java
+index 285fa83ee583595274f228e5981a67f67012d410..11a35da9d184063d2a5ff24e4256c808d674fdec 100644
+--- a/net/minecraft/world/level/redstone/CollectingNeighborUpdater.java
++++ b/net/minecraft/world/level/redstone/CollectingNeighborUpdater.java
+@@ -46,7 +46,7 @@ public class CollectingNeighborUpdater implements NeighborUpdater {
+         this.addAndRun(pos, new CollectingNeighborUpdater.MultiNeighborUpdate(pos.immutable(), block, orientation, facing));
+     }
+ 
+-    private void addAndRun(BlockPos pos, CollectingNeighborUpdater.NeighborUpdates updates) {
++    private synchronized void addAndRun(BlockPos pos, CollectingNeighborUpdater.NeighborUpdates updates) {
+         ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread((net.minecraft.server.level.ServerLevel)this.level, pos, "Adding block without owning region"); // Folia - region threading
+         boolean flag = this.count > 0;
+         boolean flag1 = this.maxChainedNeighborUpdates >= 0 && this.count >= this.maxChainedNeighborUpdates;
