@@ -437,7 +437,7 @@ index 25a0b1d56652e4455a188d0f413581638d5ef538..95ee366ec965dca238681b65c73ba286
              if (run != null) {
                  run.run();
 diff --git a/io/papermc/paper/threadedregions/RegionizedWorldData.java b/io/papermc/paper/threadedregions/RegionizedWorldData.java
-index 37ea987cf51917fe5b52b8a9bb887ee49de99a20..1ef51be48d208ac11ae7486ac6c10aca22245e9f 100644
+index ab5a181d0cc7e65a4a10381cbf8ddf011ceb2ba7..5a8cbf25ca900546ab466b5fc41917bb165f9da3 100644
 --- a/io/papermc/paper/threadedregions/RegionizedWorldData.java
 +++ b/io/papermc/paper/threadedregions/RegionizedWorldData.java
 @@ -6,12 +6,12 @@ import ca.spottedleaf.moonrise.common.misc.NearbyPlayers;
@@ -1366,7 +1366,7 @@ index ee7bdc3adbeb04cf6ca630282f31a21e52bdb215..da31a33bbee97c1674ab9f936df3a5c2
                  return true;
                  // CraftBukkit end
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 06af060f5023214ee7f32b9e0dc1fe56ff96f783..ec1f4eebc005fef83236bf413d4dd66bef2691ea 100644
+index 90c36bb87a761119edb376f3bd425d48d29bf36f..91d875fc6bb0e4c929e6345ae32ffdd8c03ab15b 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -1,5 +1,8 @@
@@ -1453,7 +1453,7 @@ index 06af060f5023214ee7f32b9e0dc1fe56ff96f783..ec1f4eebc005fef83236bf413d4dd66b
              originWorld.moonrise$getChunkTaskScheduler().chunkHolderManager.removeTicketAtLevel(
                  TicketType.TELEPORT_HOLD_TICKET, initialPositionChunk,
                  ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkHolderManager.MAX_TICKET_LEVEL,
-@@ -6272,7 +6318,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -6274,7 +6320,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      // Paper end - Folia schedulers
      // Paper start - optimise Folia entity scheduler
      public final void registerScheduler() {
