@@ -1,19 +1,19 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Bacteriawa <A3167717663@hotmail.com>
-Date: Sun, 6 Jul 2025 16:19:22 +0800
-Subject: [PATCH] LightingLuminol
+Date: Mon, 29 Sep 2025 23:27:43 +0800
+Subject: [PATCH] Rebrand to LightingLuminol
 
 
 diff --git a/src/main/java/me/earthme/luminol/config/modules/misc/ServerModNameConfig.java b/src/main/java/me/earthme/luminol/config/modules/misc/ServerModNameConfig.java
-index f164e41975adee8b68dbcb400007681c0b66a4f8..b48e9b0b7dae52eba6187261f0c07f9e7ff7f1bc 100644
+index df5d926fb4401dd93d658fe14ae4d9d58cff68f9..86ad8d6e76ce361e806bfda97eb8a07cae1cfa08 100644
 --- a/src/main/java/me/earthme/luminol/config/modules/misc/ServerModNameConfig.java
 +++ b/src/main/java/me/earthme/luminol/config/modules/misc/ServerModNameConfig.java
 @@ -8,7 +8,7 @@ import me.earthme.luminol.enums.EnumConfigCategory;
- @ConfigClassInfo(configAttribution = EnumConfigCategory.MISC, mainName = "server_mod_name")
+ @ConfigClassInfo(category = EnumConfigCategory.MISC, name = "server_mod_name")
  public class ServerModNameConfig implements IConfigModule {
-     @ConfigInfo(baseName = "name")
+     @ConfigInfo(name = "name")
 -    public static String serverModName = "Luminol";
 +    public static String serverModName = "LightingLuminol";
  
-     @ConfigInfo(baseName = "vanilla_spoof")
+     @ConfigInfo(name = "vanilla_spoof")
      public static boolean fakeVanilla = false;
