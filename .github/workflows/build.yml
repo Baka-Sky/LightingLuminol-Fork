@@ -46,14 +46,6 @@ jobs:
       - name: CreateJar
         run: ./gradlew --refresh-dependencies createMojmapPaperclipJar
 
-      - name: Publish to repo
-        if: github.event_name != 'pull_request'
-        continue-on-error: true
-        run: ./gradlew --refresh-dependencies generateDevelopmentBundle publish -PpublishDevBundle=true
-        env:
-          MAVEN_REPO_USER: ${{ secrets.MAVEN_REPO_USER }}
-          MAVEN_REPO_PASSWORD: ${{ secrets.MAVEN_REPO_PASSWORD }}
-
       - name: Upload Artifact
         uses: "actions/upload-artifact@v4"
         with:
