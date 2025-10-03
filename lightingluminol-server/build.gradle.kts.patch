@@ -51,7 +51,7 @@
      // Luminol start - Dependenices insert
      implementation("com.electronwill.night-config:toml:3.8.2") // Night config
      implementation("com.github.luben:zstd-jni:1.5.4-1")
-@@ -276,14 +_,14 @@
+@@ -275,14 +_,14 @@
          val gitBranch = git.exec(providers, "rev-parse", "--abbrev-ref", "HEAD").get().trim()
          attributes(
              "Main-Class" to "org.bukkit.craftbukkit.Main",
@@ -70,7 +70,7 @@
              "Build-Number" to (build ?: ""),
              "Build-Time" to buildTime.toString(),
              "Git-Branch" to gitBranch,
-@@ -447,7 +_,7 @@
+@@ -446,7 +_,7 @@
  }
  
  fill {
