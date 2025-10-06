@@ -909,7 +909,7 @@ index 75027e73859c955a54034640f905cb5d91a6a2f4..02697b2d0a8dbd74b44c129b6f5117d9
  
      public int getSpawnProtectionRadius() {
 diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
-index 6868b915bf3deb85783a638d4441a15fea6da2dc..e787ae9c8d36a74841c573defd0b349a6abf8a4e 100644
+index 6868b915bf3deb85783a638d4441a15fea6da2dc..46c0638e7144c01e005468d9b2649e80375bfde2 100644
 --- a/net/minecraft/server/level/ChunkMap.java
 +++ b/net/minecraft/server/level/ChunkMap.java
 @@ -957,12 +957,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -963,6 +963,16 @@ index 6868b915bf3deb85783a638d4441a15fea6da2dc..e787ae9c8d36a74841c573defd0b349a
              // Folia end - region threading
          }
  
+@@ -1017,6 +1029,9 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         final Entity[] trackerEntitiesRaw = trackerEntities.getRawDataUnchecked();
+         for (int i = 0, len = totalEntities = trackerEntities.size(); i < len; ++i) { // Folia - region threading
+             final Entity entity = trackerEntitiesRaw[i];
++            if (entity == null) {
++                continue;
++            }
+             final ChunkMap.TrackedEntity tracker = ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity)entity).moonrise$getTrackedEntity();
+             if (tracker == null) {
+                 continue;
 diff --git a/net/minecraft/server/level/DistanceManager.java b/net/minecraft/server/level/DistanceManager.java
 index 619cbb1a9296c814bbdad0780df91c8db01bc5cd..a21bab0a78fccb92ccee074921b49ec2adfdd94f 100644
 --- a/net/minecraft/server/level/DistanceManager.java
@@ -1018,7 +1028,7 @@ index 619cbb1a9296c814bbdad0780df91c8db01bc5cd..a21bab0a78fccb92ccee074921b49ec2
  
      @Override
 diff --git a/net/minecraft/server/level/ServerChunkCache.java b/net/minecraft/server/level/ServerChunkCache.java
-index 05bad0366bd36b8134290a0cceb4d4dfcbbd0544..ea231978d8bd5547bd837f64d4becfe58f432151 100644
+index 05bad0366bd36b8134290a0cceb4d4dfcbbd0544..30914c593ee5f6f63221bea0983d3c6ac66ab656 100644
 --- a/net/minecraft/server/level/ServerChunkCache.java
 +++ b/net/minecraft/server/level/ServerChunkCache.java
 @@ -1,5 +1,6 @@
@@ -1053,7 +1063,17 @@ index 05bad0366bd36b8134290a0cceb4d4dfcbbd0544..ea231978d8bd5547bd837f64d4becfe5
              ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.pushChunkWait(this.level, chunkX, chunkZ);
              this.mainThreadProcessor.managedBlock(completable::isDone);
              ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.popChunkWait();
-@@ -696,7 +704,13 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+@@ -176,6 +184,9 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+ 
+         java.util.Objects.checkFromToIndex(0, size, raw.length);
+         for (int i = 0; i < size; ++i) {
++            if (raw[i] == null) {
++                continue;
++            }
+             world.tickChunk(raw[i], randomTickSpeed);
+ 
+             // call mid-tick tasks for chunk system
+@@ -696,7 +707,13 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
          int sectionPosZ = SectionPos.blockToSectionCoord(pos.getZ());
          ChunkHolder visibleChunkIfPresent = this.getVisibleChunkIfPresent(ChunkPos.asLong(sectionPosX, sectionPosZ));
          if (visibleChunkIfPresent != null && visibleChunkIfPresent.blockChanged(pos)) {
@@ -1068,7 +1088,7 @@ index 05bad0366bd36b8134290a0cceb4d4dfcbbd0544..ea231978d8bd5547bd837f64d4becfe5
          }
      }
  
-@@ -910,8 +924,10 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+@@ -910,8 +927,10 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
          @Override
          public boolean pollTask() {
              // Folia start - region threading
@@ -1081,7 +1101,7 @@ index 05bad0366bd36b8134290a0cceb4d4dfcbbd0544..ea231978d8bd5547bd837f64d4becfe5
              }
              // Folia end - region threading
              // Paper start - rewrite chunk system
-@@ -919,7 +935,13 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+@@ -919,7 +938,13 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
              if (serverChunkCache.runDistanceManagerUpdates()) {
                  return true;
              } else {
