@@ -351,7 +351,7 @@ index 335058589eeba934105bea31a0c3aea2293a5597..db1e0d7f27ecae60ab853b4a16ec2cf1
          // Folia end - block plugins not marked as supported
          // Copied from SimplePluginManager#loadPlugins
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 4dde33c872d463bf17ba03e926de90e6988444b2..94f70ca0aabdb295c3df766d021a836233280bb4 100644
+index 4dde33c872d463bf17ba03e926de90e6988444b2..acac571c772ef6b082e05d8e6b636b4d16d521bc 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -1,5 +1,7 @@
@@ -457,6 +457,15 @@ index 4dde33c872d463bf17ba03e926de90e6988444b2..94f70ca0aabdb295c3df766d021a8362
          } catch (Exception ex) {
              this.getLogger().log(Level.SEVERE, null, ex);
          }
+@@ -3223,7 +3266,7 @@ public final class CraftServer implements Server {
+ 
+     @Override
+     public int getCurrentTick() {
+-        return (int)io.papermc.paper.threadedregions.RegionizedServer.getCurrentTick(); // Folia - region threading
++        return (int) io.papermc.paper.threadedregions.RegionizedServer.getGlobalTickData().getCurrentTick(); // (int)io.papermc.paper.threadedregions.RegionizedServer.getCurrentTick(); // Folia - region threading // LightingLuminol
+     }
+ 
+     @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 index 9b9eea4babcd67a088e9400b369d168d11c06ac1..941adf2576ca203839645dde058cab363326e8af 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
