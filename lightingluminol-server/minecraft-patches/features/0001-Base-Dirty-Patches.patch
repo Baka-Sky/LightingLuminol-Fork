@@ -2834,6 +2834,40 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
                  ChunkAccess chunk = this.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()), ChunkStatus.FULL, false);
                  if (chunk != null) {
                      return chunk.getBlockEntity(pos);
+diff --git a/net/minecraft/world/level/LevelAccessor.java b/net/minecraft/world/level/LevelAccessor.java
+index f22146c86dd916c16f683fd5b0a8e1205d51ff3b..a6964c40c004e5ddad8f23c6fc62d6b57c4a2c09 100644
+--- a/net/minecraft/world/level/LevelAccessor.java
++++ b/net/minecraft/world/level/LevelAccessor.java
+@@ -44,11 +44,29 @@ public interface LevelAccessor extends CommonLevelAccessor, LevelTimeAccess, Sch
+ 
+     @Override
+     default <T> ScheduledTick<T> createTick(BlockPos pos, T type, int delay, TickPriority priority) {
++        if (this instanceof Level level) {
++            var ref = level.worldDataPool.getAndHeldReference(pos);
++            var worldData = ref.left();
++            try {
++                return new ScheduledTick<>(type, pos, worldData.getRedstoneGameTime() + delay, priority, this.nextSubTickCount());
++            }finally {
++                level.worldDataPool.releaseReference(pos, ref.right());
++            }
++        }
+         return new ScheduledTick<>(type, pos, this.getRedstoneGameTime() + delay, priority, this.nextSubTickCount()); // Folia - region threading
+     }
+ 
+     @Override
+     default <T> ScheduledTick<T> createTick(BlockPos pos, T type, int delay) {
++        if (this instanceof Level level) {
++            var ref = level.worldDataPool.getAndHeldReference(pos);
++            var worldData = ref.left();
++            try {
++                return new ScheduledTick<>(type, pos, worldData.getRedstoneGameTime() + delay, this.nextSubTickCount());
++            }finally {
++                level.worldDataPool.releaseReference(pos, ref.right());
++            }
++        }
+         return new ScheduledTick<>(type, pos, this.getRedstoneGameTime() + delay, this.nextSubTickCount()); // Folia - region threading
+     }
+ 
 diff --git a/net/minecraft/world/level/ScheduledTickAccess.java b/net/minecraft/world/level/ScheduledTickAccess.java
 index 0fbbccde3fb2143fba0933a5fcb6dc4c0bcc9501..deeb6e8f1768c83fb62dca4150afd78ba2de560c 100644
 --- a/net/minecraft/world/level/ScheduledTickAccess.java
