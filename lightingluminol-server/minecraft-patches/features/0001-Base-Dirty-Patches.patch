@@ -437,7 +437,7 @@ index 25a0b1d56652e4455a188d0f413581638d5ef538..95ee366ec965dca238681b65c73ba286
              if (run != null) {
                  run.run();
 diff --git a/io/papermc/paper/threadedregions/RegionizedWorldData.java b/io/papermc/paper/threadedregions/RegionizedWorldData.java
-index 3318df90f90b6fd831d0a96450e54ae426865ab1..dbf2ce70b1797f575ef029f78e3aea7a941e4171 100644
+index 3318df90f90b6fd831d0a96450e54ae426865ab1..1ef67d0f10d137b57f7fd4cc69a57c0e007f0ad1 100644
 --- a/io/papermc/paper/threadedregions/RegionizedWorldData.java
 +++ b/io/papermc/paper/threadedregions/RegionizedWorldData.java
 @@ -6,12 +6,12 @@ import ca.spottedleaf.moonrise.common.misc.NearbyPlayers;
@@ -565,6 +565,15 @@ index 3318df90f90b6fd831d0a96450e54ae426865ab1..dbf2ce70b1797f575ef029f78e3aea7a
  
      // not transient
      public java.util.ArrayDeque<net.minecraft.world.level.block.RedstoneTorchBlock.Toggle> redstoneUpdateInfos;
+@@ -596,7 +598,7 @@ public final class RegionizedWorldData {
+         final ServerPlayer player = conn.getPlayer();
+         // now that the connection is removed, we can allow this region to die
+         player.level().moonrise$getChunkTaskScheduler().chunkHolderManager.removeTicketAtLevel(
+-            ServerGamePacketListenerImpl.DISCONNECT_TICKET, player.connection.disconnectPos,
++            ServerGamePacketListenerImpl.DISCONNECT_TICKET, player.connection.disconnectPos == null ? player.chunkPosition() : player.connection.disconnectPos,
+             ChunkHolderManager.MAX_TICKET_LEVEL,
+             player.connection.disconnectTicketId
+         );
 @@ -677,11 +679,8 @@ public final class RegionizedWorldData {
      }
  
