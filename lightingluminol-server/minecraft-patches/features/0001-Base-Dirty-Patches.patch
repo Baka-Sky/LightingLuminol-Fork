@@ -1395,7 +1395,7 @@ index ee7bdc3adbeb04cf6ca630282f31a21e52bdb215..da31a33bbee97c1674ab9f936df3a5c2
                  return true;
                  // CraftBukkit end
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 90c36bb87a761119edb376f3bd425d48d29bf36f..91d875fc6bb0e4c929e6345ae32ffdd8c03ab15b 100644
+index 34d802060e096c5acfbd9a66fab96c0e8c792fe1..656088915d5ca3a170f3e6b802df272632d970af 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -1,5 +1,8 @@
@@ -1423,7 +1423,7 @@ index 90c36bb87a761119edb376f3bd425d48d29bf36f..91d875fc6bb0e4c929e6345ae32ffdd8
              if (gameTime != this.pistonDeltasGameTime) {
                  Arrays.fill(this.pistonDeltas, 0.0);
                  this.pistonDeltasGameTime = gameTime;
-@@ -4352,7 +4362,15 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4358,7 +4368,15 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          if (!this.canTeleportAsync()) {
              return false;
          }
@@ -1440,7 +1440,7 @@ index 90c36bb87a761119edb376f3bd425d48d29bf36f..91d875fc6bb0e4c929e6345ae32ffdd8
          if ((teleportFlags & TELEPORT_FLAG_UNMOUNT) == 0L) {
              for (Entity entity : this.getIndirectPassengers()) {
                  if (!entity.canTeleportAsync()) {
-@@ -4819,12 +4837,40 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4825,12 +4843,40 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          ca.spottedleaf.concurrentutil.completable.CallbackCompletable<TeleportTransition> portalInfoCompletable
              = new ca.spottedleaf.concurrentutil.completable.CallbackCompletable<>();
  
@@ -1482,7 +1482,7 @@ index 90c36bb87a761119edb376f3bd425d48d29bf36f..91d875fc6bb0e4c929e6345ae32ffdd8
              originWorld.moonrise$getChunkTaskScheduler().chunkHolderManager.removeTicketAtLevel(
                  TicketType.TELEPORT_HOLD_TICKET, initialPositionChunk,
                  ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkHolderManager.MAX_TICKET_LEVEL,
-@@ -6274,7 +6320,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -6280,7 +6326,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      // Paper end - Folia schedulers
      // Paper start - optimise Folia entity scheduler
      public final void registerScheduler() {
