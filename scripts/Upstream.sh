@@ -71,7 +71,7 @@ fi
 
 logsuffix="\n\nLuminol Changes (LuminolMC/Luminol $luminolHashArg...$targetRef):\n$luminolCommits"
 disclaimer="Upstream has released updates that appear to apply and compile correctly"
-log="Updated Upstream (Luminol)\n\n${disclaimer}${logsuffix}"
+log="Auto Updated Upstream (Luminol)\n\n${disclaimer}${logsuffix}"
 
 git add gradle.properties
 echo -e "$log" | git commit -F -
