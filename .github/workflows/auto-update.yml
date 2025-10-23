@@ -89,6 +89,7 @@ jobs:
             git push
           else
             echo "No changes to commit."
+            exit 78
           fi
         env:
           OLD_LUMINOL_REF: ${{ steps.currLuminolRef.outputs.OLD_LUMINOL_REF }}
