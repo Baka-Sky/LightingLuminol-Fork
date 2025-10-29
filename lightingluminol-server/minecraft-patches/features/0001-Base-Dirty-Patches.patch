@@ -1126,7 +1126,7 @@ index 05bad0366bd36b8134290a0cceb4d4dfcbbd0544..30914c593ee5f6f63221bea0983d3c6a
              // Paper end - rewrite chunk system
          }
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index eb3aef1f5198592eda5dafe84b91271e861b4135..df102d3d4ea21e01e6c6b89ac5101f152fb318ee 100644
+index 3207150a9bbe9f7bef66e416efdc9bb242b1ad17..67d3327c623cd81bd4ea31cafbcd3c3ca2ecf388 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -181,6 +181,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
@@ -1264,7 +1264,7 @@ index eb3aef1f5198592eda5dafe84b91271e861b4135..df102d3d4ea21e01e6c6b89ac5101f15
      }
  
      private void runBlockEvents() {
-@@ -2804,24 +2853,39 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+@@ -2806,24 +2855,39 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
  
          @Override
          public void onTickingStart(Entity entity) {
@@ -1307,7 +1307,7 @@ index eb3aef1f5198592eda5dafe84b91271e861b4135..df102d3d4ea21e01e6c6b89ac5101f15
              // ServerLevel.this.getChunkSource().addEntity(entity); // Paper - ignore and warn about illegal addEntity calls instead of crashing server; moved down below valid=true
              if (entity instanceof ServerPlayer serverPlayer) {
                  ServerLevel.this.players.add(serverPlayer);
-@@ -2844,7 +2908,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+@@ -2846,7 +2910,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
                      );
                  }
  
@@ -1316,7 +1316,7 @@ index eb3aef1f5198592eda5dafe84b91271e861b4135..df102d3d4ea21e01e6c6b89ac5101f15
              }
  
              if (entity instanceof EnderDragon enderDragon) {
-@@ -2867,12 +2931,18 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+@@ -2869,12 +2933,18 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
              }
              // Paper end - Entity origin API
              new com.destroystokyo.paper.event.entity.EntityAddToWorldEvent(entity.getBukkitEntity(), ServerLevel.this.getWorld()).callEvent(); // Paper - fire while valid
@@ -1336,7 +1336,7 @@ index eb3aef1f5198592eda5dafe84b91271e861b4135..df102d3d4ea21e01e6c6b89ac5101f15
              // Spigot start // TODO I don't think this is needed anymore
              if (entity instanceof Player player) {
                  for (final ServerLevel level : ServerLevel.this.getServer().getAllLevels()) {
-@@ -2924,7 +2994,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+@@ -2926,7 +2996,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
                      );
                  }
  
@@ -1345,7 +1345,7 @@ index eb3aef1f5198592eda5dafe84b91271e861b4135..df102d3d4ea21e01e6c6b89ac5101f15
              }
  
              if (entity instanceof EnderDragon enderDragon) {
-@@ -2944,6 +3014,9 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+@@ -2946,6 +3016,9 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
              }
              // CraftBukkit end
              new com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent(entity.getBukkitEntity(), ServerLevel.this.getWorld()).callEvent(); // Paper - fire while valid
