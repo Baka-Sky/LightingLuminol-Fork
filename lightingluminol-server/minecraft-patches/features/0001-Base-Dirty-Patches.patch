@@ -437,7 +437,7 @@ index 25a0b1d56652e4455a188d0f413581638d5ef538..95ee366ec965dca238681b65c73ba286
              if (run != null) {
                  run.run();
 diff --git a/io/papermc/paper/threadedregions/RegionizedWorldData.java b/io/papermc/paper/threadedregions/RegionizedWorldData.java
-index 3318df90f90b6fd831d0a96450e54ae426865ab1..1ef67d0f10d137b57f7fd4cc69a57c0e007f0ad1 100644
+index 96213569af94fc12b2384207861469c3e0208931..70e7f4f3ab1ea1dfe5906c240227b32405fe4b0a 100644
 --- a/io/papermc/paper/threadedregions/RegionizedWorldData.java
 +++ b/io/papermc/paper/threadedregions/RegionizedWorldData.java
 @@ -6,12 +6,12 @@ import ca.spottedleaf.moonrise.common.misc.NearbyPlayers;
@@ -565,7 +565,7 @@ index 3318df90f90b6fd831d0a96450e54ae426865ab1..1ef67d0f10d137b57f7fd4cc69a57c0e
  
      // not transient
      public java.util.ArrayDeque<net.minecraft.world.level.block.RedstoneTorchBlock.Toggle> redstoneUpdateInfos;
-@@ -596,7 +598,7 @@ public final class RegionizedWorldData {
+@@ -599,7 +601,7 @@ public final class RegionizedWorldData {
          final ServerPlayer player = conn.getPlayer();
          // now that the connection is removed, we can allow this region to die
          player.level().moonrise$getChunkTaskScheduler().chunkHolderManager.removeTicketAtLevel(
@@ -574,7 +574,7 @@ index 3318df90f90b6fd831d0a96450e54ae426865ab1..1ef67d0f10d137b57f7fd4cc69a57c0e
              ChunkHolderManager.MAX_TICKET_LEVEL,
              player.connection.disconnectTicketId
          );
-@@ -677,11 +679,8 @@ public final class RegionizedWorldData {
+@@ -680,11 +682,8 @@ public final class RegionizedWorldData {
      }
  
      public void addEntityTickingEntity(final Entity entity) {
@@ -587,7 +587,7 @@ index 3318df90f90b6fd831d0a96450e54ae426865ab1..1ef67d0f10d137b57f7fd4cc69a57c0e
      }
  
      public boolean hasEntityTickingEntity(final Entity entity) {
-@@ -689,11 +688,8 @@ public final class RegionizedWorldData {
+@@ -692,11 +691,8 @@ public final class RegionizedWorldData {
      }
  
      public void removeEntityTickingEntity(final Entity entity) {
@@ -600,7 +600,7 @@ index 3318df90f90b6fd831d0a96450e54ae426865ab1..1ef67d0f10d137b57f7fd4cc69a57c0e
      }
  
      public void forEachTickingEntity(final Consumer<Entity> action) {
-@@ -708,14 +704,11 @@ public final class RegionizedWorldData {
+@@ -711,14 +707,11 @@ public final class RegionizedWorldData {
      }
  
      public void addEntity(final Entity entity) {
@@ -616,7 +616,7 @@ index 3318df90f90b6fd831d0a96450e54ae426865ab1..1ef67d0f10d137b57f7fd4cc69a57c0e
          }
      }
  
-@@ -724,28 +717,19 @@ public final class RegionizedWorldData {
+@@ -727,28 +720,19 @@ public final class RegionizedWorldData {
      }
  
      public void removeEntity(final Entity entity) {
@@ -646,7 +646,7 @@ index 3318df90f90b6fd831d0a96450e54ae426865ab1..1ef67d0f10d137b57f7fd4cc69a57c0e
          this.navigatingMobs.remove(mob);
      }
  
-@@ -760,25 +744,32 @@ public final class RegionizedWorldData {
+@@ -763,25 +747,32 @@ public final class RegionizedWorldData {
      // make the code easier by simply discarding it in such an event
      public void pushBlockEvent(final BlockEventData blockEventData) {
          TickThread.ensureTickThread(this.world, blockEventData.pos(), "Cannot queue block even data async");
@@ -679,7 +679,7 @@ index 3318df90f90b6fd831d0a96450e54ae426865ab1..1ef67d0f10d137b57f7fd4cc69a57c0e
          BlockEventData ret;
          while (!this.blockEvents.isEmpty()) {
              ret = this.blockEvents.removeFirst();
-@@ -786,6 +777,7 @@ public final class RegionizedWorldData {
+@@ -789,6 +780,7 @@ public final class RegionizedWorldData {
                  return ret;
              } // else: chunk must have been unloaded
          }
@@ -687,7 +687,7 @@ index 3318df90f90b6fd831d0a96450e54ae426865ab1..1ef67d0f10d137b57f7fd4cc69a57c0e
  
          return null;
      }
-@@ -823,12 +815,12 @@ public final class RegionizedWorldData {
+@@ -826,12 +818,12 @@ public final class RegionizedWorldData {
      // ticking chunks
      public void addEntityTickingChunk(final LevelChunk chunk) {
          this.entityTickingChunks.add(chunk);
@@ -702,7 +702,7 @@ index 3318df90f90b6fd831d0a96450e54ae426865ab1..1ef67d0f10d137b57f7fd4cc69a57c0e
      }
  
      public ReferenceList<LevelChunk> getEntityTickingChunks() {
-@@ -837,12 +829,12 @@ public final class RegionizedWorldData {
+@@ -840,12 +832,12 @@ public final class RegionizedWorldData {
  
      public void addTickingChunk(final LevelChunk chunk) {
          this.tickingChunks.add(chunk);
@@ -717,7 +717,7 @@ index 3318df90f90b6fd831d0a96450e54ae426865ab1..1ef67d0f10d137b57f7fd4cc69a57c0e
      }
  
      public ReferenceList<LevelChunk> getTickingChunks() {
-@@ -851,12 +843,12 @@ public final class RegionizedWorldData {
+@@ -854,12 +846,12 @@ public final class RegionizedWorldData {
  
      public void addChunk(final LevelChunk chunk) {
          this.chunks.add(chunk);
@@ -1126,7 +1126,7 @@ index 05bad0366bd36b8134290a0cceb4d4dfcbbd0544..30914c593ee5f6f63221bea0983d3c6a
              // Paper end - rewrite chunk system
          }
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index eb3aef1f5198592eda5dafe84b91271e861b4135..df102d3d4ea21e01e6c6b89ac5101f152fb318ee 100644
+index 985ddea9d74a37f58f32a27375f6f7e6af0f2192..a8675feecc864076b01d544e2dd6075b13411589 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -181,6 +181,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
@@ -1264,7 +1264,7 @@ index eb3aef1f5198592eda5dafe84b91271e861b4135..df102d3d4ea21e01e6c6b89ac5101f15
      }
  
      private void runBlockEvents() {
-@@ -2804,24 +2853,39 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+@@ -2805,24 +2854,39 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
  
          @Override
          public void onTickingStart(Entity entity) {
@@ -1307,7 +1307,7 @@ index eb3aef1f5198592eda5dafe84b91271e861b4135..df102d3d4ea21e01e6c6b89ac5101f15
              // ServerLevel.this.getChunkSource().addEntity(entity); // Paper - ignore and warn about illegal addEntity calls instead of crashing server; moved down below valid=true
              if (entity instanceof ServerPlayer serverPlayer) {
                  ServerLevel.this.players.add(serverPlayer);
-@@ -2844,7 +2908,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+@@ -2845,7 +2909,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
                      );
                  }
  
@@ -1316,7 +1316,7 @@ index eb3aef1f5198592eda5dafe84b91271e861b4135..df102d3d4ea21e01e6c6b89ac5101f15
              }
  
              if (entity instanceof EnderDragon enderDragon) {
-@@ -2867,12 +2931,18 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+@@ -2868,12 +2932,18 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
              }
              // Paper end - Entity origin API
              new com.destroystokyo.paper.event.entity.EntityAddToWorldEvent(entity.getBukkitEntity(), ServerLevel.this.getWorld()).callEvent(); // Paper - fire while valid
@@ -1336,7 +1336,7 @@ index eb3aef1f5198592eda5dafe84b91271e861b4135..df102d3d4ea21e01e6c6b89ac5101f15
              // Spigot start // TODO I don't think this is needed anymore
              if (entity instanceof Player player) {
                  for (final ServerLevel level : ServerLevel.this.getServer().getAllLevels()) {
-@@ -2924,7 +2994,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+@@ -2925,7 +2995,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
                      );
                  }
  
@@ -1345,7 +1345,7 @@ index eb3aef1f5198592eda5dafe84b91271e861b4135..df102d3d4ea21e01e6c6b89ac5101f15
              }
  
              if (entity instanceof EnderDragon enderDragon) {
-@@ -2944,6 +3014,9 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+@@ -2945,6 +3015,9 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
              }
              // CraftBukkit end
              new com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent(entity.getBukkitEntity(), ServerLevel.this.getWorld()).callEvent(); // Paper - fire while valid
@@ -1395,7 +1395,7 @@ index ee7bdc3adbeb04cf6ca630282f31a21e52bdb215..da31a33bbee97c1674ab9f936df3a5c2
                  return true;
                  // CraftBukkit end
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index bd4b7c746e97819262281523f59f2d45e6ec3112..e297148407435ff0f1f1a66530b3c675c98f1bf8 100644
+index f5539ca5964abb18124522a8aa7ce940517b2011..ce68e8b94cff30a2e1b60a71e716d06fa48017ed 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -1,5 +1,8 @@
@@ -1440,7 +1440,7 @@ index bd4b7c746e97819262281523f59f2d45e6ec3112..e297148407435ff0f1f1a66530b3c675
          if ((teleportFlags & TELEPORT_FLAG_UNMOUNT) == 0L) {
              for (Entity entity : this.getIndirectPassengers()) {
                  if (!entity.canTeleportAsync()) {
-@@ -4834,12 +4852,40 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4827,12 +4845,40 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          ca.spottedleaf.concurrentutil.completable.CallbackCompletable<TeleportTransition> portalInfoCompletable
              = new ca.spottedleaf.concurrentutil.completable.CallbackCompletable<>();
  
@@ -1482,7 +1482,7 @@ index bd4b7c746e97819262281523f59f2d45e6ec3112..e297148407435ff0f1f1a66530b3c675
              originWorld.moonrise$getChunkTaskScheduler().chunkHolderManager.removeTicketAtLevel(
                  TicketType.TELEPORT_HOLD_TICKET, initialPositionChunk,
                  ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkHolderManager.MAX_TICKET_LEVEL,
-@@ -6289,7 +6335,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -6282,7 +6328,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      // Paper end - Folia schedulers
      // Paper start - optimise Folia entity scheduler
      public final void registerScheduler() {
