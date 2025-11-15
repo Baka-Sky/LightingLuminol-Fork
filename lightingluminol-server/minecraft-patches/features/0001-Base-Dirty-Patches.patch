@@ -437,10 +437,10 @@ index 25a0b1d56652e4455a188d0f413581638d5ef538..95ee366ec965dca238681b65c73ba286
              if (run != null) {
                  run.run();
 diff --git a/io/papermc/paper/threadedregions/RegionizedWorldData.java b/io/papermc/paper/threadedregions/RegionizedWorldData.java
-index 158c1f5d965bc5951db56c6b1ad99f0d8ea71571..1897f43d5a4864659be9bf80dbef3f8a59339ba6 100644
+index 6e27531126b4afddc26d7c5827e73379d632b6cd..ac7600c5537e377d677c1fb5629d0faa30ef1ff2 100644
 --- a/io/papermc/paper/threadedregions/RegionizedWorldData.java
 +++ b/io/papermc/paper/threadedregions/RegionizedWorldData.java
-@@ -6,12 +6,12 @@ import ca.spottedleaf.moonrise.common.misc.NearbyPlayers;
+@@ -6,12 +6,15 @@ import ca.spottedleaf.moonrise.common.misc.NearbyPlayers;
  import ca.spottedleaf.moonrise.common.util.CoordinateUtils;
  import ca.spottedleaf.moonrise.common.util.TickThread;
  import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkHolderManager;
@@ -449,14 +449,14 @@ index 158c1f5d965bc5951db56c6b1ad99f0d8ea71571..1897f43d5a4864659be9bf80dbef3f8a
  import com.mojang.logging.LogUtils;
  import it.unimi.dsi.fastutil.longs.Long2ReferenceMap;
  import it.unimi.dsi.fastutil.longs.Long2ReferenceOpenHashMap;
--import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
--import it.unimi.dsi.fastutil.objects.ReferenceLinkedOpenHashSet;
--import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
+ import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
+ import it.unimi.dsi.fastutil.objects.ReferenceLinkedOpenHashSet;
+ import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 +import it.unimi.dsi.fastutil.objects.*;
  import net.minecraft.CrashReport;
  import net.minecraft.ReportedException;
  import net.minecraft.core.BlockPos;
-@@ -119,10 +119,10 @@ public final class RegionizedWorldData {
+@@ -119,10 +122,10 @@ public final class RegionizedWorldData {
              for (final Entity entity : from.loadedEntities) {
                  into.loadedEntities.add(entity);
              }
@@ -469,7 +469,7 @@ index 158c1f5d965bc5951db56c6b1ad99f0d8ea71571..1897f43d5a4864659be9bf80dbef3f8a
                  into.navigatingMobs.add(iterator.next());
              }
              for (final Iterator<Entity> iterator = from.trackerEntities.iterator(); iterator.hasNext();) {
-@@ -132,7 +132,7 @@ public final class RegionizedWorldData {
+@@ -132,7 +135,7 @@ public final class RegionizedWorldData {
                  into.trackerUnloadedEntities.add(iterator.next());
              }
              // block ticking
@@ -478,7 +478,7 @@ index 158c1f5d965bc5951db56c6b1ad99f0d8ea71571..1897f43d5a4864659be9bf80dbef3f8a
              // ticklists use game time
              from.blockLevelTicks.merge(into.blockLevelTicks, fromRedstoneTimeOffset);
              from.fluidLevelTicks.merge(into.fluidLevelTicks, fromRedstoneTimeOffset);
-@@ -284,17 +284,19 @@ public final class RegionizedWorldData {
+@@ -270,17 +273,19 @@ public final class RegionizedWorldData {
                  entity.getBukkitEntity().taskScheduler.registerTo(into.entitySchedulerTickList);
              }
              // block ticking
@@ -507,7 +507,7 @@ index 158c1f5d965bc5951db56c6b1ad99f0d8ea71571..1897f43d5a4864659be9bf80dbef3f8a
              }
  
              final Long2ReferenceOpenHashMap<LevelTicks<Block>> levelTicksBlockRegionData = new Long2ReferenceOpenHashMap<>(regionToData.size(), 0.75f);
-@@ -422,7 +424,7 @@ public final class RegionizedWorldData {
+@@ -396,7 +401,7 @@ public final class RegionizedWorldData {
      private RegionizedServer.WorldLevelData tickData;
  
      // connections
@@ -516,7 +516,7 @@ index 158c1f5d965bc5951db56c6b1ad99f0d8ea71571..1897f43d5a4864659be9bf80dbef3f8a
  
      // misc. fields
      private boolean isHandlingTick;
-@@ -436,7 +438,7 @@ public final class RegionizedWorldData {
+@@ -410,7 +415,7 @@ public final class RegionizedWorldData {
      }
  
      // entities
@@ -525,7 +525,7 @@ index 158c1f5d965bc5951db56c6b1ad99f0d8ea71571..1897f43d5a4864659be9bf80dbef3f8a
      private final NearbyPlayers nearbyPlayers;
      public final io.papermc.paper.threadedregions.EntityScheduler.EntitySchedulerTickList entitySchedulerTickList = new io.papermc.paper.threadedregions.EntityScheduler.EntitySchedulerTickList();
      private final ReferenceList<Entity> allEntities = new ReferenceList<>(EMPTY_ENTITY_ARRAY);
-@@ -453,12 +455,12 @@ public final class RegionizedWorldData {
+@@ -427,12 +432,12 @@ public final class RegionizedWorldData {
      private final LevelTicks<Fluid> fluidLevelTicks;
  
      // tile entity ticking
@@ -541,7 +541,7 @@ index 158c1f5d965bc5951db56c6b1ad99f0d8ea71571..1897f43d5a4864659be9bf80dbef3f8a
  
      public long getRedstoneGameTime() {
          return this.redstoneTime;
-@@ -491,8 +493,8 @@ public final class RegionizedWorldData {
+@@ -465,8 +470,8 @@ public final class RegionizedWorldData {
      public final NeighborUpdater neighborUpdater;
      public boolean captureBlockStates = false;
      public boolean captureTreeGeneration = false;
@@ -552,7 +552,7 @@ index 158c1f5d965bc5951db56c6b1ad99f0d8ea71571..1897f43d5a4864659be9bf80dbef3f8a
      public List<ItemEntity> captureDrops;
      // Paper start
      public int wakeupInactiveRemainingAnimals;
-@@ -505,10 +507,10 @@ public final class RegionizedWorldData {
+@@ -479,10 +484,10 @@ public final class RegionizedWorldData {
      @VisibleForDebug
      public NaturalSpawner.SpawnState lastSpawnState;
      public boolean shouldSignal = true;
@@ -565,7 +565,7 @@ index 158c1f5d965bc5951db56c6b1ad99f0d8ea71571..1897f43d5a4864659be9bf80dbef3f8a
  
      // not transient
      public java.util.ArrayDeque<net.minecraft.world.level.block.RedstoneTorchBlock.Toggle> redstoneUpdateInfos;
-@@ -591,7 +593,7 @@ public final class RegionizedWorldData {
+@@ -562,7 +567,7 @@ public final class RegionizedWorldData {
          final ServerPlayer player = conn.getPlayer();
          // now that the connection is removed, we can allow this region to die
          player.level().moonrise$getChunkTaskScheduler().chunkHolderManager.removeTicketAtLevel(
@@ -574,7 +574,7 @@ index 158c1f5d965bc5951db56c6b1ad99f0d8ea71571..1897f43d5a4864659be9bf80dbef3f8a
              ChunkHolderManager.MAX_TICKET_LEVEL,
              player.connection.disconnectTicketId
          );
-@@ -672,11 +674,8 @@ public final class RegionizedWorldData {
+@@ -643,11 +648,8 @@ public final class RegionizedWorldData {
      }
  
      public void addEntityTickingEntity(final Entity entity) {
@@ -587,7 +587,7 @@ index 158c1f5d965bc5951db56c6b1ad99f0d8ea71571..1897f43d5a4864659be9bf80dbef3f8a
      }
  
      public boolean hasEntityTickingEntity(final Entity entity) {
-@@ -684,11 +683,8 @@ public final class RegionizedWorldData {
+@@ -655,11 +657,8 @@ public final class RegionizedWorldData {
      }
  
      public void removeEntityTickingEntity(final Entity entity) {
@@ -600,7 +600,7 @@ index 158c1f5d965bc5951db56c6b1ad99f0d8ea71571..1897f43d5a4864659be9bf80dbef3f8a
      }
  
      public void forEachTickingEntity(final Consumer<Entity> action) {
-@@ -703,14 +699,11 @@ public final class RegionizedWorldData {
+@@ -674,14 +673,11 @@ public final class RegionizedWorldData {
      }
  
      public void addEntity(final Entity entity) {
@@ -616,7 +616,7 @@ index 158c1f5d965bc5951db56c6b1ad99f0d8ea71571..1897f43d5a4864659be9bf80dbef3f8a
          }
      }
  
-@@ -719,28 +712,19 @@ public final class RegionizedWorldData {
+@@ -690,28 +686,19 @@ public final class RegionizedWorldData {
      }
  
      public void removeEntity(final Entity entity) {
@@ -646,7 +646,7 @@ index 158c1f5d965bc5951db56c6b1ad99f0d8ea71571..1897f43d5a4864659be9bf80dbef3f8a
          this.navigatingMobs.remove(mob);
      }
  
-@@ -755,25 +739,32 @@ public final class RegionizedWorldData {
+@@ -726,25 +713,32 @@ public final class RegionizedWorldData {
      // make the code easier by simply discarding it in such an event
      public void pushBlockEvent(final BlockEventData blockEventData) {
          TickThread.ensureTickThread(this.world, blockEventData.pos(), "Cannot queue block even data async");
@@ -679,7 +679,7 @@ index 158c1f5d965bc5951db56c6b1ad99f0d8ea71571..1897f43d5a4864659be9bf80dbef3f8a
          BlockEventData ret;
          while (!this.blockEvents.isEmpty()) {
              ret = this.blockEvents.removeFirst();
-@@ -781,6 +772,7 @@ public final class RegionizedWorldData {
+@@ -752,6 +746,7 @@ public final class RegionizedWorldData {
                  return ret;
              } // else: chunk must have been unloaded
          }
@@ -687,7 +687,7 @@ index 158c1f5d965bc5951db56c6b1ad99f0d8ea71571..1897f43d5a4864659be9bf80dbef3f8a
  
          return null;
      }
-@@ -818,12 +810,12 @@ public final class RegionizedWorldData {
+@@ -789,12 +784,12 @@ public final class RegionizedWorldData {
      // ticking chunks
      public void addEntityTickingChunk(final LevelChunk chunk) {
          this.entityTickingChunks.add(chunk);
@@ -702,7 +702,7 @@ index 158c1f5d965bc5951db56c6b1ad99f0d8ea71571..1897f43d5a4864659be9bf80dbef3f8a
      }
  
      public ReferenceList<LevelChunk> getEntityTickingChunks() {
-@@ -832,12 +824,12 @@ public final class RegionizedWorldData {
+@@ -803,12 +798,12 @@ public final class RegionizedWorldData {
  
      public void addTickingChunk(final LevelChunk chunk) {
          this.tickingChunks.add(chunk);
@@ -717,7 +717,7 @@ index 158c1f5d965bc5951db56c6b1ad99f0d8ea71571..1897f43d5a4864659be9bf80dbef3f8a
      }
  
      public ReferenceList<LevelChunk> getTickingChunks() {
-@@ -846,12 +838,12 @@ public final class RegionizedWorldData {
+@@ -817,12 +812,12 @@ public final class RegionizedWorldData {
  
      public void addChunk(final LevelChunk chunk) {
          this.chunks.add(chunk);
@@ -815,51 +815,18 @@ index bfb39cbf1ba58d02da7e35300eb95872747506e8..03b23984ca6c654beb1720875a4243aa
  
              if (ret != null) {
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index 75027e73859c955a54034640f905cb5d91a6a2f4..02697b2d0a8dbd74b44c129b6f5117d948ba9d16 100644
+index 75027e73859c955a54034640f905cb5d91a6a2f4..fe721fabcdad6147bfdb6098276f714993927df0 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -41,7 +41,7 @@ import java.util.UUID;
- import java.util.Map.Entry;
+@@ -42,6 +42,7 @@ import java.util.Map.Entry;
  import java.util.concurrent.CompletableFuture;
  import java.util.concurrent.Executor;
--import java.util.concurrent.RejectedExecutionException;
+ import java.util.concurrent.RejectedExecutionException;
 +import java.util.concurrent.atomic.AtomicBoolean;
  import java.util.concurrent.atomic.AtomicReference;
  import java.util.concurrent.locks.LockSupport;
  import java.util.function.BooleanSupplier;
-@@ -114,7 +114,6 @@ import net.minecraft.util.TimeUtil;
- import net.minecraft.util.debugchart.RemoteDebugSampleType;
- import net.minecraft.util.debugchart.SampleLogger;
- import net.minecraft.util.debugchart.TpsDebugDimensions;
--import net.minecraft.util.profiling.EmptyProfileResults;
- import net.minecraft.util.profiling.ProfileResults;
- import net.minecraft.util.profiling.Profiler;
- import net.minecraft.util.profiling.ProfilerFiller;
-@@ -129,7 +128,6 @@ import net.minecraft.util.profiling.metrics.profiling.ServerMetricsSamplersProvi
- import net.minecraft.util.profiling.metrics.storage.MetricsPersister;
- import net.minecraft.util.thread.ReentrantBlockableEventLoop;
- import net.minecraft.world.Difficulty;
--import net.minecraft.world.RandomSequences;
- import net.minecraft.world.entity.ai.village.VillageSiege;
- import net.minecraft.world.entity.npc.CatSpawner;
- import net.minecraft.world.entity.npc.WanderingTraderSpawner;
-@@ -150,7 +148,6 @@ import net.minecraft.world.level.WorldDataConfiguration;
- import net.minecraft.world.level.biome.BiomeManager;
- import net.minecraft.world.level.block.Block;
- import net.minecraft.world.level.block.entity.FuelValues;
--import net.minecraft.world.level.border.BorderChangeListener;
- import net.minecraft.world.level.border.WorldBorder;
- import net.minecraft.world.level.chunk.storage.ChunkIOErrorReporter;
- import net.minecraft.world.level.chunk.storage.RegionStorageInfo;
-@@ -161,7 +158,6 @@ import net.minecraft.world.level.levelgen.PhantomSpawner;
- import net.minecraft.world.level.levelgen.WorldOptions;
- import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
- import net.minecraft.world.level.storage.CommandStorage;
--import net.minecraft.world.level.storage.DerivedLevelData;
- import net.minecraft.world.level.storage.DimensionDataStorage;
- import net.minecraft.world.level.storage.LevelData;
- import net.minecraft.world.level.storage.LevelResource;
-@@ -782,8 +778,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -782,8 +783,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
          // Paper end - Configurable player collision
  
@@ -869,7 +836,7 @@ index 75027e73859c955a54034640f905cb5d91a6a2f4..02697b2d0a8dbd74b44c129b6f5117d9
          if (false) this.server.spark.enableAfterPlugins(this.server); // Paper - spark // Luminol - Force disable builtin spark
          if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.pluginsEnabled(); // Paper - Remap plugins
          io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setValid(); // Paper - reset invalid state for event fire below
-@@ -791,9 +786,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -791,9 +791,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          this.server.getCommandMap().registerServerAliases(); // Paper - relocate initial CommandMap#registerServerAliases() call
          ((org.bukkit.craftbukkit.help.SimpleHelpMap) this.server.getHelpMap()).initializeCommands();
          this.server.getPluginManager().callEvent(new org.bukkit.event.server.ServerLoadEvent(org.bukkit.event.server.ServerLoadEvent.LoadType.STARTUP));
@@ -883,7 +850,7 @@ index 75027e73859c955a54034640f905cb5d91a6a2f4..02697b2d0a8dbd74b44c129b6f5117d9
      public void initWorld(ServerLevel serverLevel, ServerLevelData serverLevelData, WorldData saveData, WorldOptions worldOptions) {
          boolean isDebugWorld = saveData.isDebugWorld();
          if (serverLevel.generator != null) {
-@@ -1618,6 +1616,24 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1618,6 +1621,24 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                  return;
              }
          }
@@ -908,7 +875,7 @@ index 75027e73859c955a54034640f905cb5d91a6a2f4..02697b2d0a8dbd74b44c129b6f5117d9
  
  
          // Folia start - region threading
-@@ -2228,7 +2244,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2228,7 +2249,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
      public int getTickCount() {
@@ -1126,7 +1093,7 @@ index 05bad0366bd36b8134290a0cceb4d4dfcbbd0544..30914c593ee5f6f63221bea0983d3c6a
              // Paper end - rewrite chunk system
          }
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 985ddea9d74a37f58f32a27375f6f7e6af0f2192..a8675feecc864076b01d544e2dd6075b13411589 100644
+index e220a7c92159378b5991670963cb13e5e9bc4431..bb70322a623795b7cf50f8b8f3c549f59def4465 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -181,6 +181,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
@@ -1395,7 +1362,7 @@ index ee7bdc3adbeb04cf6ca630282f31a21e52bdb215..da31a33bbee97c1674ab9f936df3a5c2
                  return true;
                  // CraftBukkit end
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index f5539ca5964abb18124522a8aa7ce940517b2011..ce68e8b94cff30a2e1b60a71e716d06fa48017ed 100644
+index ea177b8ad7ebb25e3e2967c8ff3d36dc3dda6a1d..e0b0ad3c6040a453ae5e1f156d5b125b6e96dfb6 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -1,5 +1,8 @@
@@ -1406,8 +1373,8 @@ index f5539ca5964abb18124522a8aa7ce940517b2011..ce68e8b94cff30a2e1b60a71e716d06f
 +import org.bukkit.event.player.PlayerTeleportEvent;
  import com.google.common.collect.ImmutableList;
  import com.google.common.collect.Lists;
- import com.google.common.collect.Sets;
-@@ -1509,7 +1512,14 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+ import com.google.common.collect.ImmutableList.Builder;
+@@ -1508,7 +1511,14 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          if (pos.lengthSqr() <= 1.0E-7) {
              return pos;
          } else {
@@ -1423,7 +1390,7 @@ index f5539ca5964abb18124522a8aa7ce940517b2011..ce68e8b94cff30a2e1b60a71e716d06f
              if (gameTime != this.pistonDeltasGameTime) {
                  Arrays.fill(this.pistonDeltas, 0.0);
                  this.pistonDeltasGameTime = gameTime;
-@@ -4358,7 +4368,15 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4357,7 +4367,15 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          if (!this.canTeleportAsync()) {
              return false;
          }
@@ -1440,7 +1407,7 @@ index f5539ca5964abb18124522a8aa7ce940517b2011..ce68e8b94cff30a2e1b60a71e716d06f
          if ((teleportFlags & TELEPORT_FLAG_UNMOUNT) == 0L) {
              for (Entity entity : this.getIndirectPassengers()) {
                  if (!entity.canTeleportAsync()) {
-@@ -4827,12 +4845,40 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4824,12 +4842,40 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          ca.spottedleaf.concurrentutil.completable.CallbackCompletable<TeleportTransition> portalInfoCompletable
              = new ca.spottedleaf.concurrentutil.completable.CallbackCompletable<>();
  
@@ -1482,7 +1449,7 @@ index f5539ca5964abb18124522a8aa7ce940517b2011..ce68e8b94cff30a2e1b60a71e716d06f
              originWorld.moonrise$getChunkTaskScheduler().chunkHolderManager.removeTicketAtLevel(
                  TicketType.TELEPORT_HOLD_TICKET, initialPositionChunk,
                  ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkHolderManager.MAX_TICKET_LEVEL,
-@@ -6282,7 +6328,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -6262,7 +6308,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      // Paper end - Folia schedulers
      // Paper start - optimise Folia entity scheduler
      public final void registerScheduler() {
@@ -1572,10 +1539,10 @@ index c8f098b7c1c1889e46f8cbb462c78fd991d58f9f..3b17a99ef8497e20240d50d075e74806
      }
      // Pufferfish end
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e855e2625c 100644
+index 4eb08dc3b3d7ed8716d7e37313512c8bc5e4e393..7dfda41bc9d7e8d8c6a2cc5ffe9836985439c86a 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
-@@ -1,16 +1,53 @@
+@@ -1,5 +1,26 @@
  package net.minecraft.world.level;
  
 +import alternate.current.wire.WireHandler;
@@ -1602,10 +1569,10 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
  import com.google.common.collect.Lists;
  import com.mojang.serialization.Codec;
  import java.io.IOException;
--import java.util.Collection;
--import java.util.Iterator;
--import java.util.List;
--import java.util.UUID;
+@@ -7,10 +28,30 @@ import java.util.Collection;
+ import java.util.Iterator;
+ import java.util.List;
+ import java.util.UUID;
 +import java.util.*;
 +import java.util.concurrent.ConcurrentHashMap;
 +import java.util.concurrent.Executor;
@@ -1633,7 +1600,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
  import net.minecraft.CrashReport;
  import net.minecraft.CrashReportCategory;
  import net.minecraft.ReportedException;
-@@ -23,11 +60,13 @@ import net.minecraft.core.particles.ParticleOptions;
+@@ -23,11 +64,14 @@ import net.minecraft.core.particles.ParticleOptions;
  import net.minecraft.core.particles.ParticleTypes;
  import net.minecraft.core.registries.BuiltInRegistries;
  import net.minecraft.core.registries.Registries;
@@ -1643,12 +1610,12 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
  import net.minecraft.resources.ResourceKey;
  import net.minecraft.resources.ResourceLocation;
  import net.minecraft.server.MinecraftServer;
--import net.minecraft.server.level.FullChunkStatus;
+ import net.minecraft.server.level.FullChunkStatus;
 +import net.minecraft.server.level.*;
  import net.minecraft.sounds.SoundEvent;
  import net.minecraft.sounds.SoundEvents;
  import net.minecraft.sounds.SoundSource;
-@@ -43,8 +82,10 @@ import net.minecraft.world.damagesource.DamageSource;
+@@ -43,8 +87,10 @@ import net.minecraft.world.damagesource.DamageSource;
  import net.minecraft.world.damagesource.DamageSources;
  import net.minecraft.world.entity.Entity;
  import net.minecraft.world.entity.EntitySelector;
@@ -1659,14 +1626,14 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
  import net.minecraft.world.entity.player.Player;
  import net.minecraft.world.item.ItemStack;
  import net.minecraft.world.item.alchemy.PotionBrewing;
-@@ -59,11 +100,12 @@ import net.minecraft.world.level.block.entity.BlockEntity;
+@@ -59,11 +105,14 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  import net.minecraft.world.level.block.entity.FuelValues;
  import net.minecraft.world.level.block.entity.TickingBlockEntity;
  import net.minecraft.world.level.block.state.BlockState;
 +import net.minecraft.world.level.border.BorderChangeListener;
  import net.minecraft.world.level.border.WorldBorder;
--import net.minecraft.world.level.chunk.ChunkAccess;
--import net.minecraft.world.level.chunk.LevelChunk;
+ import net.minecraft.world.level.chunk.ChunkAccess;
+ import net.minecraft.world.level.chunk.LevelChunk;
 +import net.minecraft.world.level.chunk.*;
  import net.minecraft.world.level.chunk.status.ChunkStatus;
  import net.minecraft.world.level.dimension.DimensionType;
@@ -1674,7 +1641,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
  import net.minecraft.world.level.entity.EntityTypeTest;
  import net.minecraft.world.level.entity.LevelEntityGetter;
  import net.minecraft.world.level.entity.UUIDLookup;
-@@ -78,23 +120,38 @@ import net.minecraft.world.level.redstone.Orientation;
+@@ -78,23 +127,40 @@ import net.minecraft.world.level.redstone.Orientation;
  import net.minecraft.world.level.saveddata.maps.MapId;
  import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
  import net.minecraft.world.level.storage.LevelData;
@@ -1691,8 +1658,8 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
  import net.minecraft.world.scores.Scoreboard;
  
  // CraftBukkit start
--import java.util.Map;
--import net.minecraft.server.level.ServerLevel;
+ import java.util.Map;
+ import net.minecraft.server.level.ServerLevel;
 +import org.bukkit.Bukkit;
 +import org.bukkit.World;
  import org.bukkit.craftbukkit.CraftServer;
@@ -1716,7 +1683,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
      public static final Codec<ResourceKey<Level>> RESOURCE_KEY_CODEC = ResourceKey.codec(Registries.DIMENSION);
      public static final ResourceKey<Level> OVERWORLD = ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("overworld"));
      public static final ResourceKey<Level> NETHER = ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("the_nether"));
-@@ -119,7 +176,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -119,7 +185,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      public float rainLevel;
      protected float oThunderLevel;
      public float thunderLevel;
@@ -1725,12 +1692,8 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
      @Deprecated
      private final RandomSource threadSafeRandom = RandomSource.createThreadSafe();
      private final Holder<DimensionType> dimensionTypeRegistration;
-@@ -130,22 +187,22 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
-     private final ResourceKey<Level> dimension;
-     private final RegistryAccess registryAccess;
-     private final DamageSources damageSources;
--    private final java.util.concurrent.atomic.AtomicLong subTickCount = new java.util.concurrent.atomic.AtomicLong(); //private long subTickCount; // Folia - region threading
-+    private final AtomicLong subTickCount = new AtomicLong(); //private long subTickCount; // Folia - region threading
+@@ -134,19 +200,19 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     private final java.util.concurrent.atomic.AtomicLong subTickCount = new java.util.concurrent.atomic.AtomicLong(); //private long subTickCount; // Folia - region threading
  
      // CraftBukkit start
 -    public final io.papermc.paper.antixray.ChunkPacketBlockController chunkPacketBlockController; // Paper - Anti-Xray
@@ -1755,7 +1718,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
          return this.paperConfig;
      }
      // Paper end - add paper world config
-@@ -160,7 +217,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -161,7 +227,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      }
  
      public CraftServer getCraftServer() {
@@ -1764,7 +1727,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
      }
      // Paper start - Use getChunkIfLoadedImmediately
      @Override
-@@ -170,7 +227,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -171,7 +237,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      // Paper end - Use getChunkIfLoadedImmediately
      // Paper start - per world ticks per spawn
      private int getTicksPerSpawn(SpawnCategory spawnCategory) {
@@ -1773,7 +1736,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
          if (perWorld >= 0) {
              return perWorld;
          }
-@@ -178,14 +235,14 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -179,14 +245,14 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      }
      // Paper end
  
@@ -1792,7 +1755,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
          return this.entityLookup;
      }
      // Folia start - profiler
-@@ -193,8 +250,8 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -194,8 +260,8 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      // Folia end - profiler
  
      @Override
@@ -1803,7 +1766,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
              throw new IllegalStateException("Entity lookup already initialised");
          }
          this.entityLookup = entityLookup;
-@@ -203,9 +260,9 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -204,9 +270,9 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      @Override
      public final <T extends Entity> List<T> getEntitiesOfClass(final Class<T> entityClass, final AABB boundingBox, final Predicate<? super T> predicate) {
          Profiler.get().incrementCounter("getEntities");
@@ -1815,7 +1778,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
  
          return ret;
      }
-@@ -213,9 +270,9 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -214,9 +280,9 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      @Override
      public final List<Entity> moonrise$getHardCollidingEntities(final Entity entity, final AABB box, final Predicate<? super Entity> predicate) {
          Profiler.get().incrementCounter("getEntities");
@@ -1827,7 +1790,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
  
          return ret;
      }
-@@ -241,20 +298,20 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -242,20 +308,20 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      }
  
      @Override
@@ -1854,7 +1817,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
                  ret.increaseRef();
                  return ret;
              }
-@@ -265,15 +322,15 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -266,15 +332,15 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      }
  
      @Override
@@ -1873,7 +1836,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
  
          for (int currZ = fromZ; currZ <= toZ; ++currZ) {
              for (int currX = fromX; currX <= toX; ++currX) {
-@@ -319,13 +376,13 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -320,13 +386,13 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      @Override
      public boolean isUnobstructed(final Entity entity) {
          final AABB boundingBox = entity.getBoundingBox();
@@ -1889,7 +1852,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
              null
          );
  
-@@ -343,20 +400,20 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -344,20 +410,20 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      }
  
  
@@ -1916,7 +1879,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
  
          if (adjX == 0.0 && adjY == 0.0 && adjZ == 0.0) {
              return miss(clipContext);
-@@ -395,13 +452,13 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -396,13 +462,13 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
          double normalizedCurrY = normalizedDiffY * (diffY > 0.0 ? (1.0 - Mth.frac(fromYAdj)) : Mth.frac(fromYAdj));
          double normalizedCurrZ = normalizedDiffZ * (diffZ > 0.0 ? (1.0 - Mth.frac(fromZAdj)) : Mth.frac(fromZAdj));
  
@@ -1933,7 +1896,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
  
          for (;;) {
              currPos.set(currX, currY, currZ);
-@@ -429,14 +486,14 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -430,14 +496,14 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
              if (lastSection != null && !(blockState = lastSection.get((currX & 15) | ((currZ & 15) << 4) | ((currY & 15) << (4+4)))).isAir()) {
                  final VoxelShape blockCollision = clipContext.getBlockShape(blockState, level, currPos);
  
@@ -1950,7 +1913,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
  
                      if (fluidHit != null) {
                          if (blockHit == null) {
-@@ -484,7 +541,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -485,7 +551,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
       * @author Spottedleaf
       */
      @Override
@@ -1959,7 +1922,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
          // can only do this in this class, as not everything that implements BlockGetter can retrieve chunks
          return fastClip(clipContext.getFrom(), clipContext.getTo(), (Level)(Object)this, clipContext);
      }
-@@ -495,8 +552,8 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -496,8 +562,8 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
       */
      @Override
      public boolean collidesWithSuffocatingBlock(final Entity entity, final AABB box) {
@@ -1970,7 +1933,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
              (final BlockState state, final BlockPos pos) -> {
                  return state.isSuffocating((Level)(Object)Level.this, pos);
              }
-@@ -504,7 +561,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -505,7 +571,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      }
  
      private static VoxelShape inflateAABBToVoxel(final AABB aabb, final double x, final double y, final double z) {
@@ -1979,7 +1942,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
              aabb.minX - x,
              aabb.minY - y,
              aabb.minZ - z,
-@@ -520,10 +577,10 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -521,10 +587,10 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
       * @author Spottedleaf
       */
      @Override
@@ -1993,7 +1956,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
          }
  
          final double expandByX = rangeX * 0.5;
-@@ -533,12 +590,12 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -534,12 +600,12 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
          // note: it is useless to look at shapes outside of range / 2.0
          final AABB collectionVolume = boundsShape.bounds().inflate(expandByX, expandByY, expandByZ);
  
@@ -2010,7 +1973,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
              null
          );
  
-@@ -558,7 +615,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -559,7 +625,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
          }
  
          // expand AABBs
@@ -2019,7 +1982,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
          final VoxelShape[] rest = new VoxelShape[Math.max(0, aabbs.size() - 1)];
  
          for (int i = 1, len = aabbs.size(); i < len; ++i) {
-@@ -566,11 +623,11 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -567,11 +633,11 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
          }
  
          // use optimized implementation of ORing the shapes together
@@ -2033,7 +1996,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
  
          return freeSpace.closestPointTo(fromPosition);
      }
-@@ -580,20 +637,20 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -581,20 +647,20 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
       * @author Spottedleaf
       */
      @Override
@@ -2063,7 +2026,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
          BlockPos selected = null;
          double selectedDistance = Double.MAX_VALUE;
          final Vec3 entityPos = entity.position();
-@@ -601,7 +658,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -602,7 +668,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
          // special cases:
          if (minBlockY > maxBlockY) {
              // no point in checking
@@ -2072,7 +2035,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
          }
  
          final int minChunkX = minBlockX >> 4;
-@@ -613,7 +670,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -614,7 +680,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
          final int minChunkZ = minBlockZ >> 4;
          final int maxChunkZ = maxBlockZ >> 4;
  
@@ -2081,7 +2044,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
  
          for (int currChunkZ = minChunkZ; currChunkZ <= maxChunkZ; ++currChunkZ) {
              for (int currChunkX = minChunkX; currChunkX <= maxChunkX; ++currChunkX) {
-@@ -623,7 +680,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -624,7 +690,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
                      continue;
                  }
  
@@ -2090,7 +2053,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
  
                  // bound y
                  for (int currChunkY = minChunkY; currChunkY <= maxChunkY; ++currChunkY) {
-@@ -631,16 +688,16 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -632,16 +698,16 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
                      if (sectionIdx < 0 || sectionIdx >= sections.length) {
                          continue;
                      }
@@ -2110,7 +2073,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
  
                      final int minXIterate = currChunkX == minChunkX ? (minBlockX & 15) + sectionAdjust : 0;
                      final int maxXIterate = currChunkX == maxChunkX ? (maxBlockX & 15) - sectionAdjust : 15;
-@@ -674,11 +731,11 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -675,11 +741,11 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
  
                                  final BlockState blockData = blocks.get(localBlockIndex);
  
@@ -2124,7 +2087,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
  
                                  if (edgeCount == 0 || ((edgeCount != 1 || blockData.hasLargeCollisionShape()) && (edgeCount != 2 || blockData.getBlock() == Blocks.MOVING_PISTON))) {
                                      if (blockCollision == null) {
-@@ -692,9 +749,9 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -693,9 +759,9 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
                                      // avoid VoxelShape#move by shifting the entity collision shape instead
                                      final AABB shiftedAABB = aabb.move(-(double)blockX, -(double)blockY, -(double)blockZ);
  
@@ -2136,7 +2099,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
                                              continue;
                                          }
  
-@@ -703,7 +760,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -704,7 +770,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
                                          continue;
                                      }
  
@@ -2145,7 +2108,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
                                          continue;
                                      }
  
-@@ -718,7 +775,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -719,7 +785,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
              }
          }
  
@@ -2154,7 +2117,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
      }
      // Paper end - optimise collisions
      // Paper start - getblock optimisations - cache world height/sections
-@@ -806,18 +863,19 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -807,18 +873,19 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      }
      // Paper end - optimise random ticking
      // Folia start - region ticking
@@ -2183,7 +2146,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
          }
          Level world = ret.world;
          if (world != this) {
-@@ -827,7 +885,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -828,7 +895,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      }
  
      @Override
@@ -2192,7 +2155,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
          return this.getCurrentWorldData().getLocalPlayers();
      }
      // Folia end - region ticking
-@@ -841,12 +899,12 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -842,12 +909,12 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
          boolean isDebug,
          long biomeZoomSeed,
          int maxChainedNeighborUpdates,
@@ -2211,7 +2174,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
      ) {
          // Paper start - getblock optimisations - cache world height/sections
          final DimensionType dimType = dimensionTypeRegistration.value();
-@@ -857,13 +915,13 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -858,13 +925,13 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
          this.maxSectionY = this.maxY >> 4;
          this.sectionsCount = this.maxSectionY - this.minSectionY + 1;
          // Paper end - getblock optimisations - cache world height/sections
@@ -2227,7 +2190,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
                  this.ticksPerSpawnCategory.put(spawnCategory, this.getTicksPerSpawn(spawnCategory));
              }
          }
-@@ -899,30 +957,30 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -900,30 +967,30 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
          // CraftBukkit start
          this.getWorldBorder().world = (ServerLevel) this;
          // From PlayerList.setPlayerFileData
@@ -2264,7 +2227,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
              }
  
              @Override
-@@ -932,19 +990,19 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -933,19 +1000,19 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
              public void onBorderSetDamageSafeZOne(WorldBorder border, double safeZoneRadius) {}
          });
          // CraftBukkit end
@@ -2289,7 +2252,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
          if (collisionShape.isEmpty()) {
              return true;
          }
-@@ -958,8 +1016,8 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -959,8 +1026,8 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
          for (int i = 0, len = entities.size(); i < len; ++i) {
              Entity entity = entities.get(i);
  
@@ -2300,7 +2263,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
                  continue;
              }
  
-@@ -970,7 +1028,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -971,7 +1038,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
                  continue;
              }
  
@@ -2309,7 +2272,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
                  return false;
              }
          }
-@@ -991,7 +1049,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -992,7 +1059,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      }
  
      // Paper start
@@ -2318,7 +2281,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
          // To be patched over
          return this.clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, context)).getType();
      }
-@@ -1020,7 +1078,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1021,7 +1088,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      @Override
      public final LevelChunk getChunk(int chunkX, int chunkZ) { // Paper - final to help inline
          // Paper start - Perf: make sure loaded chunks get the inlined variant of this function
@@ -2327,7 +2290,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
          LevelChunk ifLoaded = cps.getChunkAtIfLoadedImmediately(chunkX, chunkZ);
          if (ifLoaded != null) {
              return ifLoaded;
-@@ -1039,9 +1097,12 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1040,9 +1107,12 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      @Override
      @Nullable
      public final BlockState getBlockStateIfLoaded(BlockPos pos) {
@@ -2342,7 +2305,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
              if (previous != null) {
                  return previous.getHandle();
              }
-@@ -1054,6 +1115,9 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1055,6 +1125,9 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
  
              return chunk == null ? null : chunk.getBlockState(pos);
          }
@@ -2352,7 +2315,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
      }
  
      @Override
-@@ -1105,8 +1169,11 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1106,8 +1179,11 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
  
      @Override
      public boolean setBlock(BlockPos pos, BlockState state, int flags, int recursionLeft) {
@@ -2366,7 +2329,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
          // CraftBukkit start - tree generation
          if (worldData.captureTreeGeneration) { // Folia - region threading
              // Paper start - Protect Bedrock and End Portal/Frames from being destroyed
-@@ -1115,7 +1182,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1116,7 +1192,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
              // Paper end - Protect Bedrock and End Portal/Frames from being destroyed
              CraftBlockState blockstate = worldData.capturedBlockStates.get(pos); // Folia - region threading
              if (blockstate == null) {
@@ -2375,7 +2338,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
                  worldData.capturedBlockStates.put(pos.immutable(), blockstate); // Folia - region threading
              }
              blockstate.setData(state);
-@@ -1135,7 +1202,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1136,7 +1212,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
              if (worldData.captureBlockStates) { // Folia - region threading
                  final CraftBlockState snapshot;
                  if (!worldData.capturedBlockStates.containsKey(pos)) { // Folia - region threading
@@ -2384,7 +2347,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
                      worldData.capturedBlockStates.put(pos.immutable(), snapshot); // Folia - region threading
                      captured = true;
                  } else {
-@@ -1201,10 +1268,16 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1202,10 +1278,16 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
                  return true;
              }
          }
@@ -2401,7 +2364,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
          BlockState state = newState;
          BlockState blockState = oldState;
          BlockState blockState1 = currentState;
-@@ -1230,8 +1303,8 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1231,8 +1313,8 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
                  // CraftBukkit start
                  blockState.updateIndirectNeighbourShapes(this, pos, i, recursionLeft - 1); // Don't call an event for the old block to limit event spam
                  boolean cancelledUpdates = false; // Paper - Fix block place logic
@@ -2412,7 +2375,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
                      cancelledUpdates = !event.callEvent(); // Paper - Fix block place logic
                  }
                  // CraftBukkit end
-@@ -1243,6 +1316,9 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1244,6 +1326,9 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
  
              this.updatePOIOnBlockStateChange(pos, blockState, blockState1);
          }
@@ -2422,7 +2385,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
      }
      // CraftBukkit end
      public void updatePOIOnBlockStateChange(BlockPos pos, BlockState oldState, BlockState newState) {
-@@ -1267,8 +1343,8 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1268,8 +1353,8 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
              boolean playEffect = true;
              BlockState effectType = blockState;
              int xp = blockState.getBlock().getExpDrop(blockState, (ServerLevel) this, pos, ItemStack.EMPTY, true);
@@ -2433,7 +2396,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
                  if (!event.callEvent()) {
                      return false;
                  }
-@@ -1323,7 +1399,13 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1324,7 +1409,13 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
  
      @Override
      public void neighborShapeChanged(Direction direction, BlockPos pos, BlockPos neighborPos, BlockState neighborState, int flags, int recursionLeft) {
@@ -2448,7 +2411,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
      }
  
      @Override
-@@ -1350,7 +1432,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1351,7 +1442,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      // Folia start - region threading
      @Nullable
      public BlockState getBlockStateFromEmptyChunkIfLoaded(BlockPos pos) {
@@ -2457,7 +2420,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
          ChunkAccess chunk = chunkProvider.getChunkAtImmediately(pos.getX() >> 4, pos.getZ() >> 4);
          if (chunk != null) {
              return chunk.getBlockState(pos);
-@@ -1360,7 +1442,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1361,7 +1452,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
  
      @Nullable
      public BlockState getBlockStateFromEmptyChunk(BlockPos pos) {
@@ -2466,7 +2429,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
          ChunkAccess chunk = chunkProvider.getChunkAtImmediately(pos.getX() >> 4, pos.getZ() >> 4);
          if (chunk != null) {
              return chunk.getBlockState(pos);
-@@ -1372,13 +1454,19 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1373,13 +1464,19 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
  
      @Override
      public BlockState getBlockState(BlockPos pos) {
@@ -2488,7 +2451,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
          // CraftBukkit end
          if (this.isOutsideBuildHeight(pos)) {
              return Blocks.VOID_AIR.defaultBlockState();
-@@ -1486,43 +1574,49 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1487,26 +1584,32 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      }
  
      public void addBlockEntityTicker(TickingBlockEntity ticker) {
@@ -2528,11 +2491,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
          toRemove.add(null); // Paper - Fix MC-117075
          for (int i = 0; i < blockEntityTickers.size(); i++) { // Paper - Disable tick limiters // Folia - regionised ticking
              TickingBlockEntity tickingBlockEntity = blockEntityTickers.get(i); // Folia - regionised ticking
-             // Spigot end
-             if (tickingBlockEntity.isRemoved()) {
-                 toRemove.add(tickingBlockEntity); // Paper - Fix MC-117075; use removeAll
--            } else if (runsNormally && (me.earthme.luminol.config.modules.optimizations.LeavesSleepingBlockEntityConfig.enabled ? this.shouldTickBlockPosFilterNull(tickingBlockEntity.getPos()) : this.shouldTickBlocksAt(tickingBlockEntity.getPos()))) { // Leaves - Lithium Sleeping Block Entity
-+            } else if (runsNormally && (LeavesSleepingBlockEntityConfig.enabled ? this.shouldTickBlockPosFilterNull(tickingBlockEntity.getPos()) : this.shouldTickBlocksAt(tickingBlockEntity.getPos()))) { // Leaves - Lithium Sleeping Block Entity
+@@ -1517,13 +1620,13 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
                  tickingBlockEntity.tick();
                  // Paper start - rewrite chunk system
                  if ((++tickedEntities & 7) == 0) {
@@ -2548,7 +2507,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
  
          regionizedWorldData.seTtickingBlockEntities(false); // Folia - regionised ticking
          profilerFiller.pop();
-@@ -1533,13 +1627,13 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1534,13 +1637,13 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
          try {
              consumerEntity.accept(entity);
          } catch (Throwable var6) {
@@ -2566,7 +2525,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
              // Paper end - Prevent block entity and entity crashes
          }
          this.moonrise$midTickTasks(); // Paper - rewrite chunk system
-@@ -1548,15 +1642,15 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1549,15 +1652,15 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      // Paper start - Option to prevent armor stands from doing entity lookups
      @Override
      public boolean noCollision(@Nullable Entity entity, AABB box) {
@@ -2586,7 +2545,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
          // Paper end - optimise collisions
      }
      // Paper end - Option to prevent armor stands from doing entity lookups
-@@ -1573,7 +1667,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1574,7 +1677,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
          return this.shouldTickBlocksAt(ChunkPos.asLong(pos));
      }
  
@@ -2595,7 +2554,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
          this.explode(
              source,
              Explosion.getDefaultDamageSource(this, source),
-@@ -1590,7 +1684,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1591,7 +1694,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
          );
      }
  
@@ -2604,7 +2563,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
          this.explode(
              source,
              Explosion.getDefaultDamageSource(this, source),
-@@ -1614,7 +1708,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1615,7 +1718,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
          Vec3 pos,
          float radius,
          boolean fire,
@@ -2613,7 +2572,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
      ) {
          this.explode(
              source,
-@@ -1641,7 +1735,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1642,7 +1745,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
          double z,
          float radius,
          boolean fire,
@@ -2622,7 +2581,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
      ) {
          this.explode(
              source,
-@@ -1668,7 +1762,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1669,7 +1772,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
          double z,
          float radius,
          boolean fire,
@@ -2631,7 +2590,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
          ParticleOptions smallExplosionParticles,
          ParticleOptions largeExplosionParticles,
          Holder<SoundEvent> explosionSound
-@@ -1680,33 +1774,45 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1681,33 +1784,45 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      @Override
      public BlockEntity getBlockEntity(BlockPos pos) {
          // Folia start - region threading
@@ -2683,7 +2642,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
              // CraftBukkit end
              this.getChunkAt(blockPos).addAndRegisterBlockEntity(blockEntity);
          }
-@@ -1784,16 +1890,16 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1785,16 +1900,16 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
  
      @Override
      public List<Entity> getEntities(@Nullable Entity entity, AABB boundingBox, Predicate<? super Entity> predicate) {
@@ -2704,7 +2663,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
  
          return ret;
          // Paper end - rewrite chunk system
-@@ -1814,29 +1920,29 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1815,29 +1930,29 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      public <T extends Entity> void getEntities(final EntityTypeTest<Entity, T> entityTypeTest,
                                                 final AABB boundingBox, final Predicate<? super T> predicate,
                                                 final List<? super T> into, final int maxCount) {
@@ -2744,7 +2703,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
                  return;
              }
          }
-@@ -1861,34 +1967,34 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1862,34 +1977,34 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
  
          if (base == null || base == Entity.class) {
              if (maxCount != Integer.MAX_VALUE) {
@@ -2789,7 +2748,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
          for (Entity entity : slices.getAllEntities()) {
              org.bukkit.entity.Entity bukkit = entity.getBukkitEntity();
              if (bukkit != null && bukkit.isValid()) {
-@@ -1928,7 +2034,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1929,7 +2044,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      public long getGameTime() {
          // Folia start - region threading
          // Dumb world gen thread calls this for some reason. So, check for null.
@@ -2798,7 +2757,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
          return worldData == null ? this.getLevelData().getGameTime() : worldData.getTickData().nonRedstoneGameTime();
          // Folia end - region threading
      }
-@@ -1936,7 +2042,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1937,7 +2052,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      public long getDayTime() {
          // Folia start - region threading
          // Dumb world gen thread calls this for some reason. So, check for null.
@@ -2807,7 +2766,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
          return worldData == null ? this.getLevelData().getDayTime() : worldData.getTickData().dayTime();
          // Folia end - region threading
      }
-@@ -2057,7 +2163,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -2058,7 +2173,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      public void updateNeighbourForOutputSignal(BlockPos pos, Block block) {
          for (Direction direction : Direction.Plane.HORIZONTAL) {
              BlockPos blockPos = pos.relative(direction);
@@ -2816,7 +2775,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
                  BlockState blockState = this.getBlockState(blockPos);
                  if (blockState.is(Blocks.COMPARATOR)) {
                      this.neighborChanged(blockState, blockPos, block, null, false);
-@@ -2174,7 +2280,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -2175,7 +2290,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      }
  
      // Paper start - optimize redstone (Alternate Current)
@@ -2825,7 +2784,7 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
          // This method is overridden in ServerLevel.
          // Since Paper is a server platform there is no risk
          // of this implementation being called. It is here
-@@ -2192,7 +2298,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -2193,7 +2308,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
          TRIGGER("trigger"),
          STANDARD("standard"); // CraftBukkit - Add STANDARD which will always use Explosion.Effect.DESTROY
  
@@ -2834,15 +2793,6 @@ index 3a46cb424c8ea26386ed013cfc13aba36852a402..491e18b922b2356fd9182f23d0e4d2e8
          private final String id;
  
          private ExplosionInteraction(final String id) {
-@@ -2210,7 +2316,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
-     public BlockEntity lithium$getLoadedExistingBlockEntity(@Nullable BlockPos pos) {
-         if (pos == null) return null;
-         if (!this.isOutsideBuildHeight(pos)) {
--            if (ca.spottedleaf.moonrise.common.util.TickThread.isTickThreadFor(this, pos, 1)) { // Luminol - use folia thread safe check because of unable to use thread check directly & remove this.isClientSide because we only have server side
-+            if (TickThread.isTickThreadFor(this, pos, 1)) { // Luminol - use folia thread safe check because of unable to use thread check directly & remove this.isClientSide because we only have server side
-                 ChunkAccess chunk = this.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()), ChunkStatus.FULL, false);
-                 if (chunk != null) {
-                     return chunk.getBlockEntity(pos);
 diff --git a/net/minecraft/world/level/LevelAccessor.java b/net/minecraft/world/level/LevelAccessor.java
 index f22146c86dd916c16f683fd5b0a8e1205d51ff3b..a6964c40c004e5ddad8f23c6fc62d6b57c4a2c09 100644
 --- a/net/minecraft/world/level/LevelAccessor.java
@@ -3048,7 +2998,7 @@ index 4b37335e91a51b9a58ce0bce94b61ab5afbc6486..09889f8fb30d0c57c1b062d7cd860a66
              }
          }
 diff --git a/net/minecraft/world/level/chunk/LevelChunk.java b/net/minecraft/world/level/chunk/LevelChunk.java
-index 29788fedd54b8411c9c8872b4d83b037874fb5f0..d2a6a48b767fde8a3b6a1f498f82407e65017083 100644
+index f8bc2679d9eeaa5d179ab70a4cc5c97522bcc674..931bbb5f36bf77ca35909aef7ac51b3652acda19 100644
 --- a/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -419,9 +419,15 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p

@@ -11,22 +11,20 @@ grdversion=$(prop version)
 release=$(prop release)
 release_tag="$mcversion-$commitid"
 jarName="$project_id-$mcversion-paperclip.jar"
-jarName_bundler="$project_id-$mcversion-bundler.jar"
 jarName_dir="lightingluminol-server/build/libs/$jarName"
-jarName_bundler_dir="lightingluminol-server/build/libs/$jarName_bundler"
 
+flag_release=false
 pre=false
-make_latest=false
 
 if [ "$release" = "1" ]; then
   pre=true
-  make_latest=false
+  flag_release=true
+  make_latest=true
 elif [ "$release" = "2" ]; then
-  pre=false
+  flag_release=true
   make_latest=true
 fi
 
-mv lightingluminol-server/build/libs/$project_id-paperclip-$grdversion-mojmap.jar $jarName_dir
 mv lightingluminol-server/build/libs/$project_id-bundler-$grdversion-mojmap.jar $jarName_bundler_dir
 
 echo "project_id=$project_id" >> $GITHUB_ENV
@@ -38,5 +36,5 @@ echo "pre=$pre" >> $GITHUB_ENV
 echo "tag=$release_tag" >> $GITHUB_ENV
 echo "jar=$jarName" >> $GITHUB_ENV
 echo "jar_dir=$jarName_dir" >> $GITHUB_ENV
-echo "jar_dir_bundler=$jarName_bundler_dir" >> $GITHUB_ENV
+echo "flag_release=$flag_release" >> $GITHUB_ENV
 echo "make_latest=$make_latest" >> $GITHUB_ENV
