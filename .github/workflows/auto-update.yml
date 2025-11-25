@@ -10,13 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout LightingLuminol repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           path: LightingLuminol
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Checkout Luminol repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           path: Luminol
           repository: LuminolMC/Luminol
