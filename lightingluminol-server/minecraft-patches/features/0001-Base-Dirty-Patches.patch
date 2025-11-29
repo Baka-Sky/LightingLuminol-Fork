@@ -1539,7 +1539,7 @@ index c8f098b7c1c1889e46f8cbb462c78fd991d58f9f..3b17a99ef8497e20240d50d075e74806
      }
      // Pufferfish end
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index 4eb08dc3b3d7ed8716d7e37313512c8bc5e4e393..7dfda41bc9d7e8d8c6a2cc5ffe9836985439c86a 100644
+index 4eb08dc3b3d7ed8716d7e37313512c8bc5e4e393..b4bf4239d0a00191ea27055159b23c1d3afd0330 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
 @@ -1,5 +1,26 @@
@@ -2347,7 +2347,21 @@ index 4eb08dc3b3d7ed8716d7e37313512c8bc5e4e393..7dfda41bc9d7e8d8c6a2cc5ffe983698
                      worldData.capturedBlockStates.put(pos.immutable(), snapshot); // Folia - region threading
                      captured = true;
                  } else {
-@@ -1202,10 +1278,16 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1198,14 +1274,30 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+                     // Spigot end
+                 }
+                 // CraftBukkit end
++                // LightingLuminol - ensure nearby fluids update when a block is removed (e.g. fluid pumps)
++                if (!this.isClientSide && !worldData.captureBlockStates && state.isAir()) {
++                    for (Direction direction : Direction.values()) {
++                        BlockPos neighborPos = pos.relative(direction);
++                        FluidState neighborFluid = this.getFluidState(neighborPos);
++                        if (!neighborFluid.isEmpty()) {
++                            this.scheduleTick(neighborPos, neighborFluid.getType(), neighborFluid.getType().getTickDelay(this));
++                        }
++                    }
++                }
+ 
                  return true;
              }
          }
@@ -2364,7 +2378,7 @@ index 4eb08dc3b3d7ed8716d7e37313512c8bc5e4e393..7dfda41bc9d7e8d8c6a2cc5ffe983698
          BlockState state = newState;
          BlockState blockState = oldState;
          BlockState blockState1 = currentState;
-@@ -1231,8 +1313,8 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1231,8 +1323,8 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
                  // CraftBukkit start
                  blockState.updateIndirectNeighbourShapes(this, pos, i, recursionLeft - 1); // Don't call an event for the old block to limit event spam
                  boolean cancelledUpdates = false; // Paper - Fix block place logic
@@ -2375,7 +2389,7 @@ index 4eb08dc3b3d7ed8716d7e37313512c8bc5e4e393..7dfda41bc9d7e8d8c6a2cc5ffe983698
                      cancelledUpdates = !event.callEvent(); // Paper - Fix block place logic
                  }
                  // CraftBukkit end
-@@ -1244,6 +1326,9 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1244,6 +1336,9 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
  
              this.updatePOIOnBlockStateChange(pos, blockState, blockState1);
          }
@@ -2385,7 +2399,7 @@ index 4eb08dc3b3d7ed8716d7e37313512c8bc5e4e393..7dfda41bc9d7e8d8c6a2cc5ffe983698
      }
      // CraftBukkit end
      public void updatePOIOnBlockStateChange(BlockPos pos, BlockState oldState, BlockState newState) {
-@@ -1268,8 +1353,8 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1268,8 +1363,8 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
              boolean playEffect = true;
              BlockState effectType = blockState;
              int xp = blockState.getBlock().getExpDrop(blockState, (ServerLevel) this, pos, ItemStack.EMPTY, true);
@@ -2396,7 +2410,7 @@ index 4eb08dc3b3d7ed8716d7e37313512c8bc5e4e393..7dfda41bc9d7e8d8c6a2cc5ffe983698
                  if (!event.callEvent()) {
                      return false;
                  }
-@@ -1324,7 +1409,13 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1324,7 +1419,13 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
  
      @Override
      public void neighborShapeChanged(Direction direction, BlockPos pos, BlockPos neighborPos, BlockState neighborState, int flags, int recursionLeft) {
@@ -2411,7 +2425,7 @@ index 4eb08dc3b3d7ed8716d7e37313512c8bc5e4e393..7dfda41bc9d7e8d8c6a2cc5ffe983698
      }
  
      @Override
-@@ -1351,7 +1442,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1351,7 +1452,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      // Folia start - region threading
      @Nullable
      public BlockState getBlockStateFromEmptyChunkIfLoaded(BlockPos pos) {
@@ -2420,7 +2434,7 @@ index 4eb08dc3b3d7ed8716d7e37313512c8bc5e4e393..7dfda41bc9d7e8d8c6a2cc5ffe983698
          ChunkAccess chunk = chunkProvider.getChunkAtImmediately(pos.getX() >> 4, pos.getZ() >> 4);
          if (chunk != null) {
              return chunk.getBlockState(pos);
-@@ -1361,7 +1452,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1361,7 +1462,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
  
      @Nullable
      public BlockState getBlockStateFromEmptyChunk(BlockPos pos) {
@@ -2429,7 +2443,7 @@ index 4eb08dc3b3d7ed8716d7e37313512c8bc5e4e393..7dfda41bc9d7e8d8c6a2cc5ffe983698
          ChunkAccess chunk = chunkProvider.getChunkAtImmediately(pos.getX() >> 4, pos.getZ() >> 4);
          if (chunk != null) {
              return chunk.getBlockState(pos);
-@@ -1373,13 +1464,19 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1373,13 +1474,19 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
  
      @Override
      public BlockState getBlockState(BlockPos pos) {
@@ -2451,7 +2465,7 @@ index 4eb08dc3b3d7ed8716d7e37313512c8bc5e4e393..7dfda41bc9d7e8d8c6a2cc5ffe983698
          // CraftBukkit end
          if (this.isOutsideBuildHeight(pos)) {
              return Blocks.VOID_AIR.defaultBlockState();
-@@ -1487,26 +1584,32 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1487,26 +1594,32 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      }
  
      public void addBlockEntityTicker(TickingBlockEntity ticker) {
@@ -2491,7 +2505,7 @@ index 4eb08dc3b3d7ed8716d7e37313512c8bc5e4e393..7dfda41bc9d7e8d8c6a2cc5ffe983698
          toRemove.add(null); // Paper - Fix MC-117075
          for (int i = 0; i < blockEntityTickers.size(); i++) { // Paper - Disable tick limiters // Folia - regionised ticking
              TickingBlockEntity tickingBlockEntity = blockEntityTickers.get(i); // Folia - regionised ticking
-@@ -1517,13 +1620,13 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1517,13 +1630,13 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
                  tickingBlockEntity.tick();
                  // Paper start - rewrite chunk system
                  if ((++tickedEntities & 7) == 0) {
@@ -2507,7 +2521,7 @@ index 4eb08dc3b3d7ed8716d7e37313512c8bc5e4e393..7dfda41bc9d7e8d8c6a2cc5ffe983698
  
          regionizedWorldData.seTtickingBlockEntities(false); // Folia - regionised ticking
          profilerFiller.pop();
-@@ -1534,13 +1637,13 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1534,13 +1647,13 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
          try {
              consumerEntity.accept(entity);
          } catch (Throwable var6) {
@@ -2525,7 +2539,7 @@ index 4eb08dc3b3d7ed8716d7e37313512c8bc5e4e393..7dfda41bc9d7e8d8c6a2cc5ffe983698
              // Paper end - Prevent block entity and entity crashes
          }
          this.moonrise$midTickTasks(); // Paper - rewrite chunk system
-@@ -1549,15 +1652,15 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1549,15 +1662,15 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      // Paper start - Option to prevent armor stands from doing entity lookups
      @Override
      public boolean noCollision(@Nullable Entity entity, AABB box) {
@@ -2545,7 +2559,7 @@ index 4eb08dc3b3d7ed8716d7e37313512c8bc5e4e393..7dfda41bc9d7e8d8c6a2cc5ffe983698
          // Paper end - optimise collisions
      }
      // Paper end - Option to prevent armor stands from doing entity lookups
-@@ -1574,7 +1677,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1574,7 +1687,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
          return this.shouldTickBlocksAt(ChunkPos.asLong(pos));
      }
  
@@ -2554,7 +2568,7 @@ index 4eb08dc3b3d7ed8716d7e37313512c8bc5e4e393..7dfda41bc9d7e8d8c6a2cc5ffe983698
          this.explode(
              source,
              Explosion.getDefaultDamageSource(this, source),
-@@ -1591,7 +1694,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1591,7 +1704,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
          );
      }
  
@@ -2563,7 +2577,7 @@ index 4eb08dc3b3d7ed8716d7e37313512c8bc5e4e393..7dfda41bc9d7e8d8c6a2cc5ffe983698
          this.explode(
              source,
              Explosion.getDefaultDamageSource(this, source),
-@@ -1615,7 +1718,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1615,7 +1728,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
          Vec3 pos,
          float radius,
          boolean fire,
@@ -2572,7 +2586,7 @@ index 4eb08dc3b3d7ed8716d7e37313512c8bc5e4e393..7dfda41bc9d7e8d8c6a2cc5ffe983698
      ) {
          this.explode(
              source,
-@@ -1642,7 +1745,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1642,7 +1755,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
          double z,
          float radius,
          boolean fire,
@@ -2581,7 +2595,7 @@ index 4eb08dc3b3d7ed8716d7e37313512c8bc5e4e393..7dfda41bc9d7e8d8c6a2cc5ffe983698
      ) {
          this.explode(
              source,
-@@ -1669,7 +1772,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1669,7 +1782,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
          double z,
          float radius,
          boolean fire,
@@ -2590,7 +2604,7 @@ index 4eb08dc3b3d7ed8716d7e37313512c8bc5e4e393..7dfda41bc9d7e8d8c6a2cc5ffe983698
          ParticleOptions smallExplosionParticles,
          ParticleOptions largeExplosionParticles,
          Holder<SoundEvent> explosionSound
-@@ -1681,33 +1784,45 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1681,33 +1794,45 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      @Override
      public BlockEntity getBlockEntity(BlockPos pos) {
          // Folia start - region threading
@@ -2642,7 +2656,7 @@ index 4eb08dc3b3d7ed8716d7e37313512c8bc5e4e393..7dfda41bc9d7e8d8c6a2cc5ffe983698
              // CraftBukkit end
              this.getChunkAt(blockPos).addAndRegisterBlockEntity(blockEntity);
          }
-@@ -1785,16 +1900,16 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1785,16 +1910,16 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
  
      @Override
      public List<Entity> getEntities(@Nullable Entity entity, AABB boundingBox, Predicate<? super Entity> predicate) {
@@ -2663,7 +2677,7 @@ index 4eb08dc3b3d7ed8716d7e37313512c8bc5e4e393..7dfda41bc9d7e8d8c6a2cc5ffe983698
  
          return ret;
          // Paper end - rewrite chunk system
-@@ -1815,29 +1930,29 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1815,29 +1940,29 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      public <T extends Entity> void getEntities(final EntityTypeTest<Entity, T> entityTypeTest,
                                                 final AABB boundingBox, final Predicate<? super T> predicate,
                                                 final List<? super T> into, final int maxCount) {
@@ -2703,7 +2717,7 @@ index 4eb08dc3b3d7ed8716d7e37313512c8bc5e4e393..7dfda41bc9d7e8d8c6a2cc5ffe983698
                  return;
              }
          }
-@@ -1862,34 +1977,34 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1862,34 +1987,34 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
  
          if (base == null || base == Entity.class) {
              if (maxCount != Integer.MAX_VALUE) {
@@ -2748,7 +2762,7 @@ index 4eb08dc3b3d7ed8716d7e37313512c8bc5e4e393..7dfda41bc9d7e8d8c6a2cc5ffe983698
          for (Entity entity : slices.getAllEntities()) {
              org.bukkit.entity.Entity bukkit = entity.getBukkitEntity();
              if (bukkit != null && bukkit.isValid()) {
-@@ -1929,7 +2044,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1929,7 +2054,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      public long getGameTime() {
          // Folia start - region threading
          // Dumb world gen thread calls this for some reason. So, check for null.
@@ -2757,7 +2771,7 @@ index 4eb08dc3b3d7ed8716d7e37313512c8bc5e4e393..7dfda41bc9d7e8d8c6a2cc5ffe983698
          return worldData == null ? this.getLevelData().getGameTime() : worldData.getTickData().nonRedstoneGameTime();
          // Folia end - region threading
      }
-@@ -1937,7 +2052,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -1937,7 +2062,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      public long getDayTime() {
          // Folia start - region threading
          // Dumb world gen thread calls this for some reason. So, check for null.
@@ -2766,7 +2780,7 @@ index 4eb08dc3b3d7ed8716d7e37313512c8bc5e4e393..7dfda41bc9d7e8d8c6a2cc5ffe983698
          return worldData == null ? this.getLevelData().getDayTime() : worldData.getTickData().dayTime();
          // Folia end - region threading
      }
-@@ -2058,7 +2173,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -2058,7 +2183,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      public void updateNeighbourForOutputSignal(BlockPos pos, Block block) {
          for (Direction direction : Direction.Plane.HORIZONTAL) {
              BlockPos blockPos = pos.relative(direction);
@@ -2775,7 +2789,7 @@ index 4eb08dc3b3d7ed8716d7e37313512c8bc5e4e393..7dfda41bc9d7e8d8c6a2cc5ffe983698
                  BlockState blockState = this.getBlockState(blockPos);
                  if (blockState.is(Blocks.COMPARATOR)) {
                      this.neighborChanged(blockState, blockPos, block, null, false);
-@@ -2175,7 +2290,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -2175,7 +2300,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      }
  
      // Paper start - optimize redstone (Alternate Current)
@@ -2784,7 +2798,7 @@ index 4eb08dc3b3d7ed8716d7e37313512c8bc5e4e393..7dfda41bc9d7e8d8c6a2cc5ffe983698
          // This method is overridden in ServerLevel.
          // Since Paper is a server platform there is no risk
          // of this implementation being called. It is here
-@@ -2193,7 +2308,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -2193,7 +2318,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
          TRIGGER("trigger"),
          STANDARD("standard"); // CraftBukkit - Add STANDARD which will always use Explosion.Effect.DESTROY
  
