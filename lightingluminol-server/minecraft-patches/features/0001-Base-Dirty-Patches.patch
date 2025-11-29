@@ -1362,7 +1362,7 @@ index ee7bdc3adbeb04cf6ca630282f31a21e52bdb215..da31a33bbee97c1674ab9f936df3a5c2
                  return true;
                  // CraftBukkit end
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 38092dcc3dedc6c855e5598126be47f892223547..7fcc02c8982ad6cfb12fdee6048dd9435446c6fa 100644
+index 38092dcc3dedc6c855e5598126be47f892223547..140bb4279c63d8e26bdd12a1122f9f16fc8fff72 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -1,5 +1,8 @@
@@ -1399,7 +1399,7 @@ index 38092dcc3dedc6c855e5598126be47f892223547..7fcc02c8982ad6cfb12fdee6048dd943
 +        final org.bukkit.entity.Entity bukkitEntity = this.getBukkitEntity(); // force bukkit entity to be created before TPing
 +
 +        if (!this.preventMoving && this instanceof ServerPlayer) {
-+            if (!new PlayerTeleportEvent((org.bukkit.entity.Player) bukkitEntity,bukkitEntity.getLocation(), MCUtil.toLocation(destination, pos)).callEvent()) {
++            if (!new PlayerTeleportEvent((org.bukkit.entity.Player) bukkitEntity,bukkitEntity.getLocation(), MCUtil.toLocation(destination, pos), cause).callEvent()) {
 +                return false;
 +            }
 +        }
