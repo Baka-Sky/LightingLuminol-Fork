@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Helvetica Volubi <suisuroru@blue-millennium.fun>
+Date: Sat, 6 Dec 2025 17:11:13 +0800
+Subject: [PATCH] Force disable check for folia-supported flag
+
+
+diff --git a/src/main/java/me/earthme/luminol/config/modules/unsupported/DisableCheckForFoliaSupported.java b/src/main/java/me/earthme/luminol/config/modules/unsupported/DisableCheckForFoliaSupported.java
+index fa3aae5e3df7d85816e6fcb169161227583a4670..76f6a44304b8b9d27d4c60cd15f13f52684e392f 100644
+--- a/src/main/java/me/earthme/luminol/config/modules/unsupported/DisableCheckForFoliaSupported.java
++++ b/src/main/java/me/earthme/luminol/config/modules/unsupported/DisableCheckForFoliaSupported.java
+@@ -1,19 +1,6 @@
+ package me.earthme.luminol.config.modules.unsupported;
+ 
+-import me.earthme.luminol.config.IConfigModule;
+-import me.earthme.luminol.config.flags.ConfigClassInfo;
+-import me.earthme.luminol.config.flags.ConfigInfo;
+-import me.earthme.luminol.enums.EnumConfigCategory;
+-
+-@ConfigClassInfo(category = EnumConfigCategory.UNSUPPORTED, name = "disable_check_for_folia_supported")
+-public class DisableCheckForFoliaSupported implements IConfigModule {
+-    @ConfigInfo(name = "disable_for_paper", comments = """
+-            Disable check for folia-supported for spigot/bukkit/paper plugin.
+-            ATTENTION: No support will be provided if you enabled this.""")
+-    public static boolean disableForPaper = false;
+-
+-    @ConfigInfo(name = "disable_for_leaves", comments = """
+-            Disable check for folia-supported for leaves plugin.
+-            ATTENTION: No support will be provided if you enabled this.""")
+-    public static boolean disableForLeaves = false;
++public class DisableCheckForFoliaSupported {
++    public static boolean disableForPaper = true;
++    public static boolean disableForLeaves = true;
+ }
