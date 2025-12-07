@@ -885,7 +885,7 @@ index 75027e73859c955a54034640f905cb5d91a6a2f4..fe721fabcdad6147bfdb6098276f7149
  
      public int getSpawnProtectionRadius() {
 diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
-index 6868b915bf3deb85783a638d4441a15fea6da2dc..46c0638e7144c01e005468d9b2649e80375bfde2 100644
+index 6868b915bf3deb85783a638d4441a15fea6da2dc..85cf85ece21f1437dae12e311dd6a5e7aab28316 100644
 --- a/net/minecraft/server/level/ChunkMap.java
 +++ b/net/minecraft/server/level/ChunkMap.java
 @@ -957,12 +957,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -939,7 +939,7 @@ index 6868b915bf3deb85783a638d4441a15fea6da2dc..46c0638e7144c01e005468d9b2649e80
              // Folia end - region threading
          }
  
-@@ -1017,6 +1029,9 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1017,13 +1029,20 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          final Entity[] trackerEntitiesRaw = trackerEntities.getRawDataUnchecked();
          for (int i = 0, len = totalEntities = trackerEntities.size(); i < len; ++i) { // Folia - region threading
              final Entity entity = trackerEntitiesRaw[i];
@@ -949,6 +949,18 @@ index 6868b915bf3deb85783a638d4441a15fea6da2dc..46c0638e7144c01e005468d9b2649e80
              final ChunkMap.TrackedEntity tracker = ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity)entity).moonrise$getTrackedEntity();
              if (tracker == null) {
                  continue;
+             }
++            var chunkStatus = ((ca.spottedleaf.moonrise.patches.chunk_system.entity.ChunkSystemEntity)entity).moonrise$getChunkStatus();
++            if (chunkStatus == null) {
++                continue;
++            }
+             ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerTrackedEntity)tracker).moonrise$tick(nearbyPlayers.getChunk(entity.chunkPosition())); // Folia - region threading
+             if (((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerTrackedEntity)tracker).moonrise$hasPlayers()
+-                || ((ca.spottedleaf.moonrise.patches.chunk_system.entity.ChunkSystemEntity)entity).moonrise$getChunkStatus().isOrAfter(FullChunkStatus.ENTITY_TICKING)) {
++                || chunkStatus.isOrAfter(FullChunkStatus.ENTITY_TICKING)) {
+                 tracker.serverEntity.sendChanges();
+             }
+         }
 diff --git a/net/minecraft/server/level/DistanceManager.java b/net/minecraft/server/level/DistanceManager.java
 index 619cbb1a9296c814bbdad0780df91c8db01bc5cd..a21bab0a78fccb92ccee074921b49ec2adfdd94f 100644
 --- a/net/minecraft/server/level/DistanceManager.java
