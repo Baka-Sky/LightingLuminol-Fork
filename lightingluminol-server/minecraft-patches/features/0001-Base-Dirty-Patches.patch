@@ -814,7 +814,7 @@ index 30feb7a900027653bea6ba99331df9ab59859174..705a6f4a0d6707607ff9a8e2acc062b5
  
              if (ret != null) {
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index a36ed4b368ed9ee41eeb9fdf096aae41963a58cc..7df0780f58b793a1ac5f76c5524a2f852bf26c45 100644
+index a36ed4b368ed9ee41eeb9fdf096aae41963a58cc..2bb88326d99431d88a1428cdcbc351f638dff8c9 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
 @@ -38,6 +38,7 @@ import java.util.Map.Entry;
@@ -843,7 +843,7 @@ index a36ed4b368ed9ee41eeb9fdf096aae41963a58cc..7df0780f58b793a1ac5f76c5524a2f85
 +        this.connection.acceptConnections();*/
      }
      // Paper end - rework world loading process
-+         ate final AtomicBoolean pluginsEnableCallbackExecuted = new AtomicBoolean(false);
++    private final AtomicBoolean pluginsEnableCallbackExecuted = new AtomicBoolean(false);
 +    public final ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue<Runnable> pluginEnabledCallbacks = new ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue<>();
  
      protected void forceDifficulty() {
@@ -1103,7 +1103,7 @@ index f4c9c551fc39bae38e283ccbbc3cd116f0536a64..fdb4f2bd8f9b361e47330faa1536f409
              // Paper end - rewrite chunk system
          }
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index a60c70550c217bccda6695dc7b7165de8e97e5cd..fc97998de0ea2e4a4cd9c274de79495ec28b8ae2 100644
+index a60c70550c217bccda6695dc7b7165de8e97e5cd..bc107e7c2a359a58ee61c0fcd9234f161ea3bdd7 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -219,6 +219,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
@@ -1234,7 +1234,7 @@ index a60c70550c217bccda6695dc7b7165de8e97e5cd..fc97998de0ea2e4a4cd9c274de79495e
 +        var ref = this.worldDataPool.getAndHeldReference(pos);
 +        var worldData = ref.left();
 +        try {
-+            worldData.pushBlockEvent(new BlockEventData(pos, block, eventID, eventParam)); // Folia - regionised ticking
++            worldData.pushBlockEvent(new BlockEventData(pos, block, eventId, eventParam)); // Folia - regionised ticking
 +        } finally {
 +            this.worldDataPool.releaseReference(pos, ref.right());
 +        }
@@ -1549,7 +1549,7 @@ index 650724a806a18da2439f43d3c180ecffa0fc40d5..6824f1cefc5f0e9a78187cf19511fa49
      }
      // Pufferfish end
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index c2f4e554a7839861733cfa1fccfc96ff5d2b93f2..ab8bca6731449c76c816395f45ae5c5e65e28369 100644
+index c2f4e554a7839861733cfa1fccfc96ff5d2b93f2..ca0fec496e6d72a262f87e9584a0197330aa67bc 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
 @@ -1,5 +1,44 @@
@@ -2252,39 +2252,46 @@ index c2f4e554a7839861733cfa1fccfc96ff5d2b93f2..ab8bca6731449c76c816395f45ae5c5e
          LevelChunk ifLoaded = cps.getChunkAtIfLoadedImmediately(chunkX, chunkZ);
          if (ifLoaded != null) {
              return ifLoaded;
-@@ -1002,13 +1068,19 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -1002,20 +1068,26 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
      @Override
      @Nullable
      public final BlockState getBlockStateIfLoaded(BlockPos pos) {
+-        // CraftBukkit start - tree generation
+-        if (this.getCurrentWorldData().captureTreeGeneration) { // Folia - region threading
+-            CraftBlockState previous = this.getCurrentWorldData().capturedBlockStates.get(pos); // Folia - region threading
+-            if (previous != null) {
+-                return previous.getHandle();
 +        var ref = this.worldDataPool.getAndHeldReference(pos);
 +        var worldData = ref.left();
 +        try {
-         // CraftBukkit start - tree generation
--        if (this.getCurrentWorldData().captureTreeGeneration) { // Folia - region threading
--            CraftBlockState previous = this.getCurrentWorldData().capturedBlockStates.get(pos); // Folia - region threading
-+        if (worldData.captureTreeGeneration) { // Folia - region threading
-+            CraftBlockState previous = worldData.capturedBlockStates.get(pos); // Folia - region threading
-             if (previous != null) {
-                 return previous.getHandle();
++            // CraftBukkit start - tree generation
++            if (worldData.captureTreeGeneration) { // Folia - region threading
++                CraftBlockState previous = worldData.capturedBlockStates.get(pos); // Folia - region threading
++                if (previous != null) {
++                    return previous.getHandle();
++                }
              }
-         }
-+        }finally {
-+        this.worldDataPool.releaseReference(pos, ref.right());
-+        }
-         // CraftBukkit end
-         if (this.isOutsideBuildHeight(pos)) {
-             return Blocks.VOID_AIR.defaultBlockState();
-@@ -1017,6 +1089,9 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+-        }
+-        // CraftBukkit end
+-        if (this.isOutsideBuildHeight(pos)) {
+-            return Blocks.VOID_AIR.defaultBlockState();
+-        } else {
+-            ChunkAccess chunk = this.getChunkIfLoadedImmediately(pos.getX() >> 4, pos.getZ() >> 4);
++            // CraftBukkit end
++            if (this.isOutsideBuildHeight(pos)) {
++                return Blocks.VOID_AIR.defaultBlockState();
++            } else {
++                ChunkAccess chunk = this.getChunkIfLoadedImmediately(pos.getX() >> 4, pos.getZ() >> 4);
  
-             return chunk == null ? null : chunk.getBlockState(pos);
+-            return chunk == null ? null : chunk.getBlockState(pos);
++                return chunk == null ? null : chunk.getBlockState(pos);
++            }
++        } finally {
++            this.worldDataPool.releaseReference(pos, ref.right());
          }
-+        }finally {
-+        this.worldDataPool.releaseReference(pos, ref.right());
-+        }
      }
  
-     @Override
-@@ -1067,8 +1142,11 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -1067,8 +1139,11 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
  
      @Override
      public boolean setBlock(BlockPos pos, BlockState state, @Block.UpdateFlags int flags, int recursionLeft) {
@@ -2298,7 +2305,7 @@ index c2f4e554a7839861733cfa1fccfc96ff5d2b93f2..ab8bca6731449c76c816395f45ae5c5e
          // CraftBukkit start - tree generation
          if (worldData.captureTreeGeneration) { // Folia - region threading
              // Paper start - Protect Bedrock and End Portal/Frames from being destroyed
-@@ -1077,7 +1155,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -1077,7 +1152,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
              // Paper end - Protect Bedrock and End Portal/Frames from being destroyed
              CraftBlockState blockstate = worldData.capturedBlockStates.get(pos); // Folia - region threading
              if (blockstate == null) {
@@ -2307,7 +2314,7 @@ index c2f4e554a7839861733cfa1fccfc96ff5d2b93f2..ab8bca6731449c76c816395f45ae5c5e
                  worldData.capturedBlockStates.put(pos.immutable(), blockstate); // Folia - region threading
              }
              blockstate.setData(state);
-@@ -1097,7 +1175,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -1097,7 +1172,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
              if (worldData.captureBlockStates) { // Folia - region threading
                  final CraftBlockState snapshot;
                  if (!worldData.capturedBlockStates.containsKey(pos)) { // Folia - region threading
@@ -2316,7 +2323,7 @@ index c2f4e554a7839861733cfa1fccfc96ff5d2b93f2..ab8bca6731449c76c816395f45ae5c5e
                      worldData.capturedBlockStates.put(pos.immutable(), snapshot); // Folia - region threading
                      captured = true;
                  } else {
-@@ -1159,14 +1237,30 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -1159,14 +1234,30 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
                      // Spigot end
                  }
                  // CraftBukkit end
@@ -2347,7 +2354,7 @@ index c2f4e554a7839861733cfa1fccfc96ff5d2b93f2..ab8bca6731449c76c816395f45ae5c5e
          BlockState state = newState;
          BlockState blockState = oldState;
          BlockState blockState1 = currentState;
-@@ -1192,8 +1286,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -1192,8 +1283,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
                  // CraftBukkit start
                  blockState.updateIndirectNeighbourShapes(this, pos, i, recursionLeft - 1); // Don't call an event for the old block to limit event spam
                  boolean cancelledUpdates = false; // Paper - Fix block place logic
@@ -2358,7 +2365,7 @@ index c2f4e554a7839861733cfa1fccfc96ff5d2b93f2..ab8bca6731449c76c816395f45ae5c5e
                      cancelledUpdates = !event.callEvent(); // Paper - Fix block place logic
                  }
                  // CraftBukkit end
-@@ -1205,6 +1299,9 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -1205,6 +1296,9 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
  
              this.updatePOIOnBlockStateChange(pos, blockState, blockState1);
          }
@@ -2368,7 +2375,7 @@ index c2f4e554a7839861733cfa1fccfc96ff5d2b93f2..ab8bca6731449c76c816395f45ae5c5e
      }
      // CraftBukkit end
      public void updatePOIOnBlockStateChange(BlockPos pos, BlockState oldState, BlockState newState) {
-@@ -1229,8 +1326,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -1229,8 +1323,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
              boolean playEffect = true;
              BlockState effectType = blockState;
              int xp = blockState.getBlock().getExpDrop(blockState, (ServerLevel) this, pos, ItemStack.EMPTY, true);
@@ -2379,7 +2386,7 @@ index c2f4e554a7839861733cfa1fccfc96ff5d2b93f2..ab8bca6731449c76c816395f45ae5c5e
                  if (!event.callEvent()) {
                      return false;
                  }
-@@ -1287,7 +1384,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -1287,7 +1381,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
      public void neighborShapeChanged(
          Direction direction, BlockPos pos, BlockPos neighborPos, BlockState neighborState, @Block.UpdateFlags int flags, int recursionLeft
      ) {
@@ -2394,7 +2401,7 @@ index c2f4e554a7839861733cfa1fccfc96ff5d2b93f2..ab8bca6731449c76c816395f45ae5c5e
      }
  
      @Override
-@@ -1314,7 +1417,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -1314,7 +1414,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
      // Folia start - region threading
      @Nullable
      public BlockState getBlockStateFromEmptyChunkIfLoaded(BlockPos pos) {
@@ -2403,7 +2410,7 @@ index c2f4e554a7839861733cfa1fccfc96ff5d2b93f2..ab8bca6731449c76c816395f45ae5c5e
          ChunkAccess chunk = chunkProvider.getChunkAtImmediately(pos.getX() >> 4, pos.getZ() >> 4);
          if (chunk != null) {
              return chunk.getBlockState(pos);
-@@ -1324,7 +1427,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -1324,7 +1424,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
  
      @Nullable
      public BlockState getBlockStateFromEmptyChunk(BlockPos pos) {
@@ -2412,21 +2419,44 @@ index c2f4e554a7839861733cfa1fccfc96ff5d2b93f2..ab8bca6731449c76c816395f45ae5c5e
          ChunkAccess chunk = chunkProvider.getChunkAtImmediately(pos.getX() >> 4, pos.getZ() >> 4);
          if (chunk != null) {
              return chunk.getBlockState(pos);
-@@ -1336,9 +1439,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -1336,19 +1436,25 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
  
      @Override
      public BlockState getBlockState(BlockPos pos) {
+-        // CraftBukkit start - tree generation
+-        if (this.getCurrentWorldData().captureTreeGeneration) { // Folia - region threading
+-            CraftBlockState previous = this.getCurrentWorldData().capturedBlockStates.get(pos); // Paper // Folia - region threading
+-            if (previous != null) {
+-                return previous.getHandle();
 +        var ref = this.worldDataPool.getAndHeldReference(pos);
 +        var worldData = ref.left();
 +        try {
-         // CraftBukkit start - tree generation
--        if (this.getCurrentWorldData().captureTreeGeneration) { // Folia - region threading
--            CraftBlockState previous = this.getCurrentWorldData().capturedBlockStates.get(pos); // Paper // Folia - region threading
-+        if (worldData.captureTreeGeneration) { // Folia - region threading
-+            CraftBlockState previous = worldData.capturedBlockStates.get(pos); // Paper // Folia - region threading
-             if (previous != null) {
-                 return previous.getHandle();
++            // CraftBukkit start - tree generation
++            if (worldData.captureTreeGeneration) { // Folia - region threading
++                CraftBlockState previous = worldData.capturedBlockStates.get(pos); // Paper // Folia - region threading
++                if (previous != null) {
++                    return previous.getHandle();
++                }
              }
+-        }
+-        // CraftBukkit end
+-        if (!this.isInValidBounds(pos)) {
+-            return Blocks.VOID_AIR.defaultBlockState();
+-        } else {
+-            ChunkAccess chunk = this.getChunk(pos.getX() >> 4, pos.getZ() >> 4, ChunkStatus.FULL, true); // Paper - manually inline to reduce hops and avoid unnecessary null check to reduce total byte code size, this should never return null and if it does we will see it the next line but the real stack trace will matter in the chunk engine
+-            return chunk.getBlockState(pos);
++            // CraftBukkit end
++            if (!this.isInValidBounds(pos)) {
++                return Blocks.VOID_AIR.defaultBlockState();
++            } else {
++                ChunkAccess chunk = this.getChunk(pos.getX() >> 4, pos.getZ() >> 4, ChunkStatus.FULL, true); // Paper - manually inline to reduce hops and avoid unnecessary null check to reduce total byte code size, this should never return null and if it does we will see it the next line but the real stack trace will matter in the chunk engine
++                return chunk.getBlockState(pos);
++            }
++        } finally {
++            this.worldDataPool.releaseReference(pos, ref.right());
+         }
+     }
+ 
 @@ -1436,24 +1542,30 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
      }
  
@@ -2867,38 +2897,140 @@ index 0fbbccde3fb2143fba0933a5fcb6dc4c0bcc9501..deeb6e8f1768c83fb62dca4150afd78b
      }
  }
 diff --git a/net/minecraft/world/level/ServerExplosion.java b/net/minecraft/world/level/ServerExplosion.java
-index c8fa9a9ae29ecf9b2d6234e7efee61d05c8bc0ae..8a2e67af75d672187eccc2ba4faf2f4663e10ed9 100644
+index c8fa9a9ae29ecf9b2d6234e7efee61d05c8bc0ae..227c3a263e2c99b278d402699e0c966320304c49 100644
 --- a/net/minecraft/world/level/ServerExplosion.java
 +++ b/net/minecraft/world/level/ServerExplosion.java
-@@ -486,6 +486,9 @@ public class ServerExplosion implements Explosion {
+@@ -486,71 +486,77 @@ public class ServerExplosion implements Explosion {
              int floor3 = Mth.floor(this.center.y + f + 1.0);
              int floor4 = Mth.floor(this.center.z - f - 1.0);
              int floor5 = Mth.floor(this.center.z + f + 1.0);
+-            List <Entity> list = this.level.getEntities(this.excludeSourceFromDamage ? this.source : null, new AABB(floor, floor2, floor4, floor1, floor3, floor5), entity -> entity.isAlive() && !entity.isSpectator()); // Paper - Fix lag from explosions processing dead entities, Allow explosions to damage source
+-            for (Entity entity : list) { // Paper - used in loop
+-                if (!entity.ignoreExplosion(this)) {
+-                    double d = Math.sqrt(entity.distanceToSqr(this.center)) / f;
+-                    if (!(d > 1.0)) {
+-                        Vec3 vec3 = entity instanceof PrimedTnt ? entity.position() : entity.getEyePosition();
+-                        Vec3 vec31 = vec3.subtract(this.center).normalize();
+-                        boolean shouldDamageEntity = this.damageCalculator.shouldDamageEntity(this, entity);
+-                        float knockbackMultiplier = this.damageCalculator.getKnockbackMultiplier(entity);
+-                        float f1 = !shouldDamageEntity && knockbackMultiplier == 0.0F ? 0.0F : this.getBlockDensity(this.center, entity); // Paper - Optimize explosions
+-                        if (shouldDamageEntity) {
+-                            // CraftBukkit start
+-
+-                            // Special case ender dragon only give knockback if no damage is cancelled
+-                            // Thinks to note:
+-                            // - Setting a velocity to a EnderDragonPart is ignored (and therefore not needed)
+-                            // - Damaging EnderDragonPart while forward the damage to EnderDragon
+-                            // - Damaging EnderDragon does nothing
+-                            // - EnderDragon hitbox always covers the other parts and is therefore always present
+-                            if (entity instanceof EnderDragonPart) {
+-                                continue;
+-                            }
 +            var ref = this.level.worldDataPool.getAndHeldReference((int)this.center.x >> 4, (int)this.center.z >> 4);
 +            var worldData = ref.left();
 +            try {
-             List <Entity> list = this.level.getEntities(this.excludeSourceFromDamage ? this.source : null, new AABB(floor, floor2, floor4, floor1, floor3, floor5), entity -> entity.isAlive() && !entity.isSpectator()); // Paper - Fix lag from explosions processing dead entities, Allow explosions to damage source
-             for (Entity entity : list) { // Paper - used in loop
-                 if (!entity.ignoreExplosion(this)) {
-@@ -495,7 +498,7 @@ public class ServerExplosion implements Explosion {
-                         Vec3 vec31 = vec3.subtract(this.center).normalize();
-                         boolean shouldDamageEntity = this.damageCalculator.shouldDamageEntity(this, entity);
-                         float knockbackMultiplier = this.damageCalculator.getKnockbackMultiplier(entity);
--                        float f1 = !shouldDamageEntity && knockbackMultiplier == 0.0F ? 0.0F : this.getBlockDensity(this.center, entity); // Paper - Optimize explosions
-+                        float f1 = !shouldDamageEntity && knockbackMultiplier == 0.0F ? 0.0F : this.getBlockDensity(this.center, entity, worldData); // Paper - Optimize explosions
-                         if (shouldDamageEntity) {
-                             // CraftBukkit start
++                List <Entity> list = this.level.getEntities(this.excludeSourceFromDamage ? this.source : null, new AABB(floor, floor2, floor4, floor1, floor3, floor5), entity -> entity.isAlive() && !entity.isSpectator()); // Paper - Fix lag from explosions processing dead entities, Allow explosions to damage source
++                for (Entity entity : list) { // Paper - used in loop
++                    if (!entity.ignoreExplosion(this)) {
++                        double d = Math.sqrt(entity.distanceToSqr(this.center)) / f;
++                        if (!(d > 1.0)) {
++                            Vec3 vec3 = entity instanceof PrimedTnt ? entity.position() : entity.getEyePosition();
++                            Vec3 vec31 = vec3.subtract(this.center).normalize();
++                            boolean shouldDamageEntity = this.damageCalculator.shouldDamageEntity(this, entity);
++                            float knockbackMultiplier = this.damageCalculator.getKnockbackMultiplier(entity);
++                            float f1 = !shouldDamageEntity && knockbackMultiplier == 0.0F ? 0.0F : this.getBlockDensity(this.center, entity, worldData); // Paper - Optimize explosions
++                            if (shouldDamageEntity) {
++                                // CraftBukkit start
++
++                                // Special case ender dragon only give knockback if no damage is cancelled
++                                // Thinks to note:
++                                // - Setting a velocity to a EnderDragonPart is ignored (and therefore not needed)
++                                // - Damaging EnderDragonPart while forward the damage to EnderDragon
++                                // - Damaging EnderDragon does nothing
++                                // - EnderDragon hitbox always covers the other parts and is therefore always present
++                                if (entity instanceof EnderDragonPart) {
++                                    continue;
++                                }
  
-@@ -553,6 +556,9 @@ public class ServerExplosion implements Explosion {
+-                            entity.lastDamageCancelled = false;
++                                entity.lastDamageCancelled = false;
+ 
+-                            if (entity instanceof EnderDragon) {
+-                                for (EnderDragonPart dragonPart : ((EnderDragon) entity).getSubEntities()) {
+-                                    // Calculate damage separately for each EntityComplexPart
+-                                    if (list.contains(dragonPart)) {
+-                                        dragonPart.hurtServer(this.level, this.damageSource, this.damageCalculator.getEntityDamageAmount(this, dragonPart, f1));
++                                if (entity instanceof EnderDragon) {
++                                    for (EnderDragonPart dragonPart : ((EnderDragon) entity).getSubEntities()) {
++                                        // Calculate damage separately for each EntityComplexPart
++                                        if (list.contains(dragonPart)) {
++                                            dragonPart.hurtServer(this.level, this.damageSource, this.damageCalculator.getEntityDamageAmount(this, dragonPart, f1));
++                                        }
+                                     }
++                                } else {
++                                    entity.hurtServer(this.level, this.damageSource, this.damageCalculator.getEntityDamageAmount(this, entity, f1));
++                                }
++
++                                if (entity.lastDamageCancelled) { // SPIGOT-5339, SPIGOT-6252, SPIGOT-6777: Skip entity if damage event was cancelled
++                                    continue;
+                                 }
+-                            } else {
+-                                entity.hurtServer(this.level, this.damageSource, this.damageCalculator.getEntityDamageAmount(this, entity, f1));
++                                // CraftBukkit end
+                             }
+ 
+-                            if (entity.lastDamageCancelled) { // SPIGOT-5339, SPIGOT-6252, SPIGOT-6777: Skip entity if damage event was cancelled
+-                                continue;
++                            double d1 = entity instanceof LivingEntity livingEntity
++                                ? livingEntity.getAttributeValue(Attributes.EXPLOSION_KNOCKBACK_RESISTANCE)
++                                : 0.0;
++                            double d2 = entity instanceof Player && this.level.paperConfig().environment.disableExplosionKnockback ? 0 : (1.0 - d) * f1 * knockbackMultiplier * (1.0 - d1); // Paper
++                            Vec3 vec32 = vec31.scale(d2);
++                            // CraftBukkit start - Call EntityKnockbackEvent
++                            if (entity instanceof LivingEntity) {
++                                // Paper start - knockback events
++                                io.papermc.paper.event.entity.EntityKnockbackEvent event = CraftEventFactory.callEntityKnockbackEvent((org.bukkit.craftbukkit.entity.CraftLivingEntity) entity.getBukkitEntity(), this.source, this.damageSource.getEntity() != null ? this.damageSource.getEntity() : this.source, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.EXPLOSION, d2, vec32);
++                                vec32 = event.isCancelled() ? Vec3.ZERO : org.bukkit.craftbukkit.util.CraftVector.toVec3(event.getKnockback());
++                                // Paper end - knockback events
+                             }
+                             // CraftBukkit end
+-                        }
++                            entity.push(vec32);
++                            if (entity.getType().is(EntityTypeTags.REDIRECTABLE_PROJECTILE) && entity instanceof Projectile projectile) {
++                                projectile.setOwner(this.damageSource.getEntity());
++                            } else if (entity instanceof Player player && !player.isSpectator() && (!player.isCreative() || !player.getAbilities().flying) && !level.paperConfig().environment.disableExplosionKnockback) { // Paper - Option to disable explosion knockback
++                                this.hitPlayers.put(player, vec32);
++                            }
+ 
+-                        double d1 = entity instanceof LivingEntity livingEntity
+-                            ? livingEntity.getAttributeValue(Attributes.EXPLOSION_KNOCKBACK_RESISTANCE)
+-                            : 0.0;
+-                        double d2 = entity instanceof Player && this.level.paperConfig().environment.disableExplosionKnockback ? 0 : (1.0 - d) * f1 * knockbackMultiplier * (1.0 - d1); // Paper
+-                        Vec3 vec32 = vec31.scale(d2);
+-                        // CraftBukkit start - Call EntityKnockbackEvent
+-                        if (entity instanceof LivingEntity) {
+-                            // Paper start - knockback events
+-                            io.papermc.paper.event.entity.EntityKnockbackEvent event = CraftEventFactory.callEntityKnockbackEvent((org.bukkit.craftbukkit.entity.CraftLivingEntity) entity.getBukkitEntity(), this.source, this.damageSource.getEntity() != null ? this.damageSource.getEntity() : this.source, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.EXPLOSION, d2, vec32);
+-                            vec32 = event.isCancelled() ? Vec3.ZERO : org.bukkit.craftbukkit.util.CraftVector.toVec3(event.getKnockback());
+-                            // Paper end - knockback events
++                            entity.onExplosionHit(this.source);
+                         }
+-                        // CraftBukkit end
+-                        entity.push(vec32);
+-                        if (entity.getType().is(EntityTypeTags.REDIRECTABLE_PROJECTILE) && entity instanceof Projectile projectile) {
+-                            projectile.setOwner(this.damageSource.getEntity());
+-                        } else if (entity instanceof Player player && !player.isSpectator() && (!player.isCreative() || !player.getAbilities().flying) && !level.paperConfig().environment.disableExplosionKnockback) { // Paper - Option to disable explosion knockback
+-                            this.hitPlayers.put(player, vec32);
+-                        }
+-
+-                        entity.onExplosionHit(this.source);
+                     }
                  }
++            } finally {
++                this.level.worldDataPool.releaseReference((int)this.center.x >> 4, (int)this.center.z >> 4, ref.right());
              }
          }
-+        }finally {
-+        this.level.worldDataPool.releaseReference((int)this.center.x >> 4, (int)this.center.z >> 4, ref.right());
-+        }
      }
- 
-     private void interactWithBlocks(List<BlockPos> blocks) {
 @@ -742,11 +748,11 @@ public class ServerExplosion implements Explosion {
  
  
@@ -2972,7 +3104,7 @@ index ba253a9af6141d8ea99c064e3cc0c6486c221098..7bc7659d35f2d4741867cf035b1f9ea7
              }
          }
 diff --git a/net/minecraft/world/level/chunk/LevelChunk.java b/net/minecraft/world/level/chunk/LevelChunk.java
-index 173a55715b9c459eeb93cdc065c69e64fc704b43..0c52f2b05e9d65af5668e09f05b7084f290291dc 100644
+index 173a55715b9c459eeb93cdc065c69e64fc704b43..353ee5892f2ed288402b76d5053325733b5f0388 100644
 --- a/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -426,9 +426,15 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
@@ -2983,7 +3115,7 @@ index 173a55715b9c459eeb93cdc065c69e64fc704b43..0c52f2b05e9d65af5668e09f05b7084f
 +                    var ref = level.worldDataPool.getAndHeldReference(pos);
 +                    var worldData = ref.left();
 +                    try {
-+                        if (!this.level.isClientSide && (flags & 512) == 0 && (!worldData.captureBlockStates || block instanceof net.minecraft.world.level.block.BaseEntityBlock)) { // CraftBukkit - Don't place while processing the BlockPlaceEvent, unless it's a BlockContainer. Prevents blocks such as TNT from activating when cancelled. // Folia - region threading
++                        if (!this.level.isClientSide() && (flags & 512) == 0 && (!worldData.captureBlockStates || block instanceof net.minecraft.world.level.block.BaseEntityBlock)) { // CraftBukkit - Don't place while processing the BlockPlaceEvent, unless it's a BlockContainer. Prevents blocks such as TNT from activating when cancelled. // Folia - region threading
                          state.onPlace(this.level, pos, blockState, flag1);
                      }
 +                    } finally {

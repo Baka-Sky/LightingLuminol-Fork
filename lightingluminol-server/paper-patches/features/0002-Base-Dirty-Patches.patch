@@ -325,7 +325,7 @@ index 881a82e0115b6bc2aac29ec5d35168faceb597da..b8463efa16b6db670a2a68c0c9d0e65c
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 92de192c7b420ebb4510354f347003127595e141..bc3fa412538b50d924950719066e03b1407e4a56 100644
+index 92de192c7b420ebb4510354f347003127595e141..2ac96a7de2ff2350878fea984b0c937892b61c99 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -1,6 +1,7 @@
@@ -354,7 +354,7 @@ index 92de192c7b420ebb4510354f347003127595e141..bc3fa412538b50d924950719066e03b1
          Preconditions.checkState(this.console.getAllLevels().iterator().hasNext(), "Cannot create additional worlds on STARTUP");
          //Preconditions.checkState(!this.console.isIteratingOverLevels, "Cannot create a world while worlds are being ticked"); // Paper - Cat - Temp disable. We'll see how this goes.
          Preconditions.checkArgument(creator != null, "WorldCreator cannot be null");
-@@ -1344,7 +1347,18 @@ public final class CraftServer implements Server {
+@@ -1344,7 +1347,17 @@ public final class CraftServer implements Server {
          }
  
          this.console.addLevel(serverLevel); // Paper - Put world into worldlist before initing the world; move up
@@ -362,7 +362,6 @@ index 92de192c7b420ebb4510354f347003127595e141..bc3fa412538b50d924950719066e03b1
 +        //this.console.initWorld(serverLevel, primaryLevelData, primaryLevelData, primaryLevelData.worldGenOptions());
 +        io.papermc.paper.threadedregions.RegionizedServer.getInstance().addWorld(serverLevel);
 +        int loadRegionRadius = 1024 >> 4;
-+        serverLevel.randomSpawnSelection = new net.minecraft.world.level.ChunkPos(serverLevel.getChunkSource().randomState().sampler().findSpawnPosition());
 +        for (int currX = -loadRegionRadius; currX <= loadRegionRadius; ++currX) {
 +            for (int currZ = -loadRegionRadius; currZ <= loadRegionRadius; ++currZ) {
 +                net.minecraft.world.level.ChunkPos pos = new net.minecraft.world.level.ChunkPos(currX, currZ);
@@ -374,7 +373,7 @@ index 92de192c7b420ebb4510354f347003127595e141..bc3fa412538b50d924950719066e03b1
  
          serverLevel.setSpawnSettings(true);
          // Paper - Put world into worldlist before initing the world; move up
-@@ -1361,7 +1375,7 @@ public final class CraftServer implements Server {
+@@ -1361,7 +1374,7 @@ public final class CraftServer implements Server {
  
      @Override
      public boolean unloadWorld(World world, boolean save) {
@@ -383,14 +382,14 @@ index 92de192c7b420ebb4510354f347003127595e141..bc3fa412538b50d924950719066e03b1
          //Preconditions.checkState(!this.console.isIteratingOverLevels, "Cannot unload a world while worlds are being ticked"); // Paper - Cat - Temp disable. We'll see how this goes.
          if (world == null) {
              return false;
-@@ -1387,13 +1401,41 @@ public final class CraftServer implements Server {
+@@ -1387,13 +1400,41 @@ public final class CraftServer implements Server {
          }
  
          try {
 -            if (save) {
 -                handle.save(null, true, false); // Paper - Fix saving in unloadWorld
 -            }
-+            if (RegionizedServer.isGlobalTickThread()) {
++            if (io.papermc.paper.threadedregions.RegionizedServer.isGlobalTickThread()) {
 +                try {
 +                    if (save) {
 +                        handle.save(null, true, false); // Paper - don't disable saving
@@ -407,7 +406,7 @@ index 92de192c7b420ebb4510354f347003127595e141..bc3fa412538b50d924950719066e03b1
 +                }
 +            } else {
 +                final AtomicBoolean finished = new AtomicBoolean(false);
-+                RegionizedServer.getInstance().addTask(() -> {
++                io.papermc.paper.threadedregions.RegionizedServer.getInstance().addTask(() -> {
 +                    try {
 +                        if (save) {
 +                            handle.save(null, true, false); // Paper - don't disable saving
@@ -431,7 +430,7 @@ index 92de192c7b420ebb4510354f347003127595e141..bc3fa412538b50d924950719066e03b1
          } catch (Exception ex) {
              this.getLogger().log(Level.SEVERE, null, ex);
          }
-@@ -3004,7 +3046,7 @@ public final class CraftServer implements Server {
+@@ -3004,7 +3045,7 @@ public final class CraftServer implements Server {
  
      @Override
      public int getCurrentTick() {
