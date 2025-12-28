@@ -325,7 +325,7 @@ index 881a82e0115b6bc2aac29ec5d35168faceb597da..b8463efa16b6db670a2a68c0c9d0e65c
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 92de192c7b420ebb4510354f347003127595e141..2ac96a7de2ff2350878fea984b0c937892b61c99 100644
+index c7c4d8efef4f0998f9d8cb38ac6519518e22f915..6a4e32374723e51bb831e5ac819ae05dd1695081 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -1,6 +1,7 @@
@@ -440,7 +440,7 @@ index 92de192c7b420ebb4510354f347003127595e141..2ac96a7de2ff2350878fea984b0c9378
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index a1a79a18673c94218288f32345195b80139ad879..ed6a652547100f4a90a869a6b80a5210ba93af7c 100644
+index 99ac14e749e6b0f64088df48a984520be724adab..f706451aa6917eec973b7106cf60c2e2524815bb 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -413,7 +413,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
@@ -525,7 +525,7 @@ index a1a79a18673c94218288f32345195b80139ad879..ed6a652547100f4a90a869a6b80a5210
          // Notify anyone who's listening
          TimeSkipEvent event = new TimeSkipEvent(this, TimeSkipEvent.SkipReason.CUSTOM, time - this.world.getDayTime());
          this.server.getPluginManager().callEvent(event);
-@@ -1197,7 +1203,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1199,7 +1205,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setStorm(boolean hasStorm) {
@@ -534,7 +534,7 @@ index a1a79a18673c94218288f32345195b80139ad879..ed6a652547100f4a90a869a6b80a5210
          this.world.serverLevelData.setRaining(hasStorm, org.bukkit.event.weather.WeatherChangeEvent.Cause.PLUGIN); // Paper - Add cause to Weather/ThunderChangeEvents
          this.setWeatherDuration(0); // Reset weather duration (legacy behaviour)
          this.setClearWeatherDuration(0); // Reset clear weather duration (reset "/weather clear" commands)
-@@ -1210,7 +1216,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1212,7 +1218,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setWeatherDuration(int duration) {
@@ -543,7 +543,7 @@ index a1a79a18673c94218288f32345195b80139ad879..ed6a652547100f4a90a869a6b80a5210
          this.world.serverLevelData.setRainTime(duration);
      }
  
-@@ -1221,7 +1227,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1223,7 +1229,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setThundering(boolean thundering) {
@@ -552,7 +552,7 @@ index a1a79a18673c94218288f32345195b80139ad879..ed6a652547100f4a90a869a6b80a5210
          this.world.serverLevelData.setThundering(thundering, org.bukkit.event.weather.ThunderChangeEvent.Cause.PLUGIN); // Paper - Add cause to Weather/ThunderChangeEvents
          this.setThunderDuration(0); // Reset weather duration (legacy behaviour)
          this.setClearWeatherDuration(0); // Reset clear weather duration (reset "/weather clear" commands)
-@@ -1234,7 +1240,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1236,7 +1242,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setThunderDuration(int duration) {
@@ -561,7 +561,7 @@ index a1a79a18673c94218288f32345195b80139ad879..ed6a652547100f4a90a869a6b80a5210
          this.world.serverLevelData.setThunderTime(duration);
      }
  
-@@ -1245,7 +1251,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1247,7 +1253,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setClearWeatherDuration(int duration) {
@@ -570,7 +570,7 @@ index a1a79a18673c94218288f32345195b80139ad879..ed6a652547100f4a90a869a6b80a5210
          this.world.serverLevelData.setClearWeatherTime(duration);
      }
  
-@@ -1495,13 +1501,13 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1497,13 +1503,13 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setHardcore(boolean hardcore) {
@@ -586,7 +586,7 @@ index a1a79a18673c94218288f32345195b80139ad879..ed6a652547100f4a90a869a6b80a5210
          Preconditions.checkArgument(spawnCategory != null, "SpawnCategory cannot be null");
          Preconditions.checkArgument(CraftSpawnCategory.isValidForLimits(spawnCategory), "SpawnCategory.%s are not supported", spawnCategory);
  
-@@ -1518,25 +1524,25 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1520,25 +1526,25 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setMetadata(String metadataKey, MetadataValue newMetadataValue) {
@@ -616,7 +616,7 @@ index a1a79a18673c94218288f32345195b80139ad879..ed6a652547100f4a90a869a6b80a5210
          this.server.getWorldMetadata().removeMetadata(this, metadataKey, owningPlugin);
      }
  
-@@ -1558,7 +1564,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1560,7 +1566,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setSpawnLimit(SpawnCategory spawnCategory, int limit) {
@@ -625,7 +625,7 @@ index a1a79a18673c94218288f32345195b80139ad879..ed6a652547100f4a90a869a6b80a5210
          Preconditions.checkArgument(spawnCategory != null, "SpawnCategory cannot be null");
          Preconditions.checkArgument(CraftSpawnCategory.isValidForLimits(spawnCategory), "SpawnCategory.%s are not supported", spawnCategory);
  
-@@ -1688,7 +1694,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1690,7 +1696,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @SuppressWarnings({"unchecked", "rawtypes"})
      @Override
      public boolean setGameRuleValue(String rule, String value) {
@@ -940,10 +940,10 @@ index 3fac69d66d8d059da7deabbb5cc6988bfc4995cd..ed93eee77e444c08e4114e2c9cf20686
          // Folia end - region threading
          final ServerLevel level = this.world.getMinecraftWorld();
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index aa06b3cbea3e50c6a2567fb6a98d499648617517..8c1ea23e78fc3835094f413f06c729f465b7dd36 100644
+index a8838e45dd7d44c25442c14d49b53583f9f2a2d2..7eddc39d1705aa70b984b1c1eebd182df14f53b9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -1311,7 +1311,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
+@@ -1338,7 +1338,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
      protected boolean teleport0(Location location, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, io.papermc.paper.entity.TeleportFlag... flags) {
          // Folia start - region threading
          if (true) {
