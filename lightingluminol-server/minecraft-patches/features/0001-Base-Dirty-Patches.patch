@@ -415,7 +415,7 @@ index b3bc39ebe8d2f48d976de9cd4fcae46095523514..b6a0debf77d931a958a966012561349d
          ((DedicatedServer)MinecraftServer.getServer()).handleConsoleInputs();
  
 diff --git a/io/papermc/paper/threadedregions/RegionizedTaskQueue.java b/io/papermc/paper/threadedregions/RegionizedTaskQueue.java
-index 40ee051e2267cc497232ea4103e06616995a2f10..fb4939c5047971916a23734da70e7aa83c3111a7 100644
+index d274bf494ef421faac88305867d2808cea3b595e..1cdbd82792e26b6ec6279dadc0cf7c2a303da0aa 100644
 --- a/io/papermc/paper/threadedregions/RegionizedTaskQueue.java
 +++ b/io/papermc/paper/threadedregions/RegionizedTaskQueue.java
 @@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
@@ -799,7 +799,7 @@ index 44e59c373538e3ab19cb25cdcbd9b51b6ab86e21..e3fae4cb720df5a909b36d1eae46ec81
  
              if (ret != null) {
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index 7f6572fbde4f39d60c97a9bf2d9d04303ce4bc22..de5688d6373835c33f8c8eedc70169ae5609510e 100644
+index 491c78bffae2917f1f7f0b1fce0376a987319537..d9960ac9a559f4ca87c418a10bceca4e28eabc56 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
 @@ -38,6 +38,7 @@ import java.util.Map.Entry;
@@ -858,7 +858,7 @@ index 7f6572fbde4f39d60c97a9bf2d9d04303ce4bc22..de5688d6373835c33f8c8eedc70169ae
  
  
          // Folia start - region threading
-@@ -2328,7 +2348,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2326,7 +2346,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
      public int getTickCount() {
