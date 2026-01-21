@@ -325,7 +325,7 @@ index 881a82e0115b6bc2aac29ec5d35168faceb597da..b8463efa16b6db670a2a68c0c9d0e65c
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index c7c4d8efef4f0998f9d8cb38ac6519518e22f915..6a4e32374723e51bb831e5ac819ae05dd1695081 100644
+index 507204301b5e3cd545e66c510842c0a6391f0241..57a517e82f3ba11105b79f49695e3e5eca2dd692 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -1,6 +1,7 @@
@@ -440,10 +440,10 @@ index c7c4d8efef4f0998f9d8cb38ac6519518e22f915..6a4e32374723e51bb831e5ac819ae05d
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index e653246b2f991dd5b0c4d755e0844763686275fc..cddd448544432b3d5e4bf66c5d74a6e3726a9612 100644
+index dcd32c1e32fd67ec13bb7fca8af20aa665407594..f3138034d9022b54e2743eba5b0c8c8646021a71 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -414,7 +414,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -401,7 +401,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      public boolean isChunkGenerated(int x, int z) {
          // Paper start - Fix this method
@@ -452,7 +452,7 @@ index e653246b2f991dd5b0c4d755e0844763686275fc..cddd448544432b3d5e4bf66c5d74a6e3
              return java.util.concurrent.CompletableFuture.supplyAsync(() -> {
                  return CraftWorld.this.isChunkGenerated(x, z);
              }, (run) -> { io.papermc.paper.threadedregions.RegionizedServer.getInstance().taskQueue.queueChunkTask(this.getHandle(), x, z, run);}).join(); // Folia - region threading
-@@ -427,7 +427,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -414,7 +414,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
          ca.spottedleaf.moonrise.common.PlatformHooks.get().scheduleChunkLoad(
              this.world, x, z, false, ChunkStatus.EMPTY, true, ca.spottedleaf.concurrentutil.util.Priority.NORMAL, future::complete
          );
@@ -461,7 +461,7 @@ index e653246b2f991dd5b0c4d755e0844763686275fc..cddd448544432b3d5e4bf66c5d74a6e3
          return future.thenApply(c -> {
              if (c != null) {
                  return c.getPersistedStatus() == ChunkStatus.FULL;
-@@ -634,20 +634,20 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -621,20 +621,20 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public boolean isChunkForceLoaded(int x, int z) {
@@ -485,7 +485,7 @@ index e653246b2f991dd5b0c4d755e0844763686275fc..cddd448544432b3d5e4bf66c5d74a6e3
          Set<Chunk> chunks = new HashSet<>();
  
          for (long coord : this.getHandle().getForceLoadedChunks()) {
-@@ -757,7 +757,10 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -744,7 +744,10 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      public boolean generateTree(Location loc, TreeType type, BlockChangeDelegate delegate) {
          ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(this.world, loc.getX(), loc.getZ(), "Cannot generate tree asynchronously"); // Folia - region threading
@@ -497,7 +497,7 @@ index e653246b2f991dd5b0c4d755e0844763686275fc..cddd448544432b3d5e4bf66c5d74a6e3
          worldData.captureTreeGeneration = true; // Folia - region threading
          worldData.captureBlockStates = true; // Folia - region threading
          boolean grownTree = this.generateTree(loc, type);
-@@ -778,6 +781,9 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -765,6 +768,9 @@ public class CraftWorld extends CraftRegionAccessor implements World {
              worldData.capturedBlockStates.clear(); // Folia - region threading
              return false;
          }
@@ -507,7 +507,7 @@ index e653246b2f991dd5b0c4d755e0844763686275fc..cddd448544432b3d5e4bf66c5d74a6e3
      }
  
      @Override
-@@ -809,7 +815,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -796,7 +802,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setTime(long time) {
@@ -516,7 +516,7 @@ index e653246b2f991dd5b0c4d755e0844763686275fc..cddd448544432b3d5e4bf66c5d74a6e3
          long margin = (time - this.getFullTime()) % SharedConstants.TICKS_PER_GAME_DAY;
          if (margin < 0) margin += SharedConstants.TICKS_PER_GAME_DAY;
          this.setFullTime(this.getFullTime() + margin);
-@@ -822,7 +828,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -809,7 +815,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setFullTime(long time) {
@@ -525,7 +525,7 @@ index e653246b2f991dd5b0c4d755e0844763686275fc..cddd448544432b3d5e4bf66c5d74a6e3
          // Notify anyone who's listening
          TimeSkipEvent event = new TimeSkipEvent(this, TimeSkipEvent.SkipReason.CUSTOM, time - this.world.getDayTime());
          this.server.getPluginManager().callEvent(event);
-@@ -1209,7 +1215,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1196,7 +1202,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setStorm(boolean hasStorm) {
@@ -534,7 +534,7 @@ index e653246b2f991dd5b0c4d755e0844763686275fc..cddd448544432b3d5e4bf66c5d74a6e3
          this.world.serverLevelData.setRaining(hasStorm, org.bukkit.event.weather.WeatherChangeEvent.Cause.PLUGIN); // Paper - Add cause to Weather/ThunderChangeEvents
          this.setWeatherDuration(0); // Reset weather duration (legacy behaviour)
          this.setClearWeatherDuration(0); // Reset clear weather duration (reset "/weather clear" commands)
-@@ -1222,7 +1228,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1209,7 +1215,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setWeatherDuration(int duration) {
@@ -543,7 +543,7 @@ index e653246b2f991dd5b0c4d755e0844763686275fc..cddd448544432b3d5e4bf66c5d74a6e3
          this.world.serverLevelData.setRainTime(duration);
      }
  
-@@ -1233,7 +1239,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1220,7 +1226,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setThundering(boolean thundering) {
@@ -552,7 +552,7 @@ index e653246b2f991dd5b0c4d755e0844763686275fc..cddd448544432b3d5e4bf66c5d74a6e3
          this.world.serverLevelData.setThundering(thundering, org.bukkit.event.weather.ThunderChangeEvent.Cause.PLUGIN); // Paper - Add cause to Weather/ThunderChangeEvents
          this.setThunderDuration(0); // Reset weather duration (legacy behaviour)
          this.setClearWeatherDuration(0); // Reset clear weather duration (reset "/weather clear" commands)
-@@ -1246,7 +1252,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1233,7 +1239,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setThunderDuration(int duration) {
@@ -561,7 +561,7 @@ index e653246b2f991dd5b0c4d755e0844763686275fc..cddd448544432b3d5e4bf66c5d74a6e3
          this.world.serverLevelData.setThunderTime(duration);
      }
  
-@@ -1257,7 +1263,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1244,7 +1250,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setClearWeatherDuration(int duration) {
@@ -570,7 +570,7 @@ index e653246b2f991dd5b0c4d755e0844763686275fc..cddd448544432b3d5e4bf66c5d74a6e3
          this.world.serverLevelData.setClearWeatherTime(duration);
      }
  
-@@ -1507,13 +1513,13 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1491,13 +1497,13 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setHardcore(boolean hardcore) {
@@ -586,7 +586,7 @@ index e653246b2f991dd5b0c4d755e0844763686275fc..cddd448544432b3d5e4bf66c5d74a6e3
          Preconditions.checkArgument(spawnCategory != null, "SpawnCategory cannot be null");
          Preconditions.checkArgument(CraftSpawnCategory.isValidForLimits(spawnCategory), "SpawnCategory.%s are not supported", spawnCategory);
  
-@@ -1530,25 +1536,25 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1514,25 +1520,25 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setMetadata(String metadataKey, MetadataValue newMetadataValue) {
@@ -616,7 +616,7 @@ index e653246b2f991dd5b0c4d755e0844763686275fc..cddd448544432b3d5e4bf66c5d74a6e3
          this.server.getWorldMetadata().removeMetadata(this, metadataKey, owningPlugin);
      }
  
-@@ -1570,7 +1576,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1554,7 +1560,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setSpawnLimit(SpawnCategory spawnCategory, int limit) {
@@ -625,7 +625,7 @@ index e653246b2f991dd5b0c4d755e0844763686275fc..cddd448544432b3d5e4bf66c5d74a6e3
          Preconditions.checkArgument(spawnCategory != null, "SpawnCategory cannot be null");
          Preconditions.checkArgument(CraftSpawnCategory.isValidForLimits(spawnCategory), "SpawnCategory.%s are not supported", spawnCategory);
  
-@@ -1700,7 +1706,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1684,7 +1690,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @SuppressWarnings({"unchecked", "rawtypes"})
      @Override
      public boolean setGameRuleValue(String rule, String value) {
@@ -940,10 +940,10 @@ index 3fac69d66d8d059da7deabbb5cc6988bfc4995cd..ed93eee77e444c08e4114e2c9cf20686
          // Folia end - region threading
          final ServerLevel level = this.world.getMinecraftWorld();
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index a8838e45dd7d44c25442c14d49b53583f9f2a2d2..7eddc39d1705aa70b984b1c1eebd182df14f53b9 100644
+index 6e745c7ddf417ec2fdcf102edd6a592047b5f73e..3827944ae51e067d696c1cef6490aed3fe240cdf 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -1338,7 +1338,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
+@@ -1334,7 +1334,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
      protected boolean teleport0(Location location, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, io.papermc.paper.entity.TeleportFlag... flags) {
          // Folia start - region threading
          if (true) {
