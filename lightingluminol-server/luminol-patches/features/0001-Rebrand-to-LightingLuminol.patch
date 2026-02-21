@@ -1,19 +1,19 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Bacteriawa <A3167717663@hotmail.com>
-Date: Mon, 29 Sep 2025 23:27:43 +0800
+Date: Sat, 21 Feb 2026 23:55:06 +0800
 Subject: [PATCH] Rebrand to LightingLuminol
 
 
 diff --git a/src/main/java/me/earthme/luminol/config/modules/misc/ServerModNameConfig.java b/src/main/java/me/earthme/luminol/config/modules/misc/ServerModNameConfig.java
-index df5d926fb4401dd93d658fe14ae4d9d58cff68f9..86ad8d6e76ce361e806bfda97eb8a07cae1cfa08 100644
+index e4022494b050b68d54bac3cde87bdfc9e908859c..80c18e1f1afa2748f3419dbcb47b3de3feb8857c 100644
 --- a/src/main/java/me/earthme/luminol/config/modules/misc/ServerModNameConfig.java
 +++ b/src/main/java/me/earthme/luminol/config/modules/misc/ServerModNameConfig.java
 @@ -8,7 +8,7 @@ import me.earthme.luminol.enums.EnumConfigCategory;
  @ConfigClassInfo(category = EnumConfigCategory.MISC, name = "server_mod_name")
  public class ServerModNameConfig implements IConfigModule {
-     @ConfigInfo(name = "name")
+     @ConfigInfo(name = "name", comments = "Decides the server mod name shown in your F3 debug screen.")
 -    public static String serverModName = "Luminol";
 +    public static String serverModName = "LightingLuminol";
  
-     @ConfigInfo(name = "vanilla_spoof")
+     @ConfigInfo(name = "vanilla_spoof", comments = "Ignore any plugin's modification and server mod name set in this config block, only force sending brand name of vanilla")
      public static boolean fakeVanilla = false;
