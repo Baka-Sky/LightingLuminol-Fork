@@ -1393,7 +1393,7 @@ index 040c0f8d26554ba583ecf370e2df3690d8f48dd6..aa7222642b927577b939788dd172d7ef
 +        // LightingLuminol Start
 +        final org.bukkit.entity.Entity bukkitEntity = this.getBukkitEntity(); // force bukkit entity to be created before TPing
 +
-+        if (!this.preventMoving && this instanceof ServerPlayer) {
++        if (this instanceof ServerPlayer) {
 +            if (!new PlayerTeleportEvent((org.bukkit.entity.Player) bukkitEntity,bukkitEntity.getLocation(), MCUtil.toLocation(destination, pos), cause).callEvent()) {
 +                return false;
 +            }
