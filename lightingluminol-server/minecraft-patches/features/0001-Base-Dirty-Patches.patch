@@ -799,66 +799,33 @@ index 02c004bc7f9a0203523ce4b27cd766d6bdc478c0..e3bdda759010b3acb3bec23c57dd3044
  
              if (ret != null) {
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index 8ce5cdda24d63b33b39e32f9712fafa3917f27c5..a4f14089de921abafd0a5d1c283338bbd98fae3a 100644
+index 8ce5cdda24d63b33b39e32f9712fafa3917f27c5..c3742fd13b8769f383308c6c8c76c19169405b19 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -38,6 +38,7 @@ import java.util.Map.Entry;
- import java.util.concurrent.CompletableFuture;
- import java.util.concurrent.Executor;
- import java.util.concurrent.RejectedExecutionException;
-+import java.util.concurrent.atomic.AtomicBoolean;
- import java.util.concurrent.atomic.AtomicReference;
- import java.util.concurrent.locks.LockSupport;
- import java.util.function.BooleanSupplier;
-@@ -660,8 +661,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-             collideTeam.setSeeFriendlyInvisibles(false); // Because we want to mimic them not being on a team at all
-         }
-         // Paper end - Configurable player collision; Handle collideRule team for player collision toggle
--        this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
--        if (false) this.server.spark.registerCommandBeforePlugins(this.server); // Paper - spark // Luminol - Force disable builtin spark
-+        /*if (false) this.server.spark.registerCommandBeforePlugins(this.server); // Paper - spark // Luminol - Force disable builtin spark
-         if (false) this.server.spark.enableAfterPlugins(this.server); // Paper - spark // Luminol - Force disable builtin spark
-         if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.pluginsEnabled(); // Paper - Remap plugins
-         io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setValid(); // Paper - reset invalid state for event fire below
-@@ -669,9 +669,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-         this.server.getCommandMap().registerServerAliases(); // Paper - relocate initial CommandMap#registerServerAliases() call
+@@ -670,8 +670,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          ((org.bukkit.craftbukkit.help.SimpleHelpMap) this.server.getHelpMap()).initializeCommands();
          this.server.getPluginManager().callEvent(new org.bukkit.event.server.ServerLoadEvent(org.bukkit.event.server.ServerLoadEvent.LoadType.STARTUP));
--        this.connection.acceptConnections();
-+        this.connection.acceptConnections();*/
+         this.connection.acceptConnections();
++
++        Runnable task;
++        while ((task = this.pluginEnabledCallbacks.pollOrBlockAdds()) != null) {
++            task.run();
++        }
      }
      // Paper end - rework world loading process
-+    private final AtomicBoolean pluginsEnableCallbackExecuted = new AtomicBoolean(false);
 +    public final ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue<Runnable> pluginEnabledCallbacks = new ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue<>();
  
      protected void forceDifficulty() {
      }
-@@ -1693,6 +1695,24 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-                 return;
+@@ -1694,7 +1700,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              }
          }
-+        if (!this.pluginsEnableCallbackExecuted.getAndSet(true)) {
-+            this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
-+
-+            if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.pluginsEnabled(); // Paper - Remap plugins
-+            io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setValid(); // Paper - reset invalid state for event fire below
-+            io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callReloadableRegistrarEvent(io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.COMMANDS, io.papermc.paper.command.brigadier.PaperCommands.INSTANCE, org.bukkit.plugin.Plugin.class, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL); // Paper - call commands event for regular plugins
-+            this.server.getCommandMap().registerServerAliases(); // Paper - relocate initial CommandMap#registerServerAliases() call
-+            ((org.bukkit.craftbukkit.help.SimpleHelpMap) this.server.getHelpMap()).initializeCommands();
-+            this.server.getPluginManager().callEvent(new org.bukkit.event.server.ServerLoadEvent(org.bukkit.event.server.ServerLoadEvent.LoadType.STARTUP));
-+            this.connection.acceptConnections();
-+
-+            io.papermc.paper.threadedregions.RegionizedServer.getInstance().addTask(() -> {
-+                Runnable task;
-+                while ((task = this.pluginEnabledCallbacks.pollOrBlockAdds()) != null) {
-+                    task.run();
-+                }
-+            });
-+        }
  
- 
+-
          // Folia start - region threading
-@@ -2330,7 +2350,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         region.world.getCurrentWorldData().updateTickData();
+         BooleanSupplier hasTimeLeft = () -> {
+@@ -2330,7 +2335,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
      public int getTickCount() {
