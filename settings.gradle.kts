@@ -20,5 +20,38 @@ plugins {
 
 rootProject.name = "lightingluminol"
 
-include("lightingluminol-api")
-include("lightingluminol-server")
+for (name in listOf("lightingluminol-api", "lightingluminol-server")) {
+    include(name)
+    file(name).mkdirs()
+}
+
+optionalInclude("test-plugin")
+optionalInclude("lightingluminol-generator")
+
+fun optionalInclude(name: String, op: (ProjectDescriptor.() -> Unit)? = null) {
+    val settingsFile = file("$name.settings.gradle.kts")
+    if (settingsFile.exists()) {
+        apply(from = settingsFile)
+        findProject(":$name")?.let { op?.invoke(it) }
+    } else {
+        settingsFile.writeText(
+            """
+            // Uncomment to enable the '$name' project
+            // include(":$name")
+
+            """.trimIndent()
+        )
+    }
+}
+
+gradle.lifecycle.beforeProject {
+    val mcVersion = providers.gradleProperty("mcVersion").get().trim()
+    val lightingluminolVersionChannel = providers.gradleProperty("channel").get().trim()
+    val lightingluminolBuildNumber = providers.environmentVariable("BUILD_NUMBER").orNull?.trim()?.toInt()
+    val versionString = if (lightingluminolBuildNumber == null) {
+        "$mcVersion.local-SNAPSHOT"
+    } else {
+        "$mcVersion.build.$lightingluminolBuildNumber-${lightingluminolVersionChannel.lowercase()}"
+    }
+    version = versionString
+}
