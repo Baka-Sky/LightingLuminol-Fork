@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Bacteriawa <A3167717663@hotmail.com>
-Date: Sun, 21 Dec 2025 14:54:16 +0800
+Date: Sat, 6 Jun 2026 21:11:39 +0800
 Subject: [PATCH] Base Dirty Patches
 
 
@@ -224,7 +224,7 @@ index 2e876b918672e8ef3b5197b7e6b1597247fdeaa1..6c4e25e5e21044c0fa9728e475b28f64
  
                  if (lastRet == null) {
 diff --git a/src/main/java/ca/spottedleaf/moonrise/common/util/TickThread.java b/src/main/java/ca/spottedleaf/moonrise/common/util/TickThread.java
-index 881a82e0115b6bc2aac29ec5d35168faceb597da..b8463efa16b6db670a2a68c0c9d0e65c5bd088ec 100644
+index 8e5f470fd0b98d3894d7a5234386ff4cbe127f78..f2ef6c0621c71edd443c608c5f0a63ad61a36cde 100644
 --- a/src/main/java/ca/spottedleaf/moonrise/common/util/TickThread.java
 +++ b/src/main/java/ca/spottedleaf/moonrise/common/util/TickThread.java
 @@ -32,7 +32,7 @@ public class TickThread extends Thread {
@@ -325,112 +325,10 @@ index 881a82e0115b6bc2aac29ec5d35168faceb597da..b8463efa16b6db670a2a68c0c9d0e65c
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 507204301b5e3cd545e66c510842c0a6391f0241..57a517e82f3ba11105b79f49695e3e5eca2dd692 100644
+index 63176a938619615646f864054380752d400e1ad4..5a06c8d678cc198b3fc4ddfb82c0e131dc0cf3b9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -1,6 +1,7 @@
- package org.bukkit.craftbukkit;
- 
- import ca.spottedleaf.moonrise.common.time.TickData;
-+import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkHolderManager;
- import com.google.common.base.Function;
- import com.google.common.base.Joiner;
- import com.google.common.base.Preconditions;
-@@ -39,6 +40,8 @@ import java.util.Map;
- import java.util.Optional;
- import java.util.Set;
- import java.util.UUID;
-+import java.util.concurrent.atomic.AtomicBoolean;
-+import java.util.concurrent.locks.LockSupport;
- import java.util.function.Consumer;
- import java.util.logging.Level;
- import java.util.logging.Logger;
-@@ -1206,7 +1209,7 @@ public final class CraftServer implements Server {
- 
-     @Override
-     public World createWorld(WorldCreator creator) {
--        if (true) throw new UnsupportedOperationException(); // Folia - not implemented properly yet
-+        //if (true) throw new UnsupportedOperationException(); // Folia - not implemented properly yet
-         Preconditions.checkState(this.console.getAllLevels().iterator().hasNext(), "Cannot create additional worlds on STARTUP");
-         //Preconditions.checkState(!this.console.isIteratingOverLevels, "Cannot create a world while worlds are being ticked"); // Paper - Cat - Temp disable. We'll see how this goes.
-         Preconditions.checkArgument(creator != null, "WorldCreator cannot be null");
-@@ -1344,7 +1347,17 @@ public final class CraftServer implements Server {
-         }
- 
-         this.console.addLevel(serverLevel); // Paper - Put world into worldlist before initing the world; move up
--        this.console.initWorld(serverLevel, primaryLevelData, primaryLevelData.worldGenOptions());
-+        //this.console.initWorld(serverLevel, primaryLevelData, primaryLevelData, primaryLevelData.worldGenOptions());
-+        io.papermc.paper.threadedregions.RegionizedServer.getInstance().addWorld(serverLevel);
-+        int loadRegionRadius = 1024 >> 4;
-+        for (int currX = -loadRegionRadius; currX <= loadRegionRadius; ++currX) {
-+            for (int currZ = -loadRegionRadius; currZ <= loadRegionRadius; ++currZ) {
-+                net.minecraft.world.level.ChunkPos pos = new net.minecraft.world.level.ChunkPos(currX, currZ);
-+                serverLevel.chunkSource.addTicketAtLevel(
-+                        TicketType.UNKNOWN, pos, ChunkHolderManager.MAX_TICKET_LEVEL
-+                );
-+            }
-+        }
- 
-         serverLevel.setSpawnSettings(true);
-         // Paper - Put world into worldlist before initing the world; move up
-@@ -1361,7 +1374,7 @@ public final class CraftServer implements Server {
- 
-     @Override
-     public boolean unloadWorld(World world, boolean save) {
--        if (true) throw new UnsupportedOperationException(); // Folia - not implemented properly yet
-+        //if (true) throw new UnsupportedOperationException(); // Folia - not implemented properly yet
-         //Preconditions.checkState(!this.console.isIteratingOverLevels, "Cannot unload a world while worlds are being ticked"); // Paper - Cat - Temp disable. We'll see how this goes.
-         if (world == null) {
-             return false;
-@@ -1387,13 +1400,41 @@ public final class CraftServer implements Server {
-         }
- 
-         try {
--            if (save) {
--                handle.save(null, true, false); // Paper - Fix saving in unloadWorld
--            }
-+            if (io.papermc.paper.threadedregions.RegionizedServer.isGlobalTickThread()) {
-+                try {
-+                    if (save) {
-+                        handle.save(null, true, false); // Paper - don't disable saving
-+                    }
- 
--            handle.getChunkSource().close(save);
--            io.papermc.paper.FeatureHooks.closeEntityManager(handle, save); // SPIGOT-6722: close entityManager // Paper - chunk system
--            handle.levelStorageAccess.close();
-+                    handle.getChunkSource().close(save);
-+                    //io.papermc.paper.FeatureHooks.closeEntityManager(handle, save); // SPIGOT-6722: close entityManager // Paper - rewrite chunk system
-+                    handle.levelStorageAccess.close();
-+                } catch (Exception ex) {
-+                    this.getLogger().log(Level.SEVERE, null, ex);
-+                }
-+            } else {
-+                final AtomicBoolean finished = new AtomicBoolean(false);
-+                io.papermc.paper.threadedregions.RegionizedServer.getInstance().addTask(() -> {
-+                    try {
-+                        if (save) {
-+                            handle.save(null, true, false); // Paper - don't disable saving
-+                        }
-+
-+                        handle.getChunkSource().close(save);
-+                        //io.papermc.paper.FeatureHooks.closeEntityManager(handle, save); // SPIGOT-6722: close entityManager // Paper - rewrite chunk system
-+                        handle.levelStorageAccess.close();
-+                    } catch (Exception ex) {
-+                        this.getLogger().log(Level.SEVERE, null, ex);
-+                    } finally {
-+                        finished.set(true);
-+                    }
-+                });
-+
-+                while (!finished.get()) {
-+                    Thread.yield();
-+                    LockSupport.parkNanos(1_000L);
-+                }
-+            }
-         } catch (Exception ex) {
-             this.getLogger().log(Level.SEVERE, null, ex);
-         }
-@@ -3004,7 +3045,7 @@ public final class CraftServer implements Server {
+@@ -3062,7 +3062,7 @@ public final class CraftServer implements Server {
  
      @Override
      public int getCurrentTick() {
@@ -440,10 +338,10 @@ index 507204301b5e3cd545e66c510842c0a6391f0241..57a517e82f3ba11105b79f49695e3e5e
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index dcd32c1e32fd67ec13bb7fca8af20aa665407594..f3138034d9022b54e2743eba5b0c8c8646021a71 100644
+index 03ad9254c4b5556119fe73d533ceac7073b8fe74..4c174516742da79f8c512b7d2cf9b3a1cda7b784 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -401,7 +401,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -409,7 +409,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      public boolean isChunkGenerated(int x, int z) {
          // Paper start - Fix this method
@@ -452,7 +350,7 @@ index dcd32c1e32fd67ec13bb7fca8af20aa665407594..f3138034d9022b54e2743eba5b0c8c86
              return java.util.concurrent.CompletableFuture.supplyAsync(() -> {
                  return CraftWorld.this.isChunkGenerated(x, z);
              }, (run) -> { io.papermc.paper.threadedregions.RegionizedServer.getInstance().taskQueue.queueChunkTask(this.getHandle(), x, z, run);}).join(); // Folia - region threading
-@@ -414,7 +414,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -422,7 +422,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
          ca.spottedleaf.moonrise.common.PlatformHooks.get().scheduleChunkLoad(
              this.world, x, z, false, ChunkStatus.EMPTY, true, ca.spottedleaf.concurrentutil.util.Priority.NORMAL, future::complete
          );
@@ -461,13 +359,13 @@ index dcd32c1e32fd67ec13bb7fca8af20aa665407594..f3138034d9022b54e2743eba5b0c8c86
          return future.thenApply(c -> {
              if (c != null) {
                  return c.getPersistedStatus() == ChunkStatus.FULL;
-@@ -621,20 +621,20 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -629,20 +629,20 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public boolean isChunkForceLoaded(int x, int z) {
 -        io.papermc.paper.threadedregions.RegionizedServer.ensureGlobalTickThread("Cannot read force-loaded chunk off global region"); // Folia - region threading
 +        //io.papermc.paper.threadedregions.RegionizedServer.ensureGlobalTickThread("Cannot read force-loaded chunk off global region"); // Folia - region threading
-         return this.getHandle().getForceLoadedChunks().contains(ChunkPos.asLong(x, z));
+         return this.getHandle().getForceLoadedChunks().contains(ChunkPos.pack(x, z));
      }
  
      @Override
@@ -484,8 +382,8 @@ index dcd32c1e32fd67ec13bb7fca8af20aa665407594..f3138034d9022b54e2743eba5b0c8c86
 +        //io.papermc.paper.threadedregions.RegionizedServer.ensureGlobalTickThread("Cannot read force-loaded chunks off global region"); // Folia - region threading
          Set<Chunk> chunks = new HashSet<>();
  
-         for (long coord : this.getHandle().getForceLoadedChunks()) {
-@@ -744,7 +744,10 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         for (long pos : this.getHandle().getForceLoadedChunks()) {
+@@ -752,7 +752,10 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      public boolean generateTree(Location loc, TreeType type, BlockChangeDelegate delegate) {
          ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(this.world, loc.getX(), loc.getZ(), "Cannot generate tree asynchronously"); // Folia - region threading
@@ -497,7 +395,7 @@ index dcd32c1e32fd67ec13bb7fca8af20aa665407594..f3138034d9022b54e2743eba5b0c8c86
          worldData.captureTreeGeneration = true; // Folia - region threading
          worldData.captureBlockStates = true; // Folia - region threading
          boolean grownTree = this.generateTree(loc, type);
-@@ -765,6 +768,9 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -773,6 +776,9 @@ public class CraftWorld extends CraftRegionAccessor implements World {
              worldData.capturedBlockStates.clear(); // Folia - region threading
              return false;
          }
@@ -507,7 +405,7 @@ index dcd32c1e32fd67ec13bb7fca8af20aa665407594..f3138034d9022b54e2743eba5b0c8c86
      }
  
      @Override
-@@ -796,7 +802,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -804,7 +810,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setTime(long time) {
@@ -516,67 +414,67 @@ index dcd32c1e32fd67ec13bb7fca8af20aa665407594..f3138034d9022b54e2743eba5b0c8c86
          long margin = (time - this.getFullTime()) % SharedConstants.TICKS_PER_GAME_DAY;
          if (margin < 0) margin += SharedConstants.TICKS_PER_GAME_DAY;
          this.setFullTime(this.getFullTime() + margin);
-@@ -809,7 +815,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -817,7 +823,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setFullTime(long time) {
 -        io.papermc.paper.threadedregions.RegionizedServer.ensureGlobalTickThread("Cannot modify time off of the global region"); // Folia - region threading
 +        //io.papermc.paper.threadedregions.RegionizedServer.ensureGlobalTickThread("Cannot modify time off of the global region"); // Folia - region threading
-         // Notify anyone who's listening
-         TimeSkipEvent event = new TimeSkipEvent(this, TimeSkipEvent.SkipReason.CUSTOM, time - this.world.getDayTime());
-         this.server.getPluginManager().callEvent(event);
-@@ -1196,7 +1202,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         if (this.world.dimensionType().defaultClock().isEmpty()) {
+             throw new IllegalArgumentException("Cannot set time in world without world clock");
+         }
+@@ -1201,7 +1207,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setStorm(boolean hasStorm) {
 -        io.papermc.paper.threadedregions.RegionizedServer.ensureGlobalTickThread("Cannot modify weather off of the global region"); // Folia - region threading
 +        //io.papermc.paper.threadedregions.RegionizedServer.ensureGlobalTickThread("Cannot modify weather off of the global region"); // Folia - region threading
-         this.world.serverLevelData.setRaining(hasStorm, org.bukkit.event.weather.WeatherChangeEvent.Cause.PLUGIN); // Paper - Add cause to Weather/ThunderChangeEvents
+         this.world.getWeatherData().setRaining(hasStorm, WeatherChangeEvent.Cause.PLUGIN);
          this.setWeatherDuration(0); // Reset weather duration (legacy behaviour)
          this.setClearWeatherDuration(0); // Reset clear weather duration (reset "/weather clear" commands)
-@@ -1209,7 +1215,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1214,7 +1220,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setWeatherDuration(int duration) {
 -        io.papermc.paper.threadedregions.RegionizedServer.ensureGlobalTickThread("Cannot modify weather off of the global region"); // Folia - region threading
 +        //io.papermc.paper.threadedregions.RegionizedServer.ensureGlobalTickThread("Cannot modify weather off of the global region"); // Folia - region threading
-         this.world.serverLevelData.setRainTime(duration);
+         this.world.getWeatherData().setRainTime(duration);
      }
  
-@@ -1220,7 +1226,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1225,7 +1231,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setThundering(boolean thundering) {
 -        io.papermc.paper.threadedregions.RegionizedServer.ensureGlobalTickThread("Cannot modify weather off of the global region"); // Folia - region threading
 +        //io.papermc.paper.threadedregions.RegionizedServer.ensureGlobalTickThread("Cannot modify weather off of the global region"); // Folia - region threading
-         this.world.serverLevelData.setThundering(thundering, org.bukkit.event.weather.ThunderChangeEvent.Cause.PLUGIN); // Paper - Add cause to Weather/ThunderChangeEvents
+         this.world.getWeatherData().setThundering(thundering, ThunderChangeEvent.Cause.PLUGIN);
          this.setThunderDuration(0); // Reset weather duration (legacy behaviour)
          this.setClearWeatherDuration(0); // Reset clear weather duration (reset "/weather clear" commands)
-@@ -1233,7 +1239,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1238,7 +1244,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setThunderDuration(int duration) {
 -        io.papermc.paper.threadedregions.RegionizedServer.ensureGlobalTickThread("Cannot modify weather off of the global region"); // Folia - region threading
 +        //io.papermc.paper.threadedregions.RegionizedServer.ensureGlobalTickThread("Cannot modify weather off of the global region"); // Folia - region threading
-         this.world.serverLevelData.setThunderTime(duration);
+         this.world.getWeatherData().setThunderTime(duration);
      }
  
-@@ -1244,7 +1250,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1249,7 +1255,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setClearWeatherDuration(int duration) {
 -        io.papermc.paper.threadedregions.RegionizedServer.ensureGlobalTickThread("Cannot modify weather off of the global region"); // Folia - region threading
 +        //io.papermc.paper.threadedregions.RegionizedServer.ensureGlobalTickThread("Cannot modify weather off of the global region"); // Folia - region threading
-         this.world.serverLevelData.setClearWeatherTime(duration);
+         this.world.getWeatherData().setClearWeatherTime(duration);
      }
  
-@@ -1491,13 +1497,13 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1497,13 +1503,13 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setHardcore(boolean hardcore) {
 -        io.papermc.paper.threadedregions.RegionizedServer.ensureGlobalTickThread("Cannot modify server settings off of the global region"); // Folia - region threading
 +        //io.papermc.paper.threadedregions.RegionizedServer.ensureGlobalTickThread("Cannot modify server settings off of the global region"); // Folia - region threading
-         this.world.serverLevelData.settings.hardcore = hardcore;
+         this.world.serverLevelData.setHardcore(hardcore);
      }
  
      @Override
@@ -586,7 +484,7 @@ index dcd32c1e32fd67ec13bb7fca8af20aa665407594..f3138034d9022b54e2743eba5b0c8c86
          Preconditions.checkArgument(spawnCategory != null, "SpawnCategory cannot be null");
          Preconditions.checkArgument(CraftSpawnCategory.isValidForLimits(spawnCategory), "SpawnCategory.%s are not supported", spawnCategory);
  
-@@ -1514,25 +1520,25 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1520,25 +1526,25 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setMetadata(String metadataKey, MetadataValue newMetadataValue) {
@@ -616,7 +514,7 @@ index dcd32c1e32fd67ec13bb7fca8af20aa665407594..f3138034d9022b54e2743eba5b0c8c86
          this.server.getWorldMetadata().removeMetadata(this, metadataKey, owningPlugin);
      }
  
-@@ -1554,7 +1560,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1560,7 +1566,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setSpawnLimit(SpawnCategory spawnCategory, int limit) {
@@ -625,7 +523,7 @@ index dcd32c1e32fd67ec13bb7fca8af20aa665407594..f3138034d9022b54e2743eba5b0c8c86
          Preconditions.checkArgument(spawnCategory != null, "SpawnCategory cannot be null");
          Preconditions.checkArgument(CraftSpawnCategory.isValidForLimits(spawnCategory), "SpawnCategory.%s are not supported", spawnCategory);
  
-@@ -1684,7 +1690,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1690,7 +1696,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @SuppressWarnings({"unchecked", "rawtypes"})
      @Override
      public boolean setGameRuleValue(String rule, String value) {
@@ -635,7 +533,7 @@ index dcd32c1e32fd67ec13bb7fca8af20aa665407594..f3138034d9022b54e2743eba5b0c8c86
          if (rule == null || value == null) return false;
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
-index 3fac69d66d8d059da7deabbb5cc6988bfc4995cd..ed93eee77e444c08e4114e2c9cf2068667fad3e8 100644
+index 4ff7da43c08ac6b190ae550203e4ae6dd6326169..6997143a573afe483bcc2f2a8a8a712f9f272440 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
 @@ -1,11 +1,16 @@
@@ -655,36 +553,15 @@ index 3fac69d66d8d059da7deabbb5cc6988bfc4995cd..ed93eee77e444c08e4114e2c9cf20686
  import net.minecraft.core.BlockPos;
  import net.minecraft.core.Direction;
  import net.minecraft.server.level.ServerLevel;
-@@ -15,24 +20,18 @@ import net.minecraft.world.item.BoneMealItem;
+@@ -15,6 +20,7 @@ import net.minecraft.world.item.BoneMealItem;
  import net.minecraft.world.item.Items;
  import net.minecraft.world.item.context.UseOnContext;
  import net.minecraft.world.level.ClipContext;
 +import net.minecraft.world.level.Level;
  import net.minecraft.world.level.LevelAccessor;
  import net.minecraft.world.level.LightLayer;
--import net.minecraft.world.level.block.Blocks;
--import net.minecraft.world.level.block.RedStoneWireBlock;
--import net.minecraft.world.level.block.SaplingBlock;
-+import net.minecraft.world.level.block.*;
-+import net.minecraft.world.level.material.FluidState;
- import net.minecraft.world.phys.AABB;
- import net.minecraft.world.phys.BlockHitResult;
- import net.minecraft.world.phys.HitResult;
- import net.minecraft.world.phys.Vec3;
- import net.minecraft.world.phys.shapes.CollisionContext;
- import net.minecraft.world.phys.shapes.VoxelShape;
--import org.bukkit.Bukkit;
--import org.bukkit.Chunk;
--import org.bukkit.FluidCollisionMode;
--import org.bukkit.Location;
--import org.bukkit.Material;
--import org.bukkit.TreeType;
--import org.bukkit.World;
-+import org.bukkit.*;
- import org.bukkit.block.Biome;
- import org.bukkit.block.Block;
- import org.bukkit.block.BlockFace;
-@@ -40,6 +39,7 @@ import org.bukkit.block.BlockState;
+ import net.minecraft.world.level.SignalGetter;
+@@ -43,6 +49,7 @@ import org.bukkit.block.BlockFace;
  import org.bukkit.block.PistonMoveReaction;
  import org.bukkit.block.data.BlockData;
  import org.bukkit.craftbukkit.CraftFluidCollisionMode;
@@ -692,41 +569,25 @@ index 3fac69d66d8d059da7deabbb5cc6988bfc4995cd..ed93eee77e444c08e4114e2c9cf20686
  import org.bukkit.craftbukkit.CraftWorld;
  import org.bukkit.craftbukkit.block.data.CraftBlockData;
  import org.bukkit.craftbukkit.entity.CraftEntity;
-@@ -62,7 +62,7 @@ import org.bukkit.util.RayTraceResult;
- import org.bukkit.util.Vector;
- 
- public class CraftBlock implements Block {
--    private final net.minecraft.world.level.LevelAccessor world;
-+    private final LevelAccessor world;
-     private final BlockPos position;
- 
-     private CraftBlock(LevelAccessor world, BlockPos position) {
-@@ -77,13 +77,13 @@ public class CraftBlock implements Block {
-     public net.minecraft.world.level.block.state.BlockState getNMS() {
+@@ -81,7 +88,7 @@ public class CraftBlock implements Block {
+     public net.minecraft.world.level.block.state.BlockState getBlockState() {
          // Folia start - region threading
-         if (this.world instanceof ServerLevel serverWorld) {
+         if (this.level instanceof ServerLevel serverWorld) {
 -            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
 +            TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
          }
          // Folia end - region threading
-         return this.world.getBlockState(this.position);
-     }
- 
--    public net.minecraft.world.level.material.FluidState getNMSFluid() {
-+    public FluidState getNMSFluid() {
-         return this.world.getFluidState(this.position);
-     }
- 
-@@ -162,7 +162,7 @@ public class CraftBlock implements Block {
+         return this.level.getBlockState(this.position);
+@@ -157,7 +164,7 @@ public class CraftBlock implements Block {
      private void setData(final byte data, @net.minecraft.world.level.block.Block.UpdateFlags int flags) {
          // Folia start - region threading
-         if (this.world instanceof ServerLevel serverWorld) {
+         if (this.level instanceof ServerLevel serverWorld) {
 -            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
 +            TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
          }
          // Folia end - region threading
-         this.world.setBlock(this.position, CraftMagicNumbers.getBlock(this.getType(), data), flags);
-@@ -208,14 +208,14 @@ public class CraftBlock implements Block {
+         this.level.setBlock(this.position, CraftMagicNumbers.getBlock(this.getType(), data), flags);
+@@ -202,14 +209,14 @@ public class CraftBlock implements Block {
      public static boolean setBlockState(LevelAccessor world, BlockPos pos, net.minecraft.world.level.block.state.BlockState oldState, net.minecraft.world.level.block.state.BlockState newState, boolean applyPhysics) {
          // Folia start - region threading
          if (world instanceof ServerLevel serverWorld) {
@@ -744,7 +605,7 @@ index 3fac69d66d8d059da7deabbb5cc6988bfc4995cd..ed93eee77e444c08e4114e2c9cf20686
              } else {
                  world.setBlock(pos, Blocks.AIR.defaultBlockState(), 0);
              }
-@@ -228,7 +228,7 @@ public class CraftBlock implements Block {
+@@ -222,7 +229,7 @@ public class CraftBlock implements Block {
                      net.minecraft.world.level.block.Block.UPDATE_CLIENTS |
                      net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE |
                      net.minecraft.world.level.block.Block.UPDATE_SKIP_ON_PLACE);
@@ -753,197 +614,212 @@ index 3fac69d66d8d059da7deabbb5cc6988bfc4995cd..ed93eee77e444c08e4114e2c9cf20686
                  world.getMinecraftWorld().sendBlockUpdated(
                      pos,
                      oldState,
-@@ -361,7 +361,7 @@ public class CraftBlock implements Block {
+@@ -326,7 +333,7 @@ public class CraftBlock implements Block {
      public Biome getBiome() {
          // Folia start - region threading
-         if (this.world instanceof ServerLevel serverWorld) {
+         if (this.level instanceof ServerLevel serverWorld) {
 -            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
 +            TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
          }
          // Folia end - region threading
          return this.getWorld().getBiome(this.getX(), this.getY(), this.getZ());
-@@ -372,7 +372,7 @@ public class CraftBlock implements Block {
+@@ -336,7 +343,7 @@ public class CraftBlock implements Block {
      public Biome getComputedBiome() {
          // Folia start - region threading
-         if (this.world instanceof ServerLevel serverWorld) {
+         if (this.level instanceof ServerLevel serverWorld) {
 -            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
 +            TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
          }
          // Folia end - region threading
          return this.getWorld().getComputedBiome(this.getX(), this.getY(), this.getZ());
-@@ -383,7 +383,7 @@ public class CraftBlock implements Block {
+@@ -346,7 +353,7 @@ public class CraftBlock implements Block {
      public void setBiome(Biome bio) {
          // Folia start - region threading
-         if (this.world instanceof ServerLevel serverWorld) {
+         if (this.level instanceof ServerLevel serverWorld) {
 -            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
 +            TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
          }
          // Folia end - region threading
          this.getWorld().setBiome(this.getX(), this.getY(), this.getZ(), bio);
-@@ -435,7 +435,7 @@ public class CraftBlock implements Block {
+@@ -400,7 +407,7 @@ public class CraftBlock implements Block {
      public boolean isBlockFaceIndirectlyPowered(BlockFace face) {
          // Folia start - region threading
-         if (this.world instanceof ServerLevel serverWorld) {
+         if (this.level instanceof ServerLevel serverWorld) {
 -            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
 +            TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
          }
          // Folia end - region threading
-         int power = this.world.getMinecraftWorld().getSignal(this.position, CraftBlock.blockFaceToNotch(face));
-@@ -452,11 +452,11 @@ public class CraftBlock implements Block {
+         Direction direction = blockFaceToNotch(face);
+@@ -421,12 +428,12 @@ public class CraftBlock implements Block {
      public int getBlockPower(BlockFace face) {
          // Folia start - region threading
-         if (this.world instanceof ServerLevel serverWorld) {
+         if (this.level instanceof ServerLevel serverWorld) {
 -            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
 +            TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
          }
          // Folia end - region threading
-         int power = 0;
--        net.minecraft.world.level.Level world = this.world.getMinecraftWorld();
-+        Level world = this.world.getMinecraftWorld();
-         int x = this.getX();
-         int y = this.getY();
-         int z = this.getZ();
-@@ -546,7 +546,7 @@ public class CraftBlock implements Block {
+         Preconditions.checkArgument(face != null, "face cannot be null");
+ 
+-        net.minecraft.world.level.Level level = this.level.getMinecraftWorld();
++        Level level = this.level.getMinecraftWorld();
+         boolean searchSelfIncluded = face == BlockFace.SELF;
+         Direction onlyFace = blockFaceToNotch(face);
+ 
+@@ -522,7 +529,7 @@ public class CraftBlock implements Block {
      public boolean breakNaturally(ItemStack item, boolean triggerEffect, boolean dropExperience, boolean forceEffect) {
          // Folia start - region threading
-         if (this.world instanceof ServerLevel serverWorld) {
+         if (this.level instanceof ServerLevel serverWorld) {
 -            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
 +            TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
          }
          // Folia end - region threading
-         // Paper end
-@@ -566,10 +566,10 @@ public class CraftBlock implements Block {
-         }
- 
-         if ((result && triggerEffect) || (forceEffect && block != Blocks.AIR)) {
--            if (state.getBlock() instanceof net.minecraft.world.level.block.BaseFireBlock) {
--                this.world.levelEvent(net.minecraft.world.level.block.LevelEvent.SOUND_EXTINGUISH_FIRE, this.position, 0);
-+            if (state.getBlock() instanceof BaseFireBlock) {
-+                this.world.levelEvent(LevelEvent.SOUND_EXTINGUISH_FIRE, this.position, 0);
-             } else {
--                this.world.levelEvent(net.minecraft.world.level.block.LevelEvent.PARTICLES_DESTROY_BLOCK, this.position, net.minecraft.world.level.block.Block.getId(state));
-+                this.world.levelEvent(LevelEvent.PARTICLES_DESTROY_BLOCK, this.position, net.minecraft.world.level.block.Block.getId(state));
-             }
-         }
- 
-@@ -581,9 +581,9 @@ public class CraftBlock implements Block {
-         }
-         if (result) {
-             // special cases
--            if (block instanceof net.minecraft.world.level.block.IceBlock iceBlock) {
-+            if (block instanceof IceBlock iceBlock) {
-                 iceBlock.afterDestroy(this.world.getMinecraftWorld(), this.position, nmsItem);
--            } else if (block instanceof net.minecraft.world.level.block.TurtleEggBlock turtleEggBlock) {
-+            } else if (block instanceof TurtleEggBlock turtleEggBlock) {
-                 turtleEggBlock.decreaseEggs(this.world.getMinecraftWorld(), this.position, state);
-             }
-         }
-@@ -595,7 +595,7 @@ public class CraftBlock implements Block {
+         // Order matters here, need to drop before setting to air so skulls can get their data
+@@ -565,7 +572,7 @@ public class CraftBlock implements Block {
      public boolean applyBoneMeal(BlockFace face) {
          // Folia start - region threading
-         if (this.world instanceof ServerLevel serverWorld) {
+         if (this.level instanceof ServerLevel serverWorld) {
 -            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
 +            TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
          }
          // Folia end - region threading
-         Direction direction = CraftBlock.blockFaceToNotch(face);
-@@ -603,7 +603,9 @@ public class CraftBlock implements Block {
+         Direction direction = blockFaceToNotch(face);
+@@ -575,38 +582,42 @@ public class CraftBlock implements Block {
          ServerLevel world = this.getCraftWorld().getHandle();
          UseOnContext context = new UseOnContext(world, null, InteractionHand.MAIN_HAND, Items.BONE_MEAL.getDefaultInstance(), new BlockHitResult(Vec3.ZERO, direction, this.getPosition(), false));
  
 -        io.papermc.paper.threadedregions.RegionizedWorldData worldData = world.getCurrentWorldData(); // Folia - region threading
-+        var ref = ((net.minecraft.world.level.Level) this.world).worldDataPool.getAndHeldReference(face.getModX() >> 4, face.getModZ() >> 4);
+-        // SPIGOT-6895: Call StructureGrowEvent and BlockFertilizeEvent
+-        worldData.captureTreeGeneration = true; // Folia - region threading
+-        InteractionResult result = BoneMealItem.applyBonemeal(context);
+-        worldData.captureTreeGeneration = false; // Folia - region threading
+-
+-        if (!worldData.capturedBlockStates.isEmpty()) { // Folia - region threading
+-            TreeType treeType = SaplingBlock.treeTypeRT.get(); // Folia - region threading
+-            SaplingBlock.treeTypeRT.set(null); // Folia - region threading
+-            List<org.bukkit.block.BlockState> states = new ArrayList<>(worldData.capturedBlockStates.values()); // Folia - region threading
+-            worldData.capturedBlockStates.clear(); // Folia - region threading
+-            StructureGrowEvent structureEvent = null;
+-
+-            if (treeType != null) {
+-                structureEvent = new StructureGrowEvent(this.getLocation(), treeType, true, null, states);
+-                Bukkit.getPluginManager().callEvent(structureEvent);
+-            }
++        var ref = ((Level) this.level).worldDataPool.getAndHeldReference(this.position.getX() >> 4, this.position.getZ() >> 4);
 +        RegionizedWorldData worldData = ref.left(); // Folia - region threading
 +        try {
-         // SPIGOT-6895: Call StructureGrowEvent and BlockFertilizeEvent
-         worldData.captureTreeGeneration = true; // Folia - region threading
-         InteractionResult result = BoneMealItem.applyBonemeal(context);
-@@ -633,8 +635,10 @@ public class CraftBlock implements Block {
++            // SPIGOT-6895: Call StructureGrowEvent and BlockFertilizeEvent
++            worldData.captureTreeGeneration = true; // Folia - region threading
++            InteractionResult result = BoneMealItem.applyBonemeal(context);
++            worldData.captureTreeGeneration = false; // Folia - region threading
++
++            if (!worldData.capturedBlockStates.isEmpty()) { // Folia - region threading
++                TreeType treeType = SaplingBlock.treeTypeRT.get(); // Folia - region threading
++                SaplingBlock.treeTypeRT.set(null); // Folia - region threading
++                List<org.bukkit.block.BlockState> states = new ArrayList<>(worldData.capturedBlockStates.values()); // Folia - region threading
++                worldData.capturedBlockStates.clear(); // Folia - region threading
++                StructureGrowEvent structureEvent = null;
++
++                if (treeType != null) {
++                    structureEvent = new StructureGrowEvent(this.getLocation(), treeType, true, null, states);
++                    Bukkit.getPluginManager().callEvent(structureEvent);
++                }
+ 
+-            event = new BlockFertilizeEvent(CraftBlock.at(world, this.getPosition()), null, states);
+-            event.setCancelled(structureEvent != null && structureEvent.isCancelled());
+-            Bukkit.getPluginManager().callEvent(event);
++                event = new BlockFertilizeEvent(CraftBlock.at(world, this.getPosition()), null, states);
++                event.setCancelled(structureEvent != null && structureEvent.isCancelled());
++                Bukkit.getPluginManager().callEvent(event);
+ 
+-            if (!event.isCancelled()) {
+-                for (org.bukkit.block.BlockState state : states) {
+-                    CraftBlockState craftBlockState = (CraftBlockState) state;
+-                    craftBlockState.place(craftBlockState.getFlags());
+-                    world.checkCapturedTreeStateForObserverNotify(this.position, craftBlockState);
++                if (!event.isCancelled()) {
++                    for (org.bukkit.block.BlockState state : states) {
++                        CraftBlockState craftBlockState = (CraftBlockState) state;
++                        craftBlockState.place(craftBlockState.getFlags());
++                        world.checkCapturedTreeStateForObserverNotify(this.position, craftBlockState);
++                    }
                  }
              }
++            return result == InteractionResult.SUCCESS && (event == null || !event.isCancelled());
++        } finally {
++            ((Level) this.level).worldDataPool.releaseReference(this.position.getX() >> 4, this.position.getZ() >> 4, ref.right());
          }
 -
-         return result == InteractionResult.SUCCESS && (event == null || !event.isCancelled());
-+        }finally {
-+        ((net.minecraft.world.level.Level) this.world).worldDataPool.releaseReference(face.getModX() >> 4, face.getModZ() >> 4, ref.right());
-+        }
+-        return result == InteractionResult.SUCCESS && (event == null || !event.isCancelled());
      }
  
      @Override
-@@ -703,7 +707,7 @@ public class CraftBlock implements Block {
+@@ -673,7 +684,7 @@ public class CraftBlock implements Block {
      public RayTraceResult rayTrace(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode) {
          // Folia start - region threading
-         if (this.world instanceof ServerLevel serverWorld) {
+         if (this.level instanceof ServerLevel serverWorld) {
 -            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
 +            TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
          }
          // Folia end - region threading
          Preconditions.checkArgument(start != null, "Location start cannot be null");
-@@ -749,12 +753,12 @@ public class CraftBlock implements Block {
+@@ -719,7 +730,7 @@ public class CraftBlock implements Block {
      public boolean canPlace(BlockData data) {
          // Folia start - region threading
-         if (this.world instanceof ServerLevel serverWorld) {
+         if (this.level instanceof ServerLevel serverWorld) {
 -            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
 +            TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
          }
          // Folia end - region threading
          Preconditions.checkArgument(data != null, "BlockData cannot be null");
-         net.minecraft.world.level.block.state.BlockState iblockdata = ((CraftBlockData) data).getState();
--        net.minecraft.world.level.Level world = this.world.getMinecraftWorld();
-+        Level world = this.world.getMinecraftWorld();
- 
-         return iblockdata.canSurvive(world, this.position);
+@@ -739,13 +750,13 @@ public class CraftBlock implements Block {
      }
-@@ -771,13 +775,13 @@ public class CraftBlock implements Block {
  
-     // Paper start
      @Override
 -    public com.destroystokyo.paper.block.BlockSoundGroup getSoundGroup() {
--        return new com.destroystokyo.paper.block.CraftBlockSoundGroup(getNMS().getBlock().defaultBlockState().getSoundType());
+-        return new com.destroystokyo.paper.block.CraftBlockSoundGroup(this.getBlockState().getSoundType());
 +    public BlockSoundGroup getSoundGroup() {
-+        return new CraftBlockSoundGroup(getNMS().getBlock().defaultBlockState().getSoundType());
++        return new CraftBlockSoundGroup(this.getBlockState().getSoundType());
      }
  
      @Override
--    public org.bukkit.SoundGroup getBlockSoundGroup() {
--        return org.bukkit.craftbukkit.CraftSoundGroup.getSoundGroup(this.getNMS().getSoundType());
-+    public SoundGroup getBlockSoundGroup() {
-+        return CraftSoundGroup.getSoundGroup(this.getNMS().getSoundType());
+     public org.bukkit.SoundGroup getBlockSoundGroup() {
+-        return org.bukkit.craftbukkit.CraftSoundGroup.getSoundGroup(this.getBlockState().getSoundType());
++        return CraftSoundGroup.getSoundGroup(this.getBlockState().getSoundType());
      }
  
      @Override
-@@ -793,7 +797,7 @@ public class CraftBlock implements Block {
+@@ -762,7 +773,7 @@ public class CraftBlock implements Block {
      public void tick() {
          // Folia start - region threading
-         if (this.world instanceof ServerLevel serverWorld) {
+         if (this.level instanceof ServerLevel serverWorld) {
 -            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
 +            TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
          }
          // Folia end - region threading
-         final ServerLevel level = this.world.getMinecraftWorld();
-@@ -804,7 +808,7 @@ public class CraftBlock implements Block {
+         final ServerLevel level = this.level.getMinecraftWorld();
+@@ -773,7 +784,7 @@ public class CraftBlock implements Block {
      public void fluidTick() {
          // Folia start - region threading
-         if (this.world instanceof ServerLevel serverWorld) {
+         if (this.level instanceof ServerLevel serverWorld) {
 -            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
 +            TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
          }
          // Folia end - region threading
-         this.getNMSFluid().tick(this.world.getMinecraftWorld(), this.position, this.getNMS());
-@@ -814,7 +818,7 @@ public class CraftBlock implements Block {
+         this.level.getFluidState(this.position).tick(this.level.getMinecraftWorld(), this.position, this.getBlockState());
+@@ -783,7 +794,7 @@ public class CraftBlock implements Block {
      public void randomTick() {
          // Folia start - region threading
-         if (this.world instanceof ServerLevel serverWorld) {
+         if (this.level instanceof ServerLevel serverWorld) {
 -            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
 +            TickThread.ensureTickThread(serverWorld, this.position, "Cannot read world asynchronously");
          }
          // Folia end - region threading
-         final ServerLevel level = this.world.getMinecraftWorld();
+         final ServerLevel level = this.level.getMinecraftWorld();
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 6e745c7ddf417ec2fdcf102edd6a592047b5f73e..3827944ae51e067d696c1cef6490aed3fe240cdf 100644
+index 47926ff2fba43bb83e2d9747420a526cce8ebe65..c6dff55cb9c2b03b845075a7a4d45b03a9c761a2 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -1334,7 +1334,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
+@@ -1336,7 +1336,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
      protected boolean teleport0(Location location, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, io.papermc.paper.entity.TeleportFlag... flags) {
          // Folia start - region threading
          if (true) {
