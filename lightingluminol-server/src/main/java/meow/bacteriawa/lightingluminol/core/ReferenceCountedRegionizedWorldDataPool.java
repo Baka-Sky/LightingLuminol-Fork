@@ -1,6 +1,6 @@
 package meow.bacteriawa.lightingluminol.core;
 
-import ca.spottedleaf.concurrentutil.map.ConcurrentLong2ReferenceChainedHashTable;
+import ca.spottedleaf.concurrentutil.map.concurrent.longs.ConcurrentChainedLong2ReferenceHashTable;
 import ca.spottedleaf.moonrise.common.util.CoordinateUtils;
 import ca.spottedleaf.moonrise.common.util.TickThread;
 import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkHolderManager;
@@ -21,7 +21,7 @@ import static io.papermc.paper.threadedregions.RegionizedTaskQueue.TASK_QUEUE_TI
  * @see RegionizedTaskQueue
  */
 public class ReferenceCountedRegionizedWorldDataPool {
-    private final ConcurrentLong2ReferenceChainedHashTable<ReferenceCountData> referenceCounters = new ConcurrentLong2ReferenceChainedHashTable<>();
+    private final ConcurrentChainedLong2ReferenceHashTable<ReferenceCountData> referenceCounters = new ConcurrentChainedLong2ReferenceHashTable<>();
     private final ServerLevel world;
     private volatile int mask = -1;
 
@@ -46,7 +46,7 @@ public class ReferenceCountedRegionizedWorldDataPool {
             throw new IllegalArgumentException("Entity not in the same world as this pool");
         }
 
-        return this.getAndHeldReference(entity.chunkPosition().x, entity.chunkPosition().z);
+        return this.getAndHeldReference(entity.chunkPosition().x(), entity.chunkPosition().z());
     }
 
     public Tuple<RegionizedWorldData, ReferenceCountData> getAndHeldReference(BlockPos pos) {
