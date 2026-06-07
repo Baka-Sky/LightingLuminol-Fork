@@ -62,11 +62,6 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: ${{ env.project_id_b }} CI Artifacts
-          path: lightingluminol-server/build/libs/*-paperclip-*.jar
-
-      - name: Set Environment
-        if: github.event_name != 'pull_request'
-        run: sh scripts/SetENV.sh
           path: ${{ env.jar_dir }}
 
       - name: Check If Release Exists
