@@ -20,7 +20,8 @@ else
 fi
 release_tag="$grdversion-$commitid"
 jarName="$project_id-$grdversion-paperclip.jar"
-jarName_dir="lightingluminol-server/build/libs/$jarName"
+libs_dir="lightingluminol-server/build/libs"
+jarName_dir="$libs_dir/$jarName"
 
 flag_push_repo=false
 flag_release=false
@@ -44,7 +45,19 @@ elif [ "$pushRepo" = "false" ]; then
   flag_push_repo=false
 fi
 
-mv "lightingluminol-server/build/libs/$project_id-paperclip-$grdversion-mojmap.jar" "$jarName_dir"
+if [ -d "$libs_dir" ]; then
+  actual_jar=$(find "$libs_dir" -maxdepth 1 -type f -name "$project_id-paperclip-*.jar" | sort | head -n 1)
+else
+  actual_jar=""
+fi
+
+if [ -z "$actual_jar" ]; then
+  echo "No paperclip jar found in $libs_dir"
+  ls -la "$libs_dir" 2>/dev/null || true
+  exit 1
+fi
+
+mv "$actual_jar" "$jarName_dir"
 
 echo "project_id=$project_id" >> $GITHUB_ENV
 echo "project_id_b=$project_id_b" >> $GITHUB_ENV
