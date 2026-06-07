@@ -1,5 +1,7 @@
+set -eu
+
 prop() {
-  grep "^[[:space:]]*${1}" gradle.properties | cut -d'=' -f2 | sed 's/^[[:space:]]*//; s/\r//'
+  sed -n "s/^[[:space:]]*${1}[[:space:]]*=[[:space:]]*//p" gradle.properties | head -n 1 | sed 's/[[:space:]]*$//; s/\r$//'
 }
 
 project_id="lightingluminol"
@@ -7,16 +9,23 @@ project_id_b="LightingLuminol"
 
 commitid=$(git log --pretty='%h' -1)
 mcversion=$(prop mcVersion)
-grdversion=$(prop version)
+channel=$(prop channel)
 release=$(prop release)
 pushRepo=$(prop pushRepo)
-release_tag="$mcversion-$commitid"
-jarName="$project_id-$mcversion-paperclip.jar"
+channel_lower=$(printf '%s' "$channel" | tr '[:upper:]' '[:lower:]')
+if [ -n "${BUILD_NUMBER:-}" ]; then
+  grdversion="$mcversion.build.$BUILD_NUMBER-$channel_lower"
+else
+  grdversion="$mcversion.local-SNAPSHOT"
+fi
+release_tag="$grdversion-$commitid"
+jarName="$project_id-$grdversion-paperclip.jar"
 jarName_dir="lightingluminol-server/build/libs/$jarName"
 
 flag_push_repo=false
 flag_release=false
 pre=false
+make_latest=false
 
 if [ "$release" = "pre" ]; then
   pre=true
@@ -35,13 +44,14 @@ elif [ "$pushRepo" = "false" ]; then
   flag_push_repo=false
 fi
 
-mv lightingluminol-server/build/libs/$project_id-paperclip-$grdversion-mojmap.jar $jarName_dir
+mv "lightingluminol-server/build/libs/$project_id-paperclip-$grdversion-mojmap.jar" "$jarName_dir"
 
 echo "project_id=$project_id" >> $GITHUB_ENV
 echo "project_id_b=$project_id_b" >> $GITHUB_ENV
 echo "commit_id=$commitid" >> $GITHUB_ENV
 echo "commit_msg=$(git log --pretty='> [%h] %s' -1)" >> $GITHUB_ENV
 echo "mcversion=$mcversion" >> $GITHUB_ENV
+echo "version=$grdversion" >> $GITHUB_ENV
 echo "pre=$pre" >> $GITHUB_ENV
 echo "tag=$release_tag" >> $GITHUB_ENV
 echo "jar=$jarName" >> $GITHUB_ENV

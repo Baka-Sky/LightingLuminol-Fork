@@ -81,10 +81,10 @@ subprojects {
             events(TestLogEvent.STANDARD_OUT)
         }
     }
-/*
     extensions.configure<PublishingExtension> {
         repositories {
-            maven("https://repo.menthamc.org/repository/maven-snapshots/") {
+            val publishRepository = if (project.version.toString().endsWith("-SNAPSHOT")) "maven-snapshots" else "maven-releases"
+            maven("https://repo.menthamc.org/repository/$publishRepository/") {
                 name = "MenthaMC"
                 credentials(PasswordCredentials::class) {
                     username = System.getenv("PRIVATE_MAVEN_REPO_USERNAME")
@@ -93,7 +93,7 @@ subprojects {
             }
         }
     }
-*/
+
      tasks.withType<Javadoc>().configureEach {
         options {
             (this as StandardJavadocDocletOptions).apply {

@@ -43,7 +43,7 @@ git clone https://github.com/LuminolMC/LightingLuminol.git
 cd LightingLuminol
 
 # 应用补丁并构建 Paperclip JAR
-./gradlew applyAllPatches && ./gradlew createMojmapPaperclipJar
+./gradlew applyAllPatches && ./gradlew createPaperclipJar
 ```
 
 构建完成后，您可以在 `lightingluminol-server/build/libs` 目录中找到生成的 JAR 文件。
@@ -60,7 +60,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("me.earthme.lightingluminol:lightingluminol-api:$VERSION")
+    compileOnly("meow.bacteriawa.lightingluminol:lightingluminol-api:26.1.2.build.+")
 }
 ```
 
@@ -76,9 +76,9 @@ dependencies {
 
 <dependencies>
     <dependency>
-        <groupId>me.earthme.lightingluminol</groupId>
+        <groupId>meow.bacteriawa.lightingluminol</groupId>
         <artifactId>lightingluminol-api</artifactId>
-        <version>$VERSION</version>
+        <version>[26.1.2.build,)</version>
         <scope>provided</scope>
     </dependency>
 </dependencies>

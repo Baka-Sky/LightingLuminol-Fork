@@ -731,7 +731,7 @@ index 0cf5815672ac62d8caf7f18165be1f0f8e067aed..bd3a03ca1f7e7b3fe18f81e1a01fca4d
 \ No newline at end of file
 +}
 diff --git a/io/papermc/paper/threadedregions/TickRegionScheduler.java b/io/papermc/paper/threadedregions/TickRegionScheduler.java
-index eb5c0e77537056a13f445ec5d96b1c92de8f25af..18e966f7599cf1b94c330e350bcc82ad7cdead2b 100644
+index f60b3b40c7dc5820abc726abc8d094ed873edf6c..fe2c37395e88a15df32fee51ee9dcfe153b1f83c 100644
 --- a/io/papermc/paper/threadedregions/TickRegionScheduler.java
 +++ b/io/papermc/paper/threadedregions/TickRegionScheduler.java
 @@ -380,9 +380,9 @@ public final class TickRegionScheduler {
@@ -1345,7 +1345,7 @@ index e1de10e1a0ec221a1109a03d86fddf47b1c06a5f..f2fed0a3b4fca26b1eabb3a102b0d8f8
                  return true;
                  // CraftBukkit end
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 694c2c4c48bde264fb2436fdf02750fcc20f7fac..67b6745cd1fd30bb93c270a510a6911b1c7559e8 100644
+index 552fd994ee30deb6e9f4228b17a2883cf26b164c..d5f45517deae3289b78e3ca19f80c1f1a3cf48e2 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -1,5 +1,8 @@
@@ -1390,7 +1390,7 @@ index 694c2c4c48bde264fb2436fdf02750fcc20f7fac..67b6745cd1fd30bb93c270a510a6911b
          if ((teleportFlags & TELEPORT_FLAG_UNMOUNT) == 0L) {
              for (Entity entity : this.getIndirectPassengers()) {
                  if (!entity.canTeleportAsync()) {
-@@ -4939,12 +4957,40 @@ public abstract class Entity
+@@ -4946,12 +4964,40 @@ public abstract class Entity
          ca.spottedleaf.concurrentutil.completable.CallbackCompletable<TeleportTransition> portalInfoCompletable
              = new ca.spottedleaf.concurrentutil.completable.CallbackCompletable<>();
  
@@ -1432,7 +1432,7 @@ index 694c2c4c48bde264fb2436fdf02750fcc20f7fac..67b6745cd1fd30bb93c270a510a6911b
              originWorld.moonrise$getChunkTaskScheduler().chunkHolderManager.removeTicketAtLevel(
                  TicketType.TELEPORT_HOLD_TICKET, initialPositionChunk,
                  ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkHolderManager.MAX_TICKET_LEVEL,
-@@ -6184,7 +6230,13 @@ public abstract class Entity
+@@ -6195,7 +6241,13 @@ public abstract class Entity
      // Paper end - Folia schedulers
      // Paper start - optimise Folia entity scheduler
      public final void registerScheduler() {
@@ -2939,7 +2939,7 @@ index 759eb347299813c20226cc2fc5dc7718d12b7f56..7911c2963706d9a0c7079186c58e5680
              }
          }
 diff --git a/net/minecraft/world/level/chunk/LevelChunk.java b/net/minecraft/world/level/chunk/LevelChunk.java
-index e54479b88cd02e7ef73b5c234b6baa479241c51c..596e90182a016d2ac779342c0bab53a78a5bfc1a 100644
+index da9706f866aabee6939cacbfbcc9def01fde0326..cb33445e805c0c00c35c253d9d7db5b437fcffda 100644
 --- a/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -442,8 +442,14 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot

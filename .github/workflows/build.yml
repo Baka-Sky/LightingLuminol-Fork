@@ -55,6 +55,9 @@ jobs:
       - name: Build Paperclip Jar
         run: ./gradlew --refresh-dependencies createPaperclipJar
 
+      - name: Set Environment
+        run: sh scripts/SetENV.sh
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v7
         with:
@@ -64,9 +67,10 @@ jobs:
       - name: Set Environment
         if: github.event_name != 'pull_request'
         run: sh scripts/SetENV.sh
+          path: ${{ env.jar_dir }}
 
       - name: Check If Release Exists
-        if: github.event_name != 'pull_request' && env.flag_release == 'true'
+        if: github.event_name != 'pull_request' && (env.flag_release == 'true' || inputs.force-release == 'true')
         run: |
           git fetch --tags
           if [ -n "$(git tag -l "${{ env.tag }}")" ]; then
@@ -121,9 +125,9 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ env.tag }}
-          name: ${{ env.project_id_b }} ${{ env.mcversion }} - ${{ env.commit_id }}${{ env.release_count }}
+          name: ${{ env.project_id_b }} ${{ env.version }} - ${{ env.commit_id }}${{ env.release_count }}
           body: |
-            📦Version: `${{ env.mcversion }}` | Commit ${{ env.commit_id }} [![download](https://img.shields.io/github/downloads/LuminolMC/${{ env.project_id }}/${{ env.tag }}/total?color=red&style=flat-square)](https://github.com/LuminolMC/${{ env.project_id }}/releases/download/${{ env.tag }}/${{ env.jar }})
+            📦Version: `${{ env.version }}` | Commit ${{ env.commit_id }} [![download](https://img.shields.io/github/downloads/LuminolMC/${{ env.project_id }}/${{ env.tag }}/total?color=red&style=flat-square)](https://github.com/LuminolMC/${{ env.project_id }}/releases/download/${{ env.tag }}/${{ env.jar }})
             This release is automatically compiled by GitHub Actions
             ### Branch Info
             > ${{ github.ref_name }}
@@ -140,9 +144,9 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ env.tag }}
-          name: ${{ env.project_id_b }} ${{ env.mcversion }} - ${{ env.commit_id }}${{ env.release_count }}
+          name: ${{ env.project_id_b }} ${{ env.version }} - ${{ env.commit_id }}${{ env.release_count }}
           body: |
-            📦Version: `${{ env.mcversion }}` | Commit ${{ env.commit_id }} [![download](https://img.shields.io/github/downloads/LuminolMC/${{ env.project_id }}/${{ env.tag }}/total?color=red&style=flat-square)](https://github.com/LuminolMC/${{ env.project_id }}/releases/download/${{ env.tag }}/${{ env.jar }})
+            📦Version: `${{ env.version }}` | Commit ${{ env.commit_id }} [![download](https://img.shields.io/github/downloads/LuminolMC/${{ env.project_id }}/${{ env.tag }}/total?color=red&style=flat-square)](https://github.com/LuminolMC/${{ env.project_id }}/releases/download/${{ env.tag }}/${{ env.jar }})
             This release is automatically compiled by GitHub Actions
             ### Comments
             > ${{ inputs.comments }}
