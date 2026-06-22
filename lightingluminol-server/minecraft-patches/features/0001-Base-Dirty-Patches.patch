@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Bacteriawa <A3167717663@hotmail.com>
-Date: Sat, 6 Jun 2026 21:11:37 +0800
+Date: Mon, 22 Jun 2026 17:32:37 +0800
 Subject: [PATCH] Base Dirty Patches
 
 
@@ -731,10 +731,10 @@ index 0cf5815672ac62d8caf7f18165be1f0f8e067aed..bd3a03ca1f7e7b3fe18f81e1a01fca4d
 \ No newline at end of file
 +}
 diff --git a/io/papermc/paper/threadedregions/TickRegionScheduler.java b/io/papermc/paper/threadedregions/TickRegionScheduler.java
-index f60b3b40c7dc5820abc726abc8d094ed873edf6c..fe2c37395e88a15df32fee51ee9dcfe153b1f83c 100644
+index 86c51506c518ee445d00f7eef36ee2c9adbd9b4c..c09bd225dc4e96d8ff3d3f665548c52a24c20ef3 100644
 --- a/io/papermc/paper/threadedregions/TickRegionScheduler.java
 +++ b/io/papermc/paper/threadedregions/TickRegionScheduler.java
-@@ -380,9 +380,9 @@ public final class TickRegionScheduler {
+@@ -361,9 +361,9 @@ public final class TickRegionScheduler {
  
      // By using our own thread object, we can use a field for the current region rather than a ThreadLocal.
      // This is much faster than a thread local, since the thread local has to use a map lookup.
@@ -1448,7 +1448,7 @@ index 552fd994ee30deb6e9f4228b17a2883cf26b164c..d5f45517deae3289b78e3ca19f80c1f1
      // Paper end - optimise Folia entity scheduler
  
 diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
-index 17483ffff6cb2a9e86db7079e7c3a9a800654c62..5634f051beef069f6f7b5e0cd1ce3d3ec632561e 100644
+index 0a403e859169e0dcc4b0fd6fde7bd8bd7037e8b3..c15ab8f29707af882ec401a5cc87700c78dbda26 100644
 --- a/net/minecraft/world/entity/LivingEntity.java
 +++ b/net/minecraft/world/entity/LivingEntity.java
 @@ -1577,7 +1577,13 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
@@ -1550,7 +1550,7 @@ index 586a9544635247102ea578933aafc894399ca2aa..f76f7ff2d36c2c9319162fb3abd4ea17
          }
          super.setPos(x, y, z);
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index e06e48dd9c997ac1dc6e404aa0bc590c851e1ba8..b90aeabd1ba0f59159a73a5387dcc377963b1010 100644
+index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d28429e2f0 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
 @@ -1,14 +1,54 @@
@@ -2700,7 +2700,7 @@ index e06e48dd9c997ac1dc6e404aa0bc590c851e1ba8..b90aeabd1ba0f59159a73a5387dcc377
 -        ca.spottedleaf.moonrise.patches.chunk_system.level.entity.ChunkEntitySlices slices = ((ServerLevel)this).moonrise$getEntityLookup().getChunk(chunkX, chunkZ);
 +        ChunkEntitySlices slices = ((ServerLevel)this).moonrise$getEntityLookup().getChunk(chunkX, chunkZ);
          if (slices == null) {
-             return new org.bukkit.entity.Entity[0];
+             return me.titaniumtown.ArrayConstants.emptyBukkitEntityArray; // Gale - JettPack - reduce array allocations
          }
  
 -        List<org.bukkit.entity.Entity> ret = new java.util.ArrayList<>();
