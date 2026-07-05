@@ -435,7 +435,7 @@ index b264dbd13a392cde3f24ff75c0034985fda68ccc..b22095605d424e32a18f0b497addf12c
      public PrioritisedExecutor.PrioritisedTask createChunkTask(final ServerLevel world, final int chunkX, final int chunkZ,
                                                                 final Runnable run) {
 diff --git a/io/papermc/paper/threadedregions/RegionizedWorldData.java b/io/papermc/paper/threadedregions/RegionizedWorldData.java
-index 0cf5815672ac62d8caf7f18165be1f0f8e067aed..bd3a03ca1f7e7b3fe18f81e1a01fca4dad830327 100644
+index eedbeb005d3c8090333c36b9857c837dfb75dbd4..d47c9335ac04ad80fe5d621747b72e2401841efb 100644
 --- a/io/papermc/paper/threadedregions/RegionizedWorldData.java
 +++ b/io/papermc/paper/threadedregions/RegionizedWorldData.java
 @@ -6,12 +6,15 @@ import ca.spottedleaf.moonrise.common.misc.NearbyPlayers;
@@ -813,7 +813,7 @@ index 02c004bc7f9a0203523ce4b27cd766d6bdc478c0..e3bdda759010b3acb3bec23c57dd3044
  
              if (ret != null) {
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index 83178b9a0b017c8945c0f41981838f40263c9a12..b8068bc0245084f1392e2cbc4a601bc77e6d89c7 100644
+index 28384f9ebfcdbfbd07fc7fe3c929786eb9e2ccd3..e44dc05008a348db54a48bb07e48af8cbb476c0b 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
 @@ -712,8 +712,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -1074,7 +1074,7 @@ index 27389ff98942e27c2a877ea5b671caa31353d18c..fcb5bfd4fd1750d618c707469688e821
              // Paper end - rewrite chunk system
          }
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 047c605eb087667e10da557864ad931dadebd274..696d13f19911fec456978834b57cb972ccc4675d 100644
+index 0f1bd15ea3b1400cc948883c92eceabcd4a4cda1..f5e96b2fb187f94c19baea502d3ea07fcb5e5b5d 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -219,6 +219,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
@@ -1448,7 +1448,7 @@ index 552fd994ee30deb6e9f4228b17a2883cf26b164c..d5f45517deae3289b78e3ca19f80c1f1
      // Paper end - optimise Folia entity scheduler
  
 diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
-index 0a403e859169e0dcc4b0fd6fde7bd8bd7037e8b3..c15ab8f29707af882ec401a5cc87700c78dbda26 100644
+index cd2fb9e2110d0dba1358daa283af767db3f4e80a..2088cc56eb3e5f9d890d197b3b021a132ecb92dc 100644
 --- a/net/minecraft/world/entity/LivingEntity.java
 +++ b/net/minecraft/world/entity/LivingEntity.java
 @@ -1577,7 +1577,13 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
@@ -1550,7 +1550,7 @@ index 586a9544635247102ea578933aafc894399ca2aa..f76f7ff2d36c2c9319162fb3abd4ea17
          }
          super.setPos(x, y, z);
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d28429e2f0 100644
+index 8c051d7322d8efc1ae2e151964fd0124740fd04d..7e80fc13f69f48f73946c559a3250f77febf88bf 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
 @@ -1,14 +1,54 @@
@@ -1680,7 +1680,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
      public static final Codec<ResourceKey<Level>> RESOURCE_KEY_CODEC = ResourceKey.codec(Registries.DIMENSION);
      public static final ResourceKey<Level> OVERWORLD = ResourceKey.create(Registries.DIMENSION, Identifier.withDefaultNamespace("overworld"));
      public static final ResourceKey<Level> NETHER = ResourceKey.create(Registries.DIMENSION, Identifier.withDefaultNamespace("the_nether"));
-@@ -146,18 +207,18 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -145,18 +206,18 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
      private final java.util.concurrent.atomic.AtomicLong subTickCount = new java.util.concurrent.atomic.AtomicLong(); //private long subTickCount; // Folia - region threading
  
      // CraftBukkit start
@@ -1705,7 +1705,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
          return this.paperConfig;
      }
      // Paper end - add paper world config
-@@ -171,7 +232,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -170,7 +231,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
      }
  
      public CraftServer getCraftServer() {
@@ -1714,7 +1714,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
      }
      // Paper start - Use getChunkIfLoadedImmediately
      @Override
-@@ -181,7 +242,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -180,7 +241,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
      // Paper end - Use getChunkIfLoadedImmediately
      // Paper start - per world ticks per spawn
      private int getTicksPerSpawn(SpawnCategory spawnCategory) {
@@ -1723,7 +1723,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
          if (perWorld >= 0) {
              return perWorld;
          }
-@@ -204,8 +265,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -203,8 +264,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
      // Folia end - profiler
  
      @Override
@@ -1734,7 +1734,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
              throw new IllegalStateException("Entity lookup already initialised");
          }
          this.entityLookup = entityLookup;
-@@ -214,9 +275,9 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -213,9 +274,9 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
      @Override
      public final <T extends Entity> List<T> getEntitiesOfClass(final Class<T> entityClass, final AABB boundingBox, final Predicate<? super T> predicate) {
          Profiler.get().incrementCounter("getEntities");
@@ -1746,7 +1746,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
  
          return ret;
      }
-@@ -224,9 +285,9 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -223,9 +284,9 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
      @Override
      public final List<Entity> moonrise$getHardCollidingEntities(final Entity entity, final AABB box, final Predicate<? super Entity> predicate) {
          Profiler.get().incrementCounter("getEntities");
@@ -1758,7 +1758,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
  
          return ret;
      }
-@@ -252,20 +313,20 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -251,20 +312,20 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
      }
  
      @Override
@@ -1785,7 +1785,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
                  ret.increaseRef();
                  return ret;
              }
-@@ -276,15 +337,15 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -275,15 +336,15 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
      }
  
      @Override
@@ -1804,7 +1804,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
  
          for (int currZ = fromZ; currZ <= toZ; ++currZ) {
              for (int currX = fromX; currX <= toX; ++currX) {
-@@ -330,13 +391,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -329,13 +390,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
      @Override
      public boolean isUnobstructed(final Entity entity) {
          final AABB boundingBox = entity.getBoundingBox();
@@ -1820,7 +1820,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
              null
          );
  
-@@ -354,20 +415,20 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -353,20 +414,20 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
      }
  
  
@@ -1847,7 +1847,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
  
          if (adjX == 0.0 && adjY == 0.0 && adjZ == 0.0) {
              return miss(clipContext);
-@@ -406,13 +467,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -405,13 +466,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
          double normalizedCurrY = normalizedDiffY * (diffY > 0.0 ? (1.0 - Mth.frac(fromYAdj)) : Mth.frac(fromYAdj));
          double normalizedCurrZ = normalizedDiffZ * (diffZ > 0.0 ? (1.0 - Mth.frac(fromZAdj)) : Mth.frac(fromZAdj));
  
@@ -1864,7 +1864,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
  
          for (;;) {
              currPos.set(currX, currY, currZ);
-@@ -440,14 +501,14 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -439,14 +500,14 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
              if (lastSection != null && !(blockState = lastSection.get((currX & 15) | ((currZ & 15) << 4) | ((currY & 15) << (4+4)))).isAir()) {
                  final VoxelShape blockCollision = clipContext.getBlockShape(blockState, level, currPos);
  
@@ -1881,7 +1881,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
  
                      if (fluidHit != null) {
                          if (blockHit == null) {
-@@ -495,7 +556,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -494,7 +555,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
       * @author Spottedleaf
       */
      @Override
@@ -1890,7 +1890,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
          // can only do this in this class, as not everything that implements BlockGetter can retrieve chunks
          return fastClip(clipContext.getFrom(), clipContext.getTo(), (Level)(Object)this, clipContext);
      }
-@@ -506,8 +567,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -505,8 +566,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
       */
      @Override
      public boolean collidesWithSuffocatingBlock(final Entity entity, final AABB box) {
@@ -1901,7 +1901,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
              (final BlockState state, final BlockPos pos) -> {
                  return state.isSuffocating((Level)(Object)Level.this, pos);
              }
-@@ -515,7 +576,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -514,7 +575,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
      }
  
      private static VoxelShape inflateAABBToVoxel(final AABB aabb, final double x, final double y, final double z) {
@@ -1910,7 +1910,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
              aabb.minX - x,
              aabb.minY - y,
              aabb.minZ - z,
-@@ -531,10 +592,10 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -530,10 +591,10 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
       * @author Spottedleaf
       */
      @Override
@@ -1924,7 +1924,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
          }
  
          final double expandByX = rangeX * 0.5;
-@@ -544,12 +605,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -543,12 +604,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
          // note: it is useless to look at shapes outside of range / 2.0
          final AABB collectionVolume = boundsShape.bounds().inflate(expandByX, expandByY, expandByZ);
  
@@ -1941,7 +1941,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
              null
          );
  
-@@ -569,7 +630,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -568,7 +629,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
          }
  
          // expand AABBs
@@ -1950,7 +1950,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
          final VoxelShape[] rest = new VoxelShape[Math.max(0, aabbs.size() - 1)];
  
          for (int i = 1, len = aabbs.size(); i < len; ++i) {
-@@ -577,11 +638,11 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -576,11 +637,11 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
          }
  
          // use optimized implementation of ORing the shapes together
@@ -1964,7 +1964,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
  
          return freeSpace.closestPointTo(fromPosition);
      }
-@@ -591,20 +652,20 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -590,20 +651,20 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
       * @author Spottedleaf
       */
      @Override
@@ -1994,7 +1994,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
          BlockPos selected = null;
          double selectedDistance = Double.MAX_VALUE;
          final Vec3 entityPos = entity.position();
-@@ -612,7 +673,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -611,7 +672,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
          // special cases:
          if (minBlockY > maxBlockY) {
              // no point in checking
@@ -2003,7 +2003,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
          }
  
          final int minChunkX = minBlockX >> 4;
-@@ -624,7 +685,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -623,7 +684,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
          final int minChunkZ = minBlockZ >> 4;
          final int maxChunkZ = maxBlockZ >> 4;
  
@@ -2012,7 +2012,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
  
          for (int currChunkZ = minChunkZ; currChunkZ <= maxChunkZ; ++currChunkZ) {
              for (int currChunkX = minChunkX; currChunkX <= maxChunkX; ++currChunkX) {
-@@ -634,7 +695,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -633,7 +694,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
                      continue;
                  }
  
@@ -2021,7 +2021,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
  
                  // bound y
                  for (int currChunkY = minChunkY; currChunkY <= maxChunkY; ++currChunkY) {
-@@ -642,16 +703,16 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -641,16 +702,16 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
                      if (sectionIdx < 0 || sectionIdx >= sections.length) {
                          continue;
                      }
@@ -2041,7 +2041,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
  
                      final int minXIterate = currChunkX == minChunkX ? (minBlockX & 15) + sectionAdjust : 0;
                      final int maxXIterate = currChunkX == maxChunkX ? (maxBlockX & 15) - sectionAdjust : 15;
-@@ -685,11 +746,11 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -684,11 +745,11 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
  
                                  final BlockState blockData = blocks.get(localBlockIndex);
  
@@ -2055,7 +2055,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
  
                                  if (edgeCount == 0 || ((edgeCount != 1 || blockData.hasLargeCollisionShape()) && (edgeCount != 2 || blockData.getBlock() == Blocks.MOVING_PISTON))) {
                                      if (blockCollision == null) {
-@@ -703,9 +764,9 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -702,9 +763,9 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
                                      // avoid VoxelShape#move by shifting the entity collision shape instead
                                      final AABB shiftedAABB = aabb.move(-(double)blockX, -(double)blockY, -(double)blockZ);
  
@@ -2067,7 +2067,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
                                              continue;
                                          }
  
-@@ -714,7 +775,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -713,7 +774,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
                                          continue;
                                      }
  
@@ -2076,7 +2076,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
                                          continue;
                                      }
  
-@@ -729,7 +790,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -728,7 +789,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
              }
          }
  
@@ -2085,7 +2085,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
      }
      // Paper end - optimise collisions
      // Paper start - getblock optimisations - cache world height/sections
-@@ -822,13 +883,14 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -821,13 +882,14 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
          (ServerLevel)this, (regionData) -> new io.papermc.paper.threadedregions.RegionizedWorldData((ServerLevel)Level.this, regionData),
          io.papermc.paper.threadedregions.RegionizedWorldData.REGION_CALLBACK
      );
@@ -2105,7 +2105,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
          }
          Level world = ret.world;
          if (world != this) {
-@@ -838,7 +900,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -837,7 +899,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
      }
  
      @Override
@@ -2114,7 +2114,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
          return this.getCurrentWorldData().getLocalPlayers();
      }
      // Folia end - region ticking
-@@ -892,19 +954,19 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -891,19 +953,19 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
          this.registryAccess = registryAccess;
          this.palettedContainerFactory = PalettedContainerFactory.create(registryAccess);
          this.damageSources = new DamageSources(registryAccess);
@@ -2139,7 +2139,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
          if (collisionShape.isEmpty()) {
              return true;
          }
-@@ -918,8 +980,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -917,8 +979,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
          for (int i = 0, len = entities.size(); i < len; ++i) {
              Entity entity = entities.get(i);
  
@@ -2150,7 +2150,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
                  continue;
              }
  
-@@ -930,7 +992,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -929,7 +991,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
                  continue;
              }
  
@@ -2159,7 +2159,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
                  return false;
              }
          }
-@@ -950,7 +1012,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -949,7 +1011,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
      }
  
      // Paper start
@@ -2168,7 +2168,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
          // To be patched over
          return this.clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, context)).getType();
      }
-@@ -1008,20 +1070,26 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -1007,20 +1069,26 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
      @Override
      @Nullable
      public final BlockState getBlockStateIfLoaded(BlockPos pos) {
@@ -2207,7 +2207,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
          }
      }
  
-@@ -1073,143 +1141,163 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -1072,143 +1140,163 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
  
      @Override
      public boolean setBlock(final BlockPos pos, final BlockState blockState, @Block.UpdateFlags final int updateFlags, final int updateLimit) {
@@ -2483,7 +2483,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
          }
      }
      // CraftBukkit end
-@@ -1303,7 +1391,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -1302,7 +1390,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
          @Block.UpdateFlags final int updateFlags,
          final int updateLimit
      ) {
@@ -2498,7 +2498,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
      }
  
      @Override
-@@ -1330,7 +1424,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -1329,7 +1423,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
      // Folia start - region threading
      @Nullable
      public BlockState getBlockStateFromEmptyChunkIfLoaded(BlockPos pos) {
@@ -2507,7 +2507,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
          ChunkAccess chunk = chunkProvider.getChunkAtImmediately(pos.getX() >> 4, pos.getZ() >> 4);
          if (chunk != null) {
              return chunk.getBlockState(pos);
-@@ -1340,7 +1434,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -1339,7 +1433,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
  
      @Nullable
      public BlockState getBlockStateFromEmptyChunk(BlockPos pos) {
@@ -2516,7 +2516,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
          ChunkAccess chunk = chunkProvider.getChunkAtImmediately(pos.getX() >> 4, pos.getZ() >> 4);
          if (chunk != null) {
              return chunk.getBlockState(pos);
-@@ -1352,19 +1446,25 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -1351,19 +1445,25 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
  
      @Override
      public BlockState getBlockState(final BlockPos pos) {
@@ -2554,7 +2554,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
          }
      }
  
-@@ -1525,7 +1625,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -1524,7 +1624,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
  
      public void addBlockEntityTicker(final TickingBlockEntity ticker) {
          if (!this.paperConfig().unsupportedSettings.ticking.blockEntities) return; // Paper - option to disable ticking
@@ -2569,7 +2569,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
      }
  
      public void tickBlockEntities() {
-@@ -1775,28 +1881,40 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -1774,28 +1880,40 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
          }
          // Folia end - region threading
          // Paper start - Perf: Optimize capturedTileEntities lookup
@@ -2623,7 +2623,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
              // CraftBukkit end
              this.getChunkAt(pos).addAndRegisterBlockEntity(blockEntity);
          }
-@@ -1892,29 +2010,29 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -1891,29 +2009,29 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
      public <T extends Entity> void getEntities(final EntityTypeTest<Entity, T> entityTypeTest,
                                                 final AABB boundingBox, final Predicate<? super T> predicate,
                                                 final List<? super T> into, final int maxCount) {
@@ -2663,7 +2663,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
                  return;
              }
          }
-@@ -1939,34 +2057,34 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -1938,34 +2056,34 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
  
          if (base == null || base == Entity.class) {
              if (maxCount != Integer.MAX_VALUE) {
@@ -2708,7 +2708,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
          for (Entity entity : slices.getAllEntities()) {
              org.bukkit.entity.Entity bukkit = entity.getBukkitEntity();
              if (bukkit != null && bukkit.isValid()) {
-@@ -2040,7 +2158,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -2039,7 +2157,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
      @Override
      public long getGameTime() {
          // Dumb world gen thread calls this for some reason. So, check for null.
@@ -2717,7 +2717,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
          return worldData == null ? this.getLevelData().getGameTime() : worldData.getTickData().nonRedstoneGameTime();
      }
      // Folia end - region threading
-@@ -2272,7 +2390,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -2271,7 +2389,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
      }
  
      // Paper start - optimize redstone (Alternate Current)
@@ -2726,7 +2726,7 @@ index f0ae87545bd38c38cffbc2217acb9008a4183531..bd40bfe6433372fd8d06cf18231091d2
          // This method is overridden in ServerLevel.
          // Since Paper is a server platform there is no risk
          // of this implementation being called. It is here
-@@ -2290,7 +2408,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -2289,7 +2407,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
          TRIGGER("trigger"),
          STANDARD("standard"); // CraftBukkit - Add STANDARD which will always use Explosion.Effect.DESTROY
  

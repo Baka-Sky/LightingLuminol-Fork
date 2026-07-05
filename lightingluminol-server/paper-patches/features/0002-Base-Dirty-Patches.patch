@@ -816,7 +816,7 @@ index 4ff7da43c08ac6b190ae550203e4ae6dd6326169..6997143a573afe483bcc2f2a8a8a712f
          // Folia end - region threading
          final ServerLevel level = this.level.getMinecraftWorld();
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 47926ff2fba43bb83e2d9747420a526cce8ebe65..c6dff55cb9c2b03b845075a7a4d45b03a9c761a2 100644
+index 59e3a15cce0ed34aa3b75b92db9e349c9fe481fa..6a1cf553c028456ec2cb136c8c6752b31fecfaee 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -1336,7 +1336,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
