@@ -1,0 +1,86 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Fri, 10 Mar 2023 00:16:26 -0800
+Subject: [PATCH] Add chunk system throughput counters to /tps
+
+
+diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/task/ChunkFullTask.java b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/task/ChunkFullTask.java
+index 96ccb8f657d755b2e58a8dd0cda00ca0df4886b2..fd48134ab73d3096bc86402b4eb393c8153fceab 100644
+--- a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/task/ChunkFullTask.java
++++ b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/task/ChunkFullTask.java
+@@ -30,6 +30,9 @@ public final class ChunkFullTask extends ChunkProgressionTask implements Runnabl
+     private final ChunkAccess fromChunk;
+     private final PrioritisedExecutor.PrioritisedTask convertToFullTask;
+ 
++    public static final io.papermc.paper.util.IntervalledCounter chunkLoads = new io.papermc.paper.util.IntervalledCounter(java.util.concurrent.TimeUnit.SECONDS.toNanos(15L));
++    public static final io.papermc.paper.util.IntervalledCounter chunkGenerates = new io.papermc.paper.util.IntervalledCounter(java.util.concurrent.TimeUnit.SECONDS.toNanos(15L));
++
+     public ChunkFullTask(final ChunkTaskScheduler scheduler, final ServerLevel world, final int chunkX, final int chunkZ,
+                          final NewChunkHolder chunkHolder, final ChunkAccess fromChunk, final Priority priority) {
+         super(scheduler, world, chunkX, chunkZ);
+@@ -43,6 +46,20 @@ public final class ChunkFullTask extends ChunkProgressionTask implements Runnabl
+         return ChunkStatus.FULL;
+     }
+ 
++    public static double genRate(final long time) {
++        synchronized (chunkGenerates) {
++            chunkGenerates.updateCurrentTime(time);
++            return chunkGenerates.getRate();
++        }
++    }
++
++    public static double loadRate(final long time) {
++        synchronized (chunkLoads) {
++            chunkLoads.updateCurrentTime(time);
++            return chunkLoads.getRate();
++        }
++    }
++
+     @Override
+     public void run() {
+         final PlatformHooks platformHooks = PlatformHooks.get();
+@@ -59,6 +76,17 @@ public final class ChunkFullTask extends ChunkProgressionTask implements Runnabl
+                 ((ChunkSystemPoiManager)this.world.getPoiManager()).moonrise$checkConsistency(this.fromChunk);
+             }
+ 
++            final long time = System.nanoTime();
++            if (this.fromChunk instanceof ImposterProtoChunk wrappedFull) {
++                synchronized (chunkLoads) {
++                    chunkLoads.updateAndAdd(1L, time);
++                }
++            } else {
++                synchronized (chunkGenerates) {
++                    chunkGenerates.updateAndAdd(1L, time);
++                }
++            }
++
+             if (this.fromChunk instanceof ImposterProtoChunk wrappedFull) {
+                 chunk = wrappedFull.getWrapped();
+             } else {
+diff --git a/io/papermc/paper/threadedregions/commands/CommandServerHealth.java b/io/papermc/paper/threadedregions/commands/CommandServerHealth.java
+index d362c9b19a82b8e87bb52497729a9ff134574b1c..aa860cfe9de616f185163fe74e0f4f49bd13a805 100644
+--- a/io/papermc/paper/threadedregions/commands/CommandServerHealth.java
++++ b/io/papermc/paper/threadedregions/commands/CommandServerHealth.java
+@@ -170,6 +170,9 @@ public final class CommandServerHealth extends Command {
+             totalUtil += (report == null ? 0.0 : report.utilisation());
+         }
+ 
++        final double genRate = ca.spottedleaf.moonrise.patches.chunk_system.scheduling.task.ChunkFullTask.genRate(currTime);
++        final double loadRate = ca.spottedleaf.moonrise.patches.chunk_system.scheduling.task.ChunkFullTask.loadRate(currTime);
++
+         totalUtil += globalTickReport.utilisation();
+ 
+         tpsByRegion.sort(null);
+@@ -284,6 +287,12 @@ public final class CommandServerHealth extends Command {
+                 .append(Component.text(ONE_DECIMAL_PLACES.get().format(maxThreadCount * 100.0), INFORMATION))
+                 .append(Component.text("%\n", PRIMARY))
+ 
++                .append(Component.text(" - ", LIST, TextDecoration.BOLD))
++                .append(Component.text("Load rate: ", PRIMARY))
++                .append(Component.text(TWO_DECIMAL_PLACES.get().format(loadRate) + ", ", INFORMATION))
++                .append(Component.text("Gen rate: ", PRIMARY))
++                .append(Component.text(TWO_DECIMAL_PLACES.get().format(genRate) + "\n", INFORMATION))
++
+                 .append(Component.text(" - ", LIST, TextDecoration.BOLD))
+                 .append(Component.text("Lowest Region TPS: ", PRIMARY))
+                 .append(Component.text(TWO_DECIMAL_PLACES.get().format(minTps) + "\n", CommandUtil.getColourForTPS(minTps)))

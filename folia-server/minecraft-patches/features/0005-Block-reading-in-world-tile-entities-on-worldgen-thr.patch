@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sun, 23 Apr 2023 07:08:26 -0700
+Subject: [PATCH] Block reading in-world tile entities on worldgen threads
+
+The returned TE may be in the world, in which case it is unsafe
+for the current thread to modify or access its contents.
+
+diff --git a/net/minecraft/world/level/chunk/ImposterProtoChunk.java b/net/minecraft/world/level/chunk/ImposterProtoChunk.java
+index 754c3bb648558d96f9eed990a41480e4366bd72f..3e6fbef8466c02ca93b6eaa39481effbe87a2910 100644
+--- a/net/minecraft/world/level/chunk/ImposterProtoChunk.java
++++ b/net/minecraft/world/level/chunk/ImposterProtoChunk.java
+@@ -83,6 +83,11 @@ public class ImposterProtoChunk extends ProtoChunk implements ca.spottedleaf.moo
+ 
+     @Override
+     public @Nullable BlockEntity getBlockEntity(final BlockPos pos) {
++        // Folia start - block reading possibly in-world block data for worldgen threads
++        if (!this.allowWrites && !ca.spottedleaf.moonrise.common.util.TickThread.isTickThread()) {
++            return null;
++        }
++        // Folia end - block reading possibly in-world block data for worldgen threads
+         return this.wrapped.getBlockEntity(pos);
+     }
+ 

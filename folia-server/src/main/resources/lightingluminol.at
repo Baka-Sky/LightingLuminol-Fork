@@ -1,0 +1,3 @@
+public io.papermc.paper.threadedregions.RegionizedTaskQueue TASK_QUEUE_TICKET
+public io.papermc.paper.threadedregions.TickRegions$TickRegionData getRegionizedData
+public io.papermc.paper.threadedregions.TickRegions$TickRegionData getOrCreateRegionizedData

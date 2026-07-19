@@ -1,0 +1,21 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Fri, 30 Aug 2024 18:34:32 -0700
+Subject: [PATCH] Add watchdog thread
+
+When regions take too long, having the server print the stacktrace
+of the ticking region should help debug the cause.
+
+diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
+index ab6c553f0f5c228e65c95538fc2deef07d9cd077..5607f4cc8ca2f620461eb5e97d01d9db0d6b2303 100644
+--- a/src/main/java/org/spigotmc/WatchdogThread.java
++++ b/src/main/java/org/spigotmc/WatchdogThread.java
+@@ -156,7 +156,7 @@ public class WatchdogThread extends ca.spottedleaf.moonrise.common.util.TickThre
+         }
+     }
+ 
+-    private static void dumpThread(ThreadInfo thread, Logger logger) {
++    public static void dumpThread(ThreadInfo thread, Logger logger) { // Folia - watchdog - public
+         logger.log(Level.SEVERE, "------------------------------");
+ 
+         logger.log(Level.SEVERE, "Current Thread: " + thread.getThreadName());
