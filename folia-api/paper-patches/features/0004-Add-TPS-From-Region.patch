@@ -1,0 +1,92 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Euphyllia Bierque <bierque.euphyllia@gmail.com>
+Date: Tue, 28 Jan 2025 16:34:17 -0800
+Subject: [PATCH] Add TPS From Region
+
+
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index d083e3e5f00aac3e5c48a248cae665f3517a4b4a..8a24b84db656da4cec59e9bccac306467c8155b0 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -2994,6 +2994,42 @@ public final class Bukkit {
+         return server.isGlobalTickThread();
+     }
+     // Paper end - Folia region threading API
++    // Folia start - region TPS API
++    /**
++     * Gets the TPS from the region which owns the specified location, or {@code null} if no region owns
++     * the specified location.
++     *
++     * @param location The location for which to get the TPS
++     * @return TPS (5s, 15s, 1m, 5m, 15m), or null if the region doesn't exist
++     */
++    public static double @Nullable [] getRegionTPS(@NotNull Location location) {
++        return server.getRegionTPS(location);
++    }
++
++    /**
++     * Gets the TPS from the region which owns the specified chunk, or {@code null} if no region owns
++     * the specified location.
++     *
++     * @param chunk - The specified chunk
++     * @return TPS (5s, 15s, 1m, 5m, 15m), or null if the region doesn't exist
++     */
++    public static double @Nullable [] getRegionTPS(@NotNull Chunk chunk) {
++        return server.getRegionTPS(chunk);
++    }
++
++    /**
++     * Gets the TPS from the region which owns the specified chunk, or {@code null} if no region owns
++     * the specified location.
++     *
++     * @param world - World containing the chunk
++     * @param chunkX - X-coordinate of the chunk
++     * @param chunkZ - Z-coordinate of the chunk
++     * @return TPS (5s, 15s, 1m, 5m, 15m), or null if the region doesn't exist
++     */
++    public static double @Nullable [] getRegionTPS(@NotNull World world, int chunkX, int chunkZ) {
++        return server.getRegionTPS(world, chunkX, chunkZ);
++    }
++    // Folia end - region TPS API
+ 
+     /**
+      * @deprecated All methods on this class have been deprecated, see the individual methods for replacements.
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index 62341f72e8457c5547994bee1f3fda9faade6ce0..fb5ca3ab0ddba433a39e65572beeb955b50d6f72 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -2776,4 +2776,34 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      */
+     void allowPausing(@NotNull org.bukkit.plugin.Plugin plugin, boolean value);
+     // Paper end - API to check if the server is sleeping
++    // Folia start - region TPS API
++    /**
++     * Gets the TPS from the region which owns the specified location, or {@code null} if no region owns
++     * the specified location.
++     *
++     * @param location The location for which to get the TPS
++     * @return TPS (5s, 15s, 1m, 5m, 15m), or null if the region doesn't exist
++     */
++    double @Nullable [] getRegionTPS(@NotNull Location location);
++
++    /**
++     * Gets the TPS from the region which owns the specified chunk, or {@code null} if no region owns
++     * the specified location.
++     *
++     * @param chunk - The specified chunk
++     * @return TPS (5s, 15s, 1m, 5m, 15m), or null if the region doesn't exist
++     */
++    double @Nullable [] getRegionTPS(@NotNull Chunk chunk);
++
++    /**
++     * Gets the TPS from the region which owns the specified chunk, or {@code null} if no region owns
++     * the specified location.
++     *
++     * @param world - World containing the chunk
++     * @param chunkX - X-coordinate of the chunk
++     * @param chunkZ - Z-coordinate of the chunk
++     * @return TPS (5s, 15s, 1m, 5m, 15m), or null if the region doesn't exist
++     */
++    double @Nullable [] getRegionTPS(@NotNull World world, int chunkX, int chunkZ);
++    // Folia end - region TPS API
+ }

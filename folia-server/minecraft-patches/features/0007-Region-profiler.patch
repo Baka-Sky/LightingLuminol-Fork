@@ -1,0 +1,1456 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Tue, 3 Oct 2023 06:03:34 -0700
+Subject: [PATCH] Region profiler
+
+Profiling for a region starts with the /profiler command.
+The usage for /profiler:
+/profiler <world> <block x> <block z> <time in s> [radius, default 100 blocks]
+
+Any region within the radius of the specified block coordinates
+will be profiled. The profiling will stop after the specified
+time has passed.
+
+Once the profiler finishes, it will place a report in
+the directory ./profiler/<id>.
+
+Since regions can split into smaller regions, or merge into
+other regions, the profiler will track this information. If
+a profiled region splits, then all of the regions it splits
+into are attached to the same profiler instance. If a profiled
+region merges into another region, then the merged region is
+profiled. This information is tracked and logged into the
+"journal.txt" file contained in the report directory. The
+journal tracks the region ids for the merge/split operations.
+
+Region profiling is placed into the "region-X.txt" file where
+X is the region id inside the profile directory. The header
+of the file describes some stats about the region, namely
+total profiling duration, ticks, utilisation, TPS, and MSPT.
+
+Then, the timing tree is follows. The format is as specified:
+
+There are two types of data recorded: Timers and Counters.
+
+Timers are specified as follows:
+<indent><name> X% total, Y% parent, self A% total, self B% children, avg D sum E, Fms raw sum
+The above specifies the format for a named timer.
+
+The <indent> specifies the number of parent timers.
+
+"X" represents the percentage of time the timer took relative
+to the entire profiling instance.
+
+"Y" represents the percentage of time the timer took relative
+to its _parents_ timer. For example:
+```
+Full Tick 100.000% total, 100.000% parent, self 0.889% total, self 0.889% children, avg 200.000 sum 200, 401.300ms raw sum
+|+++Tick World: minecraft:overworld 81.409% total, 81.409% parent, self 1.873% total, self 2.301% children, avg 1.000 sum 200, 326.694ms raw sum
+|---|---Entity Tick 56.784% total, 69.751% parent, self 6.049% total, self 10.652% children, avg 1.000 sum 200, 227.874ms raw sum
+```
+"Entity Tick" measured 69.751% of the time for the "Tick World: minecraft:overworld" timer.
+
+"A" represents the self time relative to the entire profiling instance.
+The self time is the amount of time for a timer that is _not_ measured
+by a child timer.
+
+"B" represents the self time relative to its _parents_ timer.
+
+"D" represents the average number of times the timer is invoked relative to
+its parent.
+For example:
+```
+|---|---|---Entity Tick: bat 2.642% total, 7.343% parent, self 2.642% total, self 100.000% children, avg 14.975 sum 2,995, 23.127ms raw sum
+```
+In this case, an average of 14.975 bats were ticked for every
+time the "Entity Tick" timer was invoked.
+
+"E" represents the total number of times the timer is invoked.
+
+"F" represents the total raw time accumulated by the timer.
+
+Counters are specified as follows:
+<indent>#<name> avg X sum Y
+
+The X is the average number of times the counter is invoked
+relative to the parent, exactly similar to the D field of Timers,
+where Y is the total number of times the counter is invoked.
+
+diff --git a/ca/spottedleaf/leafprofiler/LProfilerRegistry.java b/ca/spottedleaf/leafprofiler/LProfilerRegistry.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..20a0f56dc213509b0cef89e2d4669ec18a81a36f
+--- /dev/null
++++ b/ca/spottedleaf/leafprofiler/LProfilerRegistry.java
+@@ -0,0 +1,48 @@
++package ca.spottedleaf.leafprofiler;
++
++import ca.spottedleaf.profiler.ProfilerRegistry;
++import ca.spottedleaf.profiler.ProfilerRegistry.ProfileType;
++
++public final class LProfilerRegistry {
++
++    public static final ProfilerRegistry GLOBAL_REGISTRY = new ProfilerRegistry();
++    public static final int TICK = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Full Tick");
++    public static final int IN_BETWEEN_TICK = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "In Between Tick");
++    public static final int INTERNAL_TICK_TASKS = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Internal Tick Tasks");
++    public static final int PLAYER_PACKET_PROCESSING = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Player Packet Processing");
++    public static final int PLUGIN_TICK_TASKS = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Plugin Tick Tasks");
++    public static final int ENTITY_SCHEDULER_TICK = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Entity Scheduler Tick");
++    public static final int ENTITY_SCHEDULERS_TICKED = GLOBAL_REGISTRY.createType(ProfileType.COUNTER, "Entity Schedulers Ticked");
++    public static final int CONNECTION_TICK = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Connection Tick");
++    public static final int AUTOSAVE = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Autosave");
++    public static final int PLAYER_SAVE = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Player Save");
++    public static final int CHUNK_SAVE = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Chunk Save");
++    public static final int BLOCK_TICK = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Block Tick");
++    public static final int FLUID_TICK = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Fluid Tick");
++    public static final int BLOCK_OR_FLUID_TICK_COUNT = GLOBAL_REGISTRY.createType(ProfileType.COUNTER, "Block/Fluid Tick Count");
++    public static final int RAIDS_TICK = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Raids Tick");
++    public static final int CHUNK_PROVIDER_TICK = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Chunk Source Tick");
++    public static final int CHUNK_HOLDER_MANAGER_TICK = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Chunk Holder Manager Tick");
++    public static final int TICKET_LEVEL_UPDATE_PROCESSING = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Ticket Level Update Processing");
++    public static final int PLAYER_CHUNK_LOADER_TICK = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Player Chunk Loader Tick");
++    public static final int CHUNK_TICK = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Chunk Ticks");
++    public static final int CHUNK_SPAWN_COLLECT_CHUNKS = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Collect Spawning Chunks");
++    public static final int MOB_SPAWN_ENTITY_COUNT = GLOBAL_REGISTRY.createType(ProfileType.COUNTER, "Mob Spawn Entity Count");
++    public static final int SPAWN_TICK = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Spawn Entities");
++    public static final int RANDOM_TICK = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Random Tick");
++    public static final int SPAWN_CHUNK_COUNT = GLOBAL_REGISTRY.createType(ProfileType.COUNTER, "Entity Spawn Chunk Count");
++    public static final int RANDOM_CHUNK_TICK_COUNT = GLOBAL_REGISTRY.createType(ProfileType.COUNTER, "Random Chunk Tick Count");
++    public static final int MISC_MOB_SPAWN_TICK = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Misc Mob Spawn Tick");
++    public static final int BROADCAST_BLOCK_CHANGES = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Broadcast Block Changes");
++    public static final int ENTITY_TRACKER_TICK = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Entity Tracker Tick");
++    public static final int TRACKED_ENTITY_COUNTS = GLOBAL_REGISTRY.createType(ProfileType.COUNTER, "Total Tracked Entities");
++    public static final int POI_MANAGER_TICK = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "POI Manager Tick");
++    public static final int PROCESS_UNLOADS = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Process Unloads");
++    public static final int BLOCK_EVENT_TICK = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Block Event Tick");
++    public static final int ACTIVATE_ENTITIES = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Activate Entities");
++    public static final int ENTITY_TICK = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Entity Tick");
++    public static final int DRAGON_FIGHT_TICK = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Dragon Fight Tick");
++    public static final int TILE_ENTITY = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Tile Entities");
++    public static final int TILE_ENTITY_PENDING = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Tile Entity Handle Pending");
++    public static final int TILE_ENTITY_TICK = GLOBAL_REGISTRY.createType(ProfileType.TIMER, "Tile Entity Tick");
++}
+diff --git a/ca/spottedleaf/leafprofiler/RegionizedProfiler.java b/ca/spottedleaf/leafprofiler/RegionizedProfiler.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..48223704c769b1920e5b7ad444f0ffea39d17c60
+--- /dev/null
++++ b/ca/spottedleaf/leafprofiler/RegionizedProfiler.java
+@@ -0,0 +1,280 @@
++package ca.spottedleaf.leafprofiler;
++
++import ca.spottedleaf.common.time.TickData;
++import ca.spottedleaf.common.time.TickTime;
++import ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue;
++import ca.spottedleaf.profiler.ProfileGraph;
++import ca.spottedleaf.profiler.Profiler;
++import ca.spottedleaf.profiler.ProfilerRegistry;
++import io.papermc.paper.threadedregions.ThreadedRegionizer;
++import io.papermc.paper.threadedregions.TickRegions;
++import it.unimi.dsi.fastutil.longs.LongArrayList;
++import java.util.ArrayList;
++import java.util.List;
++import java.util.concurrent.atomic.AtomicInteger;
++import java.util.concurrent.atomic.AtomicLong;
++import java.util.function.Consumer;
++import java.util.function.Supplier;
++
++public final class RegionizedProfiler {
++
++    private static final AtomicLong ID_GENERATOR = new AtomicLong();
++
++    public final long id;
++    private final AtomicInteger profilingRegions = new AtomicInteger();
++    private final MultiThreadedQueue<RecordedOperation> operations = new MultiThreadedQueue<>();
++    private final MultiThreadedQueue<RegionTimings> timings = new MultiThreadedQueue<>();
++    private final long absoluteStart = System.nanoTime();
++    private final long absoluteEnd;
++    private final Consumer<ProfileResults> onFinish;
++
++    public RegionizedProfiler(final long id, final long recordFor, final Consumer<ProfileResults> onFinish) {
++        this.id = id;
++        this.onFinish = onFinish;
++        this.absoluteEnd = this.absoluteStart + recordFor;
++    }
++
++    public void createProfiler(final ThreadedRegionizer.ThreadedRegion<TickRegions.TickRegionData, TickRegions.TickRegionSectionData> into) {
++        final Handle newProfiler = new Handle(
++            new Profiler(LProfilerRegistry.GLOBAL_REGISTRY, new ProfileGraph()),
++            false, this, into
++        );
++        newProfiler.startProfiler();
++
++        into.getData().profiler = newProfiler;
++    }
++
++    public void preMerge(final ThreadedRegionizer.ThreadedRegion<TickRegions.TickRegionData, TickRegions.TickRegionSectionData> from,
++                         final ThreadedRegionizer.ThreadedRegion<TickRegions.TickRegionData, TickRegions.TickRegionSectionData> into) {
++        final Handle fromProfiler = from.getData().profiler;
++        final Handle intoProfiler = into.getData().profiler;
++        this.operations.add(new RecordedOperation(OperationType.MERGE, from.id, LongArrayList.of(into.id), System.nanoTime()));
++
++        if (intoProfiler != null) {
++            // target is already profiling
++            fromProfiler.stopProfiler();
++            return;
++        }
++
++        this.createProfiler(into);
++
++        // the old profiler must be terminated only after creating the new one, so that there is always at least one
++        // profiler running, otherwise the profiler will complete
++        fromProfiler.stopProfiler();
++    }
++
++    public void preSplit(final ThreadedRegionizer.ThreadedRegion<TickRegions.TickRegionData, TickRegions.TickRegionSectionData> from,
++                         final List<ThreadedRegionizer.ThreadedRegion<TickRegions.TickRegionData, TickRegions.TickRegionSectionData>> into) {
++        final Handle fromProfiler = from.getData().profiler;
++
++        final LongArrayList regions = new LongArrayList(into.size());
++        for (int i = 0, len = into.size(); i < len; ++i) {
++            regions.add(into.get(i).id);
++        }
++
++        this.operations.add(new RecordedOperation(OperationType.SPLIT, from.id, regions, System.nanoTime()));
++
++        for (int i = 0, len = into.size(); i < len; ++i) {
++            // create new profiler
++            this.createProfiler(into.get(i));
++        }
++
++        // the old profiler must be terminated only after creating the new ones, so that there is always at least one
++        // profiler running, otherwise the profiler will complete
++        fromProfiler.stopProfiler();
++    }
++
++    public static record RecordedOperation(
++        OperationType type,
++
++        /*
++         * The target for start,end or the `from` region for merge/split
++         */
++        long regionOfInterest,
++
++        /*
++         * The merge target or the split targets
++         */
++        LongArrayList targetRegions,
++
++        /*
++         * The timestamp for this operation
++         */
++        long time
++    ) {}
++
++    public static enum OperationType {
++        START,
++        MERGE,
++        SPLIT,
++        END;
++    }
++
++    public static final class Handle {
++
++        public final Profiler profiler;
++        private boolean noOp;
++        public final RegionizedProfiler profilerGroup;
++        private final ThreadedRegionizer.ThreadedRegion<TickRegions.TickRegionData, TickRegions.TickRegionSectionData> region;
++        private final TickData tickData = new TickData(Long.MAX_VALUE);
++        private long startTime;
++
++        public static final Handle NO_OP_HANDLE = new Handle(
++            null, true, null, null
++        );
++
++        private Handle(final Profiler profiler, final boolean noOp,
++                       final RegionizedProfiler profilerGroup,
++                       final ThreadedRegionizer.ThreadedRegion<TickRegions.TickRegionData, TickRegions.TickRegionSectionData> region) {
++            this.profiler = profiler;
++            this.noOp = noOp;
++            this.profilerGroup = profilerGroup;
++            this.region = region;
++        }
++
++        public void startTick() {
++            if (this.noOp) {
++                return;
++            }
++
++            this.profiler.startTimer(LProfilerRegistry.TICK, System.nanoTime());
++        }
++
++        public void stopTick() {
++            if (this.noOp) {
++                return;
++            }
++
++
++
++            this.profiler.stopTimer(LProfilerRegistry.TICK, System.nanoTime());
++            this.profiler.accumulate();
++        }
++
++        public void startInBetweenTick() {
++            if (this.noOp) {
++                return;
++            }
++
++            this.profiler.startTimer(LProfilerRegistry.IN_BETWEEN_TICK, System.nanoTime());
++        }
++
++        public void stopInBetweenTick() {
++            if (this.noOp) {
++                return;
++            }
++
++            this.profiler.stopTimer(LProfilerRegistry.IN_BETWEEN_TICK, System.nanoTime());
++        }
++
++        public void startTimer(final int timerId) {
++            if (this.noOp) {
++                return;
++            }
++
++            this.profiler.startTimer(timerId, System.nanoTime());
++        }
++
++        public void stopTimer(final int timerId) {
++            if (this.noOp) {
++                return;
++            }
++
++            this.profiler.stopTimer(timerId, System.nanoTime());
++        }
++
++        public void addCounter(final int counterId, final long count) {
++            if (this.noOp) {
++                return;
++            }
++
++            this.profiler.incrementCounter(counterId, count);
++        }
++
++        public int getOrCreateTimerAndStart(final Supplier<String> name) {
++            if (this.noOp) {
++                return -1;
++            }
++
++            final int timer = this.profiler.registry.getOrCreateType(ProfilerRegistry.ProfileType.TIMER, name.get());
++
++            this.profiler.startTimer(timer, System.nanoTime());
++
++            return timer;
++        }
++
++        public void addTickTime(final TickTime tickTime) {
++            if (this.noOp) {
++                return;
++            }
++            this.tickData.addDataFrom(tickTime);
++        }
++
++        public void startProfiler() {
++            if (this.noOp) {
++                return;
++            }
++            this.profilerGroup.profilingRegions.getAndIncrement();
++            this.startTime = System.nanoTime();
++            this.profilerGroup.operations.add(
++                new RecordedOperation(OperationType.START, this.region.id, new LongArrayList(), this.startTime)
++            );
++        }
++
++        public void stopProfiler() {
++            if (this.noOp) {
++                return;
++            }
++
++            final long endTime = System.nanoTime();
++
++            this.noOp = true;
++            this.region.getData().profiler = null;
++            this.profilerGroup.operations.add(
++                new RecordedOperation(OperationType.END, this.region.id, new LongArrayList(), endTime)
++            );
++            this.profilerGroup.timings.add(
++                new RegionTimings(
++                    this.startTime, endTime, this.region.id, this.profiler, this.tickData
++                )
++            );
++
++            if (this.profilerGroup.profilingRegions.decrementAndGet() == 0) {
++                this.profilerGroup.onFinish.accept(
++                    new ProfileResults(
++                        this.profilerGroup.id,
++                        this.profilerGroup.absoluteStart,
++                        endTime,
++                        new ArrayList<>(this.profilerGroup.timings),
++                        new ArrayList<>(this.profilerGroup.operations)
++                    )
++                );
++            }
++        }
++
++        public void checkStop() {
++            if (this.noOp) {
++                return;
++            }
++            if ((System.nanoTime() - this.profilerGroup.absoluteEnd) >= 0L) {
++                this.stopProfiler();
++            }
++        }
++    }
++
++    public static record ProfileResults(
++        long profileId,
++        long startTime,
++        long endTime,
++        List<RegionTimings> timings,
++        List<RecordedOperation> operations
++    ) {}
++
++    public static record RegionTimings(
++        long startTime,
++        long endTime,
++        long regionId,
++        Profiler profiler,
++        TickData tickData
++    ) {}
++}
+diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java
+index 961a9c3a31a5cabc250932df823b9e3f1e6e9662..648331faac47ad644f32efc52d459dc32837ca73 100644
+--- a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java
++++ b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java
+@@ -1563,6 +1563,7 @@ public final class ChunkHolderManager {
+     }
+ 
+     public boolean processTicketUpdates() {
++        final ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle profiler = io.papermc.paper.threadedregions.TickRegionScheduler.getProfiler(); profiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.TICKET_LEVEL_UPDATE_PROCESSING); try { // Folia - profiler
+         if (BLOCK_TICKET_UPDATES.get() == Boolean.TRUE) {
+             throw new IllegalStateException("Cannot update ticket level while unloading chunks or updating entity manager");
+         }
+@@ -1600,6 +1601,7 @@ public final class ChunkHolderManager {
+         }
+ 
+         return ret;
++        } finally { profiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.TICKET_LEVEL_UPDATE_PROCESSING); } // Folia - profiler
+     }
+ 
+     private static final ThreadLocal<List<ChunkProgressionTask>> CURRENT_TICKET_UPDATE_SCHEDULING = new ThreadLocal<>();
+diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java
+index fdb0bcdca1cd38f55f191d42e422c354af4452b5..24c8581b2fa9c3ef6f6aad64bd4454d64fe233ae 100644
+--- a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java
++++ b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java
+@@ -1646,6 +1646,8 @@ public final class NewChunkHolder {
+ 
+     public SaveStat save(final boolean shutdown) {
+         TickThread.ensureTickThread(this.world, this.chunkX, this.chunkZ, "Cannot save data off-main");
++        final ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle profiler = io.papermc.paper.threadedregions.TickRegionScheduler.getProfiler(); // Folia - profiler
++        profiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.CHUNK_SAVE); try { // Folia - profiler
+ 
+         ChunkAccess chunk = this.getCurrentChunk();
+         PoiChunk poi = this.getPoiChunk();
+@@ -1701,6 +1703,7 @@ public final class NewChunkHolder {
+                         canSavePOI | executedUnloadTasks[MoonriseRegionFileIO.RegionFileType.POI_DATA.ordinal()]
+                 )
+                 : null;
++        } finally { profiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.CHUNK_SAVE); } // Folia - profiler
+     }
+ 
+     private boolean saveChunk(final ChunkAccess chunk, final boolean unloading, final Completable<CompoundTag>[] chunkSave) {
+diff --git a/io/papermc/paper/threadedregions/TickRegionScheduler.java b/io/papermc/paper/threadedregions/TickRegionScheduler.java
+index 1949fcac0dfcdb4b53dde5844362ee3ef797fb39..04034bce53332017db1e12ce7fb970aac0b84b70 100644
+--- a/io/papermc/paper/threadedregions/TickRegionScheduler.java
++++ b/io/papermc/paper/threadedregions/TickRegionScheduler.java
+@@ -136,8 +136,13 @@ public final class TickRegionScheduler {
+         tickThreadRunner.currentTickingRegion = region;
+         if (region != null) {
+             tickThreadRunner.currentTickingWorldRegionizedData = region.regioniser.world.worldRegionData.get();
++            // Folia start - profiler
++            final ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle profiler = region.getData().profiler;
++            tickThreadRunner.profiler = profiler == null ? ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle.NO_OP_HANDLE : profiler;
++            // Folia end - profiler
+         } else {
+             tickThreadRunner.currentTickingWorldRegionizedData = null;
++            tickThreadRunner.profiler = ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle.NO_OP_HANDLE; // Folia - profiler
+         }
+     }
+ 
+@@ -192,6 +197,17 @@ public final class TickRegionScheduler {
+         return tickThreadRunner.currentTickingTask;
+     }
+ 
++    // Folia start - profiler
++    public static ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle getProfiler() {
++        final Thread currThread = Thread.currentThread();
++        if (!(currThread instanceof TickThreadRunner tickThreadRunner)) {
++            return ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle.NO_OP_HANDLE;
++        }
++        return tickThreadRunner.profiler;
++    }
++    // Folia end - profiler
++
++
+     /**
+      * Schedules the given region
+      * @throws IllegalStateException If the region is already scheduled or is ticking
+@@ -264,6 +280,9 @@ public final class TickRegionScheduler {
+         private ThreadedRegionizer.ThreadedRegion<TickRegions.TickRegionData, TickRegions.TickRegionSectionData> currentTickingRegion;
+         private RegionizedWorldData currentTickingWorldRegionizedData;
+         private SchedulableTick currentTickingTask;
++        // Folia start - profiler
++        private ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle profiler = ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle.NO_OP_HANDLE;
++        // Folia end - profiler
+ 
+         public TickThreadRunner(final ThreadGroup group, final Runnable run, final String name) {
+             super(group, run, name);
+diff --git a/io/papermc/paper/threadedregions/TickRegions.java b/io/papermc/paper/threadedregions/TickRegions.java
+index f34a3cd7290971438ad1217a6f6eca49bd3691ac..17b2e796e7bd423e923a218e76ce4ba5d1044814 100644
+--- a/io/papermc/paper/threadedregions/TickRegions.java
++++ b/io/papermc/paper/threadedregions/TickRegions.java
+@@ -103,6 +103,11 @@ public final class TickRegions implements ThreadedRegionizer.RegionCallbacks<Tic
+     @Override
+     public void onRegionDestroy(final ThreadedRegionizer.ThreadedRegion<TickRegionData, TickRegionSectionData> region) {
+         // nothing for now
++        // Folia start - profiler
++        if (region.getData().profiler != null) {
++            region.getData().profiler.stopProfiler();
++        }
++        // Folia end - profiler
+     }
+ 
+     @Override
+@@ -125,13 +130,23 @@ public final class TickRegions implements ThreadedRegionizer.RegionCallbacks<Tic
+     @Override
+     public void preMerge(final ThreadedRegionizer.ThreadedRegion<TickRegionData, TickRegionSectionData> from,
+                          final ThreadedRegionizer.ThreadedRegion<TickRegionData, TickRegionSectionData> into) {
+-
++        // Folia start - profiler
++        final ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle profiler = from.getData().profiler;
++        if (profiler != null) {
++            profiler.profilerGroup.preMerge(from, into);
++        }
++        // Folia end - profiler
+     }
+ 
+     @Override
+     public void preSplit(final ThreadedRegionizer.ThreadedRegion<TickRegionData, TickRegionSectionData> from,
+                          final java.util.List<ThreadedRegionizer.ThreadedRegion<TickRegionData, TickRegionSectionData>> into) {
+-
++        // Folia start - profiler
++        final ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle profiler = from.getData().profiler;
++        if (profiler != null) {
++            profiler.profilerGroup.preSplit(from, into);
++        }
++        // Folia end - profiler
+     }
+ 
+     public static final class TickRegionSectionData implements ThreadedRegionizer.ThreadedRegionSectionData {}
+@@ -191,6 +206,8 @@ public final class TickRegions implements ThreadedRegionizer.RegionCallbacks<Tic
+ 
+         private final AtomicBoolean hasPackets = new AtomicBoolean(false);
+ 
++        public volatile ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle profiler; // Folia - profiler
++
+         private TickRegionData(final ThreadedRegionizer.ThreadedRegion<TickRegionData, TickRegionSectionData> region) {
+             this.region = region;
+             this.world = region.regioniser.world;
+@@ -450,13 +467,29 @@ public final class TickRegions implements ThreadedRegionizer.RegionCallbacks<Tic
+             return this.region.region.markNotTicking();
+         }
+ 
++        // Folia start - profiler
++        @Override
++        protected void addTickTime(final TickTime time) {
++            super.addTickTime(time);
++
++            final ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle profiler = io.papermc.paper.threadedregions.TickRegionScheduler.getProfiler();
++            profiler.addTickTime(time);
++            profiler.checkStop();
++         }
++         // Folia end - profiler
++
+         @Override
+         protected void tickRegion(final long tickCount, final long startTime, final long scheduledEnd) {
++            final ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle profiler = io.papermc.paper.threadedregions.TickRegionScheduler.getProfiler(); // Folia - profiler
++            profiler.startTick(); try { // Folia - profiler
+             MinecraftServer.getServer().tickServer(startTime, scheduledEnd, TimeUnit.MILLISECONDS.toMillis(10L), this.region);
++            } finally { profiler.stopTick(); } // Folia - profiler
+         }
+ 
+         @Override
+         protected void runRegionTasks(final BooleanSupplier canContinue) {
++            final ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle profiler = io.papermc.paper.threadedregions.TickRegionScheduler.getProfiler(); // Folia start - profiler
++            profiler.startInBetweenTick(); try { // Folia - profiler
+             final RegionizedTaskQueue.RegionTaskQueueData queue = this.region.taskQueueData;
+ 
+             boolean processedChunkTask = false;
+@@ -476,6 +509,7 @@ public final class TickRegions implements ThreadedRegionizer.RegionCallbacks<Tic
+                 // if we processed any chunk tasks, try to process ticket level updates for full status changes
+                 this.region.world.moonrise$getChunkTaskScheduler().chunkHolderManager.processTicketUpdates();
+             }
++            } finally { profiler.stopInBetweenTick(); } // Folia - profiler
+         }
+ 
+         @Override
+diff --git a/io/papermc/paper/threadedregions/commands/CommandProfiler.java b/io/papermc/paper/threadedregions/commands/CommandProfiler.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..8f940ca39da8b3fe4ca925698adb520ae389cd47
+--- /dev/null
++++ b/io/papermc/paper/threadedregions/commands/CommandProfiler.java
+@@ -0,0 +1,246 @@
++package io.papermc.paper.threadedregions.commands;
++
++import ca.spottedleaf.common.time.TickData;
++import ca.spottedleaf.leafprofiler.RegionizedProfiler;
++import com.mojang.logging.LogUtils;
++import io.papermc.paper.threadedregions.ThreadedRegionizer;
++import io.papermc.paper.threadedregions.TickRegionScheduler;
++import io.papermc.paper.threadedregions.TickRegions;
++import io.papermc.paper.util.MCUtil;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.format.NamedTextColor;
++import net.kyori.adventure.text.format.TextColor;
++import net.minecraft.util.Mth;
++import net.minecraft.world.level.ChunkPos;
++import org.bukkit.Bukkit;
++import org.bukkit.World;
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandSender;
++import org.bukkit.craftbukkit.CraftWorld;
++import org.bukkit.entity.Entity;
++import org.slf4j.Logger;
++import java.io.File;
++import java.io.IOException;
++import java.nio.charset.StandardCharsets;
++import java.nio.file.Files;
++import java.nio.file.StandardOpenOption;
++import java.text.DecimalFormat;
++import java.util.ArrayList;
++import java.util.List;
++import java.util.Objects;
++import java.util.Set;
++import java.util.concurrent.ThreadLocalRandom;
++
++public final class CommandProfiler extends Command {
++
++    private static final Logger LOGGER = LogUtils.getLogger();
++
++    private static final ThreadLocal<DecimalFormat> THREE_DECIMAL_PLACES = ThreadLocal.withInitial(() -> {
++        return new DecimalFormat("#,##0.000");
++    });
++    private static final ThreadLocal<DecimalFormat> TWO_DECIMAL_PLACES = ThreadLocal.withInitial(() -> {
++        return new DecimalFormat("#,##0.00");
++    });
++    private static final ThreadLocal<DecimalFormat> ONE_DECIMAL_PLACES = ThreadLocal.withInitial(() -> {
++        return new DecimalFormat("#,##0.0");
++    });
++    private static final ThreadLocal<DecimalFormat> NO_DECIMAL_PLACES = ThreadLocal.withInitial(() -> {
++        return new DecimalFormat("#,##0");
++    });
++    private static final TextColor ORANGE = TextColor.color(255, 165, 0);
++
++    public CommandProfiler() {
++        super("profiler");
++        this.setUsage("/<command> <world> <block x> <block z> <time in s> [radius, default 100 blocks]");
++        this.setDescription("Reports information about server health.");
++        this.setPermission("bukkit.command.tps");
++    }
++
++    @Override
++    public boolean execute(final CommandSender sender, final String commandLabel, final String[] args) {
++        if (args.length < 4 || args.length > 5) {
++            sender.sendMessage(Component.text("Usage: /profiler <world> <block x> <block z> <time in s> [radius, default 100 blocks]", NamedTextColor.RED));
++            return true;
++        }
++
++        final World world = Bukkit.getWorld(args[0]);
++        if (world == null) {
++            sender.sendMessage(Component.text("No such world '" + args[0] + "'", NamedTextColor.RED));
++            return true;
++        }
++
++        final double blockX;
++        final double blockZ;
++        final double time; // seconds
++        try {
++            blockX = (args[1].equals("~") && sender instanceof Entity entity) ? entity.getLocation().getX() : Double.parseDouble(args[1]);
++        } catch (final NumberFormatException ex) {
++            sender.sendMessage(Component.text("Invalid input for block x: " + args[1], NamedTextColor.RED));
++            return true;
++        }
++        try {
++            blockZ = (args[2].equals("~") && sender instanceof Entity entity) ? entity.getLocation().getZ() : Double.parseDouble(args[2]);
++        } catch (final NumberFormatException ex) {
++            sender.sendMessage(Component.text("Invalid input for block z: " + args[2], NamedTextColor.RED));
++            return true;
++        }
++        try {
++            time = Double.parseDouble(args[3]);
++        } catch (final NumberFormatException ex) {
++            sender.sendMessage(Component.text("Invalid input for time: " + args[3], NamedTextColor.RED));
++            return true;
++        }
++
++        final double radius;
++        if (args.length > 4) {
++            try {
++                radius = Double.parseDouble(args[4]);
++            } catch (final NumberFormatException ex) {
++                sender.sendMessage(Component.text("Invalid input for radius: " + args[4], NamedTextColor.RED));
++                return true;
++            }
++        } else {
++            radius = 100.0;
++        }
++
++        final int fromChunkX = Mth.floor(blockX - radius) >> 4;
++        final int fromChunkZ = Mth.floor(blockZ - radius) >> 4;
++        final int toChunkX = Mth.floor(blockX + radius) >> 4;
++        final int toChunkZ = Mth.floor(blockZ + radius) >> 4;
++
++        final RegionizedProfiler profiler = new RegionizedProfiler(
++            ThreadLocalRandom.current().nextLong(), (long)Math.ceil(time * 1.0E9),
++            (final RegionizedProfiler.ProfileResults results) -> {
++                MCUtil.ASYNC_EXECUTOR.execute(() -> {
++                    writeResults(results);
++                    sender.sendMessage(
++                        Component.text()
++                            .append(Component.text("Finished profiler #", NamedTextColor.DARK_GRAY))
++                            .append(Component.text(Long.toString(results.profileId()), ORANGE))
++                            .append(Component.text(", result available in ", NamedTextColor.DARK_GRAY))
++                            .append(Component.text("./profiler/" + results.profileId(), ORANGE))
++                            .build()
++                    );
++                });
++            }
++        );
++
++        final int regionCount = ((CraftWorld)world).getHandle().regioniser.computeForRegions(
++            fromChunkX, fromChunkZ, toChunkX, toChunkZ,
++            (final Set<ThreadedRegionizer.ThreadedRegion<TickRegions.TickRegionData, TickRegions.TickRegionSectionData>> set) -> {
++                for (final ThreadedRegionizer.ThreadedRegion<TickRegions.TickRegionData, TickRegions.TickRegionSectionData> region : set) {
++                    final TickRegions.TickRegionData data = region.getData();
++                    final ChunkPos center = region.getCenterChunk();
++
++                    if (data.profiler != null) {
++                        MCUtil.ASYNC_EXECUTOR.execute(() -> {
++                            sender.sendMessage(
++                                Component.text()
++                                    .append(Component.text("Region #", NamedTextColor.DARK_GRAY))
++                                    .append(Component.text(region.id, ORANGE))
++                                    .append(Component.text(" centered on ", NamedTextColor.DARK_GRAY))
++                                    .append(Component.text(Objects.toString(center), ORANGE))
++                                    .append(Component.text(" already is being profiled", NamedTextColor.DARK_GRAY))
++                                    .build()
++                            );
++                        });
++                        continue;
++                    }
++
++                    profiler.createProfiler(region);
++                    MCUtil.ASYNC_EXECUTOR.execute(() -> {
++                        sender.sendMessage(
++                            Component.text()
++                                .append(Component.text("Started profiler #", NamedTextColor.DARK_GRAY))
++                                .append(Component.text(Long.toString(profiler.id), ORANGE))
++                                .append(Component.text(" for region #", NamedTextColor.DARK_GRAY))
++                                .append(Component.text(Long.toString(region.id), ORANGE))
++                                .append(Component.text(" centered on chunk ", NamedTextColor.DARK_GRAY))
++                                .append(Component.text(Objects.toString(center), ORANGE))
++                                .build()
++                        );
++                    });
++                }
++            }
++        );
++
++        if (regionCount == 0) {
++            sender.sendMessage(
++                Component.text()
++                    .append(Component.text("No regions around specified location in radius to profile", NamedTextColor.RED))
++            );
++        }
++
++        return true;
++    }
++
++    private static void writeLines(final File file, final List<String> lines) {
++        try {
++            Files.write(
++                file.toPath(), lines, StandardCharsets.UTF_8,
++                StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE
++            );
++        } catch (final IOException ex) {
++            LOGGER.warn("Failed to write to profiler file " + file.getAbsolutePath(), ex);
++        }
++    }
++
++    private static void writeResults(final RegionizedProfiler.ProfileResults results) {
++        final File directory = new File(new File(".", "profiler"), Long.toString(results.profileId()));
++
++        directory.mkdirs();
++
++        // write region data
++        for (final RegionizedProfiler.RegionTimings regionTimings : results.timings()) {
++            final File regionProfile = new File(directory, "region-" + regionTimings.regionId() + ".txt");
++            final TickData.TickReportData tickReport = regionTimings.tickData().generateTickReport(null, regionTimings.endTime(), TickRegionScheduler.TIME_BETWEEN_TICKS);
++
++            final List<String> out = new ArrayList<>();
++            out.add("Total time: " + THREE_DECIMAL_PLACES.get().format(1.0E-9 * (regionTimings.endTime() - regionTimings.startTime())) + "s");
++            out.add("Total Ticks: " + NO_DECIMAL_PLACES.get().format(tickReport == null ? 0 : tickReport.collectedTicks()));
++            out.add("Utilisation: " + THREE_DECIMAL_PLACES.get().format(tickReport == null ? 0.0 : 100.0 * tickReport.utilisation()) + "%");
++            out.add("");
++            out.add("Min TPS: " + THREE_DECIMAL_PLACES.get().format(tickReport == null ? 20.0 : tickReport.tpsData().segmentAll().least()));
++            out.add("Median TPS: " + THREE_DECIMAL_PLACES.get().format(tickReport == null ? 20.0 : tickReport.tpsData().segmentAll().median()));
++            out.add("Average TPS: " + THREE_DECIMAL_PLACES.get().format(tickReport == null ? 20.0 : tickReport.tpsData().segmentAll().average()));
++            out.add("Max TPS: " + THREE_DECIMAL_PLACES.get().format(tickReport == null ? 20.0 : tickReport.tpsData().segmentAll().greatest()));
++            out.add("");
++            out.add("Min MSPT: " + THREE_DECIMAL_PLACES.get().format(tickReport == null ? 0.0 : 1.0E-6 * tickReport.timePerTickData().segmentAll().least()));
++            out.add("Median MSPT: " + THREE_DECIMAL_PLACES.get().format(tickReport == null ? 0.0 : 1.0E-6 *tickReport.timePerTickData().segmentAll().median()));
++            out.add("Average MSPT: " + THREE_DECIMAL_PLACES.get().format(tickReport == null ? 0.0 : 1.0E-6 *tickReport.timePerTickData().segmentAll().average()));
++            out.add("Max MSPT: " + THREE_DECIMAL_PLACES.get().format(tickReport == null ? 0.0 : 1.0E-6 *tickReport.timePerTickData().segmentAll().greatest()));
++            out.add("");
++
++            out.addAll(regionTimings.profiler().copyAccumulated().dumpToString());
++            writeLines(regionProfile, out);
++        }
++
++        // write journal
++        final File journal = new File(directory, "journal.txt");
++        final List<String> journalLines = new ArrayList<>();
++
++        for (final RegionizedProfiler.RecordedOperation operation : results.operations()) {
++            final String indent = "    ";
++            journalLines.add("Recorded Operation:");
++            journalLines.add(indent + "Type: " + operation.type());
++            journalLines.add(indent + "Time: " + THREE_DECIMAL_PLACES.get().format(1.0E-9 * (operation.time() - results.startTime())) + "s");
++            journalLines.add(indent + "From Region: " + operation.regionOfInterest());
++            journalLines.add(indent + "Target Other Regions: " + operation.targetRegions().toString());
++        }
++
++        journalLines.add("Total time: " + THREE_DECIMAL_PLACES.get().format(1.0E-9 * (results.endTime() - results.startTime())) + "s");
++        writeLines(journal, journalLines);
++
++    }
++
++    @Override
++    public List<String> tabComplete(final CommandSender sender, final String alias, final String[] args) throws IllegalArgumentException {
++        if (args.length == 0) {
++            return CommandUtil.getSortedList(Bukkit.getWorlds(), World::getName);
++        }
++        if (args.length == 1) {
++            return CommandUtil.getSortedList(Bukkit.getWorlds(), World::getName, args[0]);
++        }
++        return new ArrayList<>();
++    }
++}
+diff --git a/net/minecraft/network/PacketProcessor.java b/net/minecraft/network/PacketProcessor.java
+index 0c84984fc72ae949c09300306783db23e0ed6cc0..10fa576838c726d026df078eef6c693d14c2cbda 100644
+--- a/net/minecraft/network/PacketProcessor.java
++++ b/net/minecraft/network/PacketProcessor.java
+@@ -101,7 +101,10 @@ public class PacketProcessor implements AutoCloseable {
+             try { // Paper - detailed watchdog information
+             if (this.listener.shouldHandleMessage(this.packet)) {
+                 try {
++                    final ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle profiler = io.papermc.paper.threadedregions.TickRegionScheduler.getProfiler(); // Folia - profiler
++                    final int packetTimerId = profiler.getOrCreateTimerAndStart(() -> "Packet Handler: ".concat(ListenerAndPacket.this.packet.getClass().getName())); try { // Folia - profiler
+                     this.packet.handle(this.listener);
++                    } finally { profiler.stopTimer(packetTimerId); } // Folia - profiler
+                 } catch (Exception e) {
+                     if (e instanceof ReportedException re && re.getCause() instanceof OutOfMemoryError) {
+                         throw PacketUtils.makeReportedException(e, this.packet, this.listener);
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index e62669793bdc1b34cfc7b8860eb36f1f86ae5496..c6a4d52f76e10fcc57b2c49b07fbc2ef9bb90822 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -1649,6 +1649,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     // Folia start - region threading
+     public void tickServer(final long startTime, final long scheduledEnd, final long targetBuffer,
+                            final io.papermc.paper.threadedregions.TickRegions.TickRegionData region) {
++        final ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle foliaProfiler = io.papermc.paper.threadedregions.TickRegionScheduler.getProfiler(); // Folia - profiler
+         // Folia end - region threading
+         org.spigotmc.WatchdogThread.tick(); // Spigot
+         long nano = startTime; // Folia - region threading
+@@ -1686,6 +1687,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             }
+         }
+ 
++
+         // Folia start - region threading
+         region.world.getCurrentWorldData().updateTickData();
+         BooleanSupplier haveTime = () -> {
+@@ -1697,22 +1699,33 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         new com.destroystokyo.paper.event.server.ServerTickStartEvent((int)region.getCurrentTick()).callEvent(); // Paper - Server Tick Events // Folia - region threading
+         // Folia start - region threading
+         if (region != null) {
++            foliaProfiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.INTERNAL_TICK_TASKS); try { // Folia - profiler
+             region.getTaskQueueData().drainTasks();
++            } finally { foliaProfiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.INTERNAL_TICK_TASKS); } // Folia - profiler
++            foliaProfiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.PLAYER_PACKET_PROCESSING); try { // Folia - profiler
+             // run all player packets
+             for (ServerPlayer player : new java.util.ArrayList<>(region.world.getCurrentWorldData().getLocalPlayers())) {
+                 PacketProcessor packetProcessor = ((org.bukkit.craftbukkit.entity.CraftPlayer)player.getBukkitEntity()).packetProcessor;
+                 while (ca.spottedleaf.moonrise.common.util.TickThread.isTickThreadFor(player) && packetProcessor.executeSinglePacket());
+             }
++            } finally { foliaProfiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.PLAYER_PACKET_PROCESSING); } // Folia - profiler
++            foliaProfiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.PLUGIN_TICK_TASKS); try { // Folia - profiler
+             ((io.papermc.paper.threadedregions.scheduler.FoliaRegionScheduler)org.bukkit.Bukkit.getRegionScheduler()).tick();
++            } finally { foliaProfiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.PLUGIN_TICK_TASKS); } // Folia - profiler
+             // now run all the entity schedulers
++            long tickedEntitySchedulers = 0L; // Folia - profiler
++            foliaProfiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.ENTITY_SCHEDULER_TICK); try { // Folia - profiler
+             for (io.papermc.paper.threadedregions.EntityScheduler scheduler : region.world.getCurrentWorldData().entitySchedulerTickList.getAllSchedulers()) {
+                 net.minecraft.world.entity.Entity handle = scheduler.entity.getHandleRaw();
+                 if (!ca.spottedleaf.moonrise.common.util.TickThread.isTickThreadFor(handle) || scheduler.isRetired()) {
+                     continue;
+                 }
+ 
++                ++tickedEntitySchedulers; // Folia - profiler
+                 scheduler.executeTick();
+             }
++            foliaProfiler.addCounter(ca.spottedleaf.leafprofiler.LProfilerRegistry.ENTITY_SCHEDULERS_TICKED, tickedEntitySchedulers); // Folia - profiler
++            } finally { foliaProfiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.ENTITY_SCHEDULER_TICK); } // Folia - profiler
+         }
+         // Folia end - region threading
+         //this.tickCount++; // Folia - region threading
+@@ -1731,6 +1744,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         }
+         Profiler.get().push("save");
+         final boolean fullSave = this.autosavePeriod > 0 && io.papermc.paper.threadedregions.RegionizedServer.getCurrentTick() % this.autosavePeriod == 0; // Folia - region threading
++        foliaProfiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.AUTOSAVE); try { // Folia - profiler
+         try {
+             this.isSaving = true;
+             if (playerSaveInterval > 0) {
+@@ -1748,6 +1762,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             this.isSaving = false;
+         }
+         Profiler.get().pop();
++        } finally { foliaProfiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.AUTOSAVE); } // Folia - profiler
+         // Paper end - Incremental chunk and player saving
+ 
+         ProfilerFiller profiler = Profiler.get();
+@@ -1847,6 +1862,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+     protected void tickChildren(final BooleanSupplier haveTime, final io.papermc.paper.threadedregions.TickRegions.TickRegionData region) { // Folia - region threading
+         final io.papermc.paper.threadedregions.RegionizedWorldData regionizedWorldData = io.papermc.paper.threadedregions.TickRegionScheduler.getCurrentRegionizedWorldData(); // Folia - regionised ticking
++        final ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle foliaProfiler = io.papermc.paper.threadedregions.TickRegionScheduler.getProfiler(); // Folia - profiler
+         ProfilerFiller profiler = Profiler.get();
+         //this.getPlayerList().getPlayers().forEach(playerx -> playerx.connection.suspendFlushing()); // Folia - region threading
+         //this.server.getScheduler().mainThreadHeartbeat(); // CraftBukkit // Folia - region threading
+@@ -1907,7 +1923,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             profiler.push("tick");
+ 
+             try {
++                foliaProfiler.startTimer(level.tickTimerId); try { // Folia - profiler
+                 level.tick(haveTime, region); // Folia - region threading
++                } finally { foliaProfiler.stopTimer(level.tickTimerId); } // Folia - profiler
+             } catch (Throwable t) {
+                 CrashReport report = CrashReport.forThrowable(t, "Exception ticking world");
+                 level.fillReportDetails(report);
+@@ -1921,7 +1939,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         //this.isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked // Folia - region threading
+ 
+         profiler.popPush("connection");
++        foliaProfiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.CONNECTION_TICK); try { // Folia - profiler
+         regionizedWorldData.tickConnections(); // Folia - region threading
++        } finally { foliaProfiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.CONNECTION_TICK); } // Folia - profiler
+         profiler.popPush("players");
+         //this.playerList.tick(); // Folia - region threading
+         profiler.popPush("debugSubscribers");
+diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
+index 1b4f063e04ce7d5262515cc14fc3557378ef7d25..163999d50213e0167eb09f0eae883388849f28fa 100644
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -400,12 +400,17 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+     }
+ 
+     protected void tick(final BooleanSupplier haveTime) {
++        final ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle foliaProfiler = io.papermc.paper.threadedregions.TickRegionScheduler.getProfiler(); // Folia - profiler
+         ProfilerFiller profiler = Profiler.get();
+         profiler.push("poi");
++        foliaProfiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.POI_MANAGER_TICK); try { // Folia - profiler
+         this.poiManager.tick(haveTime);
++        } finally { foliaProfiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.POI_MANAGER_TICK); } // Folia - profiler
+         profiler.popPush("chunk_unload");
+         if (!this.level.noSave()) {
++            foliaProfiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.PROCESS_UNLOADS); try { // Folia - profiler
+             this.processUnloads(haveTime);
++            } finally { foliaProfiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.PROCESS_UNLOADS); } // Folia - profiler
+         }
+ 
+         profiler.pop();
+@@ -1041,13 +1046,18 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+ 
+     // Paper start - optimise entity tracker
+     private void newTrackerTick() {
++        // Folia start - profiler
++        final ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle profiler = io.papermc.paper.threadedregions.TickRegionScheduler.getProfiler();
++        final int totalEntities;
++        profiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.ENTITY_TRACKER_TICK); try { // Folia - profiler
++        // Folia end - profiler
+         final io.papermc.paper.threadedregions.RegionizedWorldData worldData = this.level.getCurrentWorldData(); // Folia - region threading
+         final ca.spottedleaf.moonrise.patches.chunk_system.level.entity.server.ServerEntityLookup entityLookup = (ca.spottedleaf.moonrise.patches.chunk_system.level.entity.server.ServerEntityLookup)((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getEntityLookup();;
+         final ca.spottedleaf.moonrise.common.misc.NearbyPlayers nearbyPlayers = this.level.moonrise$getNearbyPlayers(); // Folia - region threading
+ 
+         final ca.spottedleaf.moonrise.common.list.ReferenceList<net.minecraft.world.entity.Entity> trackerEntities = worldData.trackerEntities; // Folia - region threading
+         final Entity[] trackerEntitiesRaw = trackerEntities.getRawDataUnchecked();
+-        for (int i = 0, len = trackerEntities.size(); i < len; ++i) {
++        for (int i = 0, len = totalEntities = trackerEntities.size(); i < len; ++i) { // Folia - region threading
+             final Entity entity = trackerEntitiesRaw[i];
+             final ChunkMap.TrackedEntity tracker = ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity)entity).moonrise$getTrackedEntity();
+             if (tracker == null) {
+@@ -1059,6 +1069,8 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+                 tracker.serverEntity.sendChanges();
+             }
+         }
++        profiler.addCounter(ca.spottedleaf.leafprofiler.LProfilerRegistry.TRACKED_ENTITY_COUNTS, (long)totalEntities); // Folia - profiler
++        } finally { profiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.ENTITY_TRACKER_TICK); } // Folia - profiler
+     }
+     // Paper end - optimise entity tracker
+ 
+diff --git a/net/minecraft/server/level/ServerChunkCache.java b/net/minecraft/server/level/ServerChunkCache.java
+index 7df9021195d2bd191b17c56c8486e475f8b090b5..7927769cf9bccb892745f4d1390eb83b2861d1bb 100644
+--- a/net/minecraft/server/level/ServerChunkCache.java
++++ b/net/minecraft/server/level/ServerChunkCache.java
+@@ -158,6 +158,8 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+     // Paper start - chunk tick iteration optimisations
+     private final ca.spottedleaf.moonrise.common.util.SimpleThreadUnsafeRandom shuffleRandom = new ca.spottedleaf.moonrise.common.util.SimpleThreadUnsafeRandom(0L);
+     private void iterateTickingChunksFaster() {
++        final ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle foliaProfiler = io.papermc.paper.threadedregions.TickRegionScheduler.getProfiler(); // Folia - profiler
++        foliaProfiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.RANDOM_TICK); try { // Folia - profiler
+         final ServerLevel world = this.level;
+         final int randomTickSpeed = world.getGameRules().get(GameRules.RANDOM_TICK_SPEED);
+ 
+@@ -169,7 +171,7 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+         // 1. we do not care about new additions
+         // 2. _removes_ are impossible at this stage in the tick
+         final LevelChunk[] raw = entityTickingChunks.getRawDataUnchecked();
+-        final int size = entityTickingChunks.size();
++        final int size = entityTickingChunks.size(); foliaProfiler.addCounter(ca.spottedleaf.leafprofiler.LProfilerRegistry.RANDOM_CHUNK_TICK_COUNT, (long)size); // Folia - profiler
+ 
+         java.util.Objects.checkFromToIndex(0, size, raw.length);
+         for (int i = 0; i < size; ++i) {
+@@ -181,6 +183,7 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+                 continue;
+             }
+         }
++        } finally { foliaProfiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.RANDOM_TICK); } // Folia - profiler
+     }
+     // Paper end - chunk tick iteration optimisations
+ 
+@@ -483,17 +486,24 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+ 
+     @Override
+     public void tick(final BooleanSupplier haveTime, final boolean tickChunks) {
++        final ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle foliaProfiler = io.papermc.paper.threadedregions.TickRegionScheduler.getProfiler(); // Folia - profiler
+         ProfilerFiller profiler = Profiler.get();
+         profiler.push("purge");
++        foliaProfiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.CHUNK_HOLDER_MANAGER_TICK); try { // Folia - profiler
+         if (this.level.tickRateManager().runsNormally() || !tickChunks || this.level.spigotConfig.unloadFrozenChunks) { // Spigot
+             this.ticketStorage.purgeStaleTickets(this.chunkMap);
+         }
+ 
+         this.runDistanceManagerUpdates();
+         profiler.popPush("chunks");
++        } finally { foliaProfiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.CHUNK_HOLDER_MANAGER_TICK); } // Folia - profiler
+         if (tickChunks) {
++            foliaProfiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.PLAYER_CHUNK_LOADER_TICK); try { // Folia - profiler
+             ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getPlayerChunkLoader().tick(); // Paper - rewrite chunk system
++            } finally { foliaProfiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.PLAYER_CHUNK_LOADER_TICK); } // Folia - profiler
++            foliaProfiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.CHUNK_TICK); try { // Folia - profiler
+             this.tickChunks();
++            } finally { foliaProfiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.CHUNK_TICK); } // Folia - profiler
+             this.chunkMap.tick();
+         }
+ 
+@@ -505,6 +515,7 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+ 
+     private void tickChunks() {
+         io.papermc.paper.threadedregions.RegionizedWorldData regionizedWorldData = this.level.getCurrentWorldData(); // Folia - region threading
++        final ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle foliaProfiler = io.papermc.paper.threadedregions.TickRegionScheduler.getProfiler(); // Folia - profiler
+         //long time = this.level.getGameTime(); // Folia - region threading
+         long timeDiff = 1L; // Folia - region threading
+         //this.lastInhabitedUpdate = time; // Folia - region threading
+@@ -517,7 +528,9 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+                 profiler.pop();
+             }
+ 
++            foliaProfiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.BROADCAST_BLOCK_CHANGES); try { // Folia - profiler
+             this.broadcastChangedChunks(profiler);
++            } finally { foliaProfiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.BROADCAST_BLOCK_CHANGES); } // Folia - profiler
+             profiler.pop();
+         }
+     }
+@@ -539,10 +552,12 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+ 
+     private void tickChunks(final ProfilerFiller profiler, final long timeDiff) {
+         io.papermc.paper.threadedregions.RegionizedWorldData regionizedWorldData = this.level.getCurrentWorldData(); // Folia - region threading
++        final ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle foliaProfiler = io.papermc.paper.threadedregions.TickRegionScheduler.getProfiler(); // Folia - profiler
+         profiler.push("naturalSpawnCount");
+         int chunkCount = this.distanceManager.getNaturalSpawnChunkCount();
+         // Paper start - Optional per player mob spawns
+         NaturalSpawner.SpawnState spawnCookie;
++        foliaProfiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.MOB_SPAWN_ENTITY_COUNT); try { // Folia - profiler
+         if ((this.spawnFriendlies || this.spawnEnemies) && this.level.paperConfig().entities.spawning.perPlayerMobSpawns) { // don't count mobs when animals and monsters are disabled
+             // re-set mob counts
+             for (ServerPlayer player : this.level.getLocalPlayers()) { // Folia - region threading
+@@ -562,6 +577,7 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+         } else {
+             spawnCookie = NaturalSpawner.createState(chunkCount, regionizedWorldData.getLoadedEntities(), this::getFullChunk, !this.level.paperConfig().entities.spawning.perPlayerMobSpawns ? new LocalMobCapCalculator(this.chunkMap) : null, false); // Folia - region threading - note: function only cares about loaded entities, doesn't need all
+         }
++        } finally { foliaProfiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.MOB_SPAWN_ENTITY_COUNT); } // Folia - profiler
+         // Paper end - Optional per player mob spawns
+         regionizedWorldData.lastSpawnState = spawnCookie; // Folia - region threading
+         boolean doMobSpawning = this.level.getGameRules().get(GameRules.SPAWN_MOBS) && !this.level.getLocalPlayers().isEmpty(); // CraftBukkit // Folia - region threading
+@@ -586,7 +602,9 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+ 
+         try {
+             profiler.popPush("filteringSpawningChunks");
++            foliaProfiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.CHUNK_SPAWN_COLLECT_CHUNKS); try { // Folia - profiler
+             this.chunkMap.collectSpawningChunks(spawningChunks);
++            } finally { foliaProfiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.CHUNK_SPAWN_COLLECT_CHUNKS); } // Folia - profiler
+             profiler.popPush("shuffleSpawningChunks");
+             // Paper start - chunk tick iteration optimisation
+             this.shuffleRandom.setSeed(this.level.getRandom().nextLong());
+@@ -594,9 +612,12 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+             // Paper end - chunk tick iteration optimisation
+             profiler.popPush("tickSpawningChunks");
+ 
++            foliaProfiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.SPAWN_TICK); try { // Folia - profiler
++            foliaProfiler.addCounter(ca.spottedleaf.leafprofiler.LProfilerRegistry.SPAWN_CHUNK_COUNT, (long)spawningChunks.size()); // Folia - profiler
+             for (LevelChunk chunk : spawningChunks) {
+                 this.tickSpawningChunk(chunk, timeDiff, spawningCategories, spawnCookie);
+             }
++            } finally { foliaProfiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.SPAWN_TICK); } // Folia - profiler
+         } finally {
+             spawningChunks.clear();
+         }
+@@ -605,7 +626,9 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+         this.iterateTickingChunksFaster(); // Paper - chunk tick iteration optimizations
+         if (doMobSpawning) {
+             profiler.popPush("customSpawners");
++            foliaProfiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.MISC_MOB_SPAWN_TICK); try { // Folia - profiler
+             this.level.tickCustomSpawners(this.spawnEnemies);
++            } finally { foliaProfiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.MISC_MOB_SPAWN_TICK); } // Folia - profiler
+         }
+ 
+         profiler.pop();
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index b813fa3997e1000cc905fba2cd4f7c2cf24bc8c8..c6434ff2e5c211887c2e98c8462a49e0e1cb5b21 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -814,6 +814,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+ 
+     public void tick(BooleanSupplier haveTime, final io.papermc.paper.threadedregions.TickRegions.TickRegionData region) { // Folia - regionised ticking
+         final io.papermc.paper.threadedregions.RegionizedWorldData regionizedWorldData = this.getCurrentWorldData(); // Folia - regionised ticking
++        final ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle foliaProfiler = io.papermc.paper.threadedregions.TickRegionScheduler.getProfiler(); // Folia - profiler
+         ProfilerFiller profiler = Profiler.get();
+         regionizedWorldData.setHandlingTick(true); // Folia - regionised ticking
+         this.environmentAttributes().invalidateTickCache();
+@@ -851,22 +852,32 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+         if (!this.isDebug() && runs) {
+             long tick = this.getRedstoneGameTime(); // Folia - region threading
+             profiler.push("blockTicks");
++            foliaProfiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.BLOCK_TICK); try { // Folia - profiler
+             regionizedWorldData.getBlockLevelTicks().tick(tick, paperConfig().environment.maxBlockTicks, this::tickBlock); // Paper - configurable max block ticks // Folia - region threading
++            } finally { foliaProfiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.BLOCK_TICK); } // Folia - profiler
+             profiler.popPush("fluidTicks");
++            foliaProfiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.FLUID_TICK); try { // Folia - profiler
+             regionizedWorldData.getFluidLevelTicks().tick(tick, paperConfig().environment.maxFluidTicks, this::tickFluid); // Paper - configurable max fluid ticks // Folia - region threading
++            } finally { foliaProfiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.FLUID_TICK); } // Folia - profiler
+             profiler.pop();
+         }
+ 
+         profiler.popPush("raid");
+         if (runs) {
++            foliaProfiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.RAIDS_TICK); try { // Folia - profiler
+             this.raids.tick(this);
++            } finally { foliaProfiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.RAIDS_TICK); } // Folia - profiler
+         }
+ 
+         profiler.popPush("chunkSource");
++        foliaProfiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.CHUNK_PROVIDER_TICK); try { // Folia - profiler
+         this.getChunkSource().tick(haveTime, true);
++        } finally { foliaProfiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.CHUNK_PROVIDER_TICK); } // Folia - profiler
+         profiler.popPush("blockEvents");
+         if (runs) {
++            foliaProfiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.BLOCK_EVENT_TICK); try { // Folia - profiler
+             this.runBlockEvents();
++            } finally { foliaProfiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.BLOCK_EVENT_TICK); } // Folia - profiler
+         }
+ 
+         regionizedWorldData.setHandlingTick(false); // Folia - regionised ticking
+@@ -883,6 +894,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+         if (this.emptyTime < 300) {
+             profiler.push("entities");
+             if (this.dragonFight != null && runs) {
++                foliaProfiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.DRAGON_FIGHT_TICK); try { // Folia - profiler
+                 if (ca.spottedleaf.moonrise.common.util.TickThread.isTickThreadFor(this, this.dragonFight.origin)) { // Folia - region threading
+                 profiler.push("dragonFight");
+                 this.dragonFight.tick();
+@@ -895,9 +907,13 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+                             null
+                     );
+                 } // Folia end - region threading
++                } finally { foliaProfiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.DRAGON_FIGHT_TICK); } // Folia - profiler
+             }
+ 
++            foliaProfiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.ACTIVATE_ENTITIES); try { // Folia - profiler
+             io.papermc.paper.entity.activation.ActivationRange.activateEntities(this); // Paper - EAR
++            } finally { foliaProfiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.ACTIVATE_ENTITIES); } // Folia - profiler
++            foliaProfiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.ENTITY_TICK); try { // Folia - profiler
+             regionizedWorldData // Folia - regionised ticking
+                 .forEachTickingEntity( // Folia - regionised ticking
+                     entity -> {
+@@ -925,9 +941,12 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+                         }
+                     }
+                 );
++            } finally { foliaProfiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.ENTITY_TICK); } // Folia - profiler
+             if (this.paperConfig().unsupportedSettings.ticking.blockEntities) { // Paper - option to disable ticking
+             profiler.popPush("blockEntities");
++            foliaProfiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.TILE_ENTITY); try { // Folia - profiler
+             this.tickBlockEntities();
++            } finally { foliaProfiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.TILE_ENTITY); } // Folia - profiler
+             profiler.pop();
+             } // Paper - option to disable ticking
+             regionizedWorldData.currentPrimedTnt = 0; // Spigot // Folia - regionised ticking
+@@ -998,8 +1017,11 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+     }
+ 
+     public void tickCustomSpawners(final boolean spawnEnemies) {
++        final ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle profiler = io.papermc.paper.threadedregions.TickRegionScheduler.getProfiler(); // Folia - profiler
+         for (CustomSpawner spawner : this.customSpawners) {
++            final int customSpawnerTimer = profiler.getOrCreateTimerAndStart(() -> "Misc Spawner: ".concat(spawner.getClass().getName())); try { // Folia - profiler
+             spawner.tick(this, spawnEnemies);
++            } finally { profiler.stopTimer(customSpawnerTimer); } // Folia - profiler
+         }
+     }
+ 
+@@ -1464,6 +1486,12 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+         profiler.push(entity.typeHolder()::getRegisteredName);
+         profiler.incrementCounter("tickNonPassenger");
+         final boolean isActive = io.papermc.paper.entity.activation.ActivationRange.checkIfActive(entity); // Paper - EAR 2
++        // Folia start - profiler
++        final int timerId = isActive ? entity.getType().tickTimerId : entity.getType().inactiveTickTimerId;
++        final ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle foliaProfiler = io.papermc.paper.threadedregions.TickRegionScheduler.getProfiler();
++        foliaProfiler.startTimer(timerId);
++        try {
++        // Folia end - profiler
+         if (isActive) { // Paper - EAR 2
+         entity.tick();
+         // Folia start - region threading
+@@ -1478,6 +1506,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+         // Folia end - region threading
+         } else {entity.inactiveTick();} // Paper - EAR 2
+         profiler.pop();
++        } finally { foliaProfiler.stopTimer(timerId); } // Folia - profiler
+ 
+         for (Entity passenger : entity.getPassengers()) {
+             this.tickPassenger(entity, passenger, isActive); // Paper - EAR 2
+@@ -1493,6 +1522,12 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+         if (entity.isRemoved() || entity.getVehicle() != vehicle) {
+             entity.stopRiding();
+         } else if (entity instanceof Player || this.getCurrentWorldData().hasEntityTickingEntity(entity)) { // Folia - region threading
++            // Folia start - profiler
++            final int timerId = isActive ? entity.getType().tickTimerId : entity.getType().inactiveTickTimerId;
++            final ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle foliaProfiler = io.papermc.paper.threadedregions.TickRegionScheduler.getProfiler();
++            foliaProfiler.startTimer(timerId);
++            try {
++                // Folia end - profiler
+             entity.setOldPosAndRot();
+             entity.tickCount++;
+             entity.totalEntityAge++; // Paper - age-like counter for all entities
+@@ -1524,6 +1559,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+             for (Entity passenger : entity.getPassengers()) {
+                 this.tickPassenger(entity, passenger, isActive); // Paper - EAR 2
+             }
++            } finally { foliaProfiler.stopTimer(timerId); } // Folia - profiler
+         }
+     }
+ 
+diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
+index abded55cb8b695eb33a1894284a63887547c7a75..e7579a9873362317dd82b63306cf650af9472574 100644
+--- a/net/minecraft/server/players/PlayerList.java
++++ b/net/minecraft/server/players/PlayerList.java
+@@ -1033,6 +1033,7 @@ public abstract class PlayerList {
+     public void saveAll(final int interval) {
+         // Paper end - Incremental chunk and player saving
+         //io.papermc.paper.util.MCUtil.ensureMain("Save Players" , () -> { // Paper - Ensure main // Folia - region threading
++            final ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle profiler = io.papermc.paper.threadedregions.TickRegionScheduler.getProfiler(); // Folia - profiler
+         // Paper start - Incremental chunk and player saving
+             int numSaved = 0;
+             final long now = System.nanoTime(); // Folia - region threading
+@@ -1044,7 +1045,9 @@ public abstract class PlayerList {
+             }
+             // Folia end - region threading
+             if (interval == -1 || now - player.lastSave >= timeInterval) { // Folia - region threading
++                profiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.PLAYER_SAVE); try { // Folia - profiler
+                 this.save(player);
++                } finally { profiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.PLAYER_SAVE); } // Folia - profiler
+                 if (interval != -1 && ++numSaved >= io.papermc.paper.configuration.GlobalConfiguration.get().playerAutoSave.maxPerTick()) {
+                     break;
+                 }
+diff --git a/net/minecraft/world/entity/EntityType.java b/net/minecraft/world/entity/EntityType.java
+index a23e4b5e1ddc78d3fec6ab84bbac0a15dc485350..6efaa78faca15c7a48bdffb24480d1bac29f3ba8 100644
+--- a/net/minecraft/world/entity/EntityType.java
++++ b/net/minecraft/world/entity/EntityType.java
+@@ -78,6 +78,13 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T>,
+         return BuiltInRegistries.ENTITY_TYPE.getKey(type);
+     }
+ 
++    // Folia start - profiler
++    public final int tickTimerId;
++    public final int inactiveTickTimerId;
++    public final int passengerTickTimerId;
++    public final int passengerInactiveTickTimerId;
++    // Folia end - profiler
++
+     public EntityType(
+         final EntityType.EntityFactory<T> factory,
+         final MobCategory category,
+@@ -93,8 +100,14 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T>,
+         final String descriptionId,
+         final Optional<ResourceKey<LootTable>> lootTable,
+         final FeatureFlagSet requiredFeatures,
+-        final boolean allowedInPeaceful
++        final boolean allowedInPeaceful, String id // Folia - profiler
+     ) {
++        // Folia start - profiler
++        this.tickTimerId = ca.spottedleaf.leafprofiler.LProfilerRegistry.GLOBAL_REGISTRY.getOrCreateTimer("Entity Tick: " + id);
++        this.inactiveTickTimerId = ca.spottedleaf.leafprofiler.LProfilerRegistry.GLOBAL_REGISTRY.getOrCreateTimer("Inactive Entity Tick: " + id);
++        this.passengerTickTimerId = ca.spottedleaf.leafprofiler.LProfilerRegistry.GLOBAL_REGISTRY.getOrCreateTimer("Passenger Entity Tick: " + id);
++        this.passengerInactiveTickTimerId = ca.spottedleaf.leafprofiler.LProfilerRegistry.GLOBAL_REGISTRY.getOrCreateTimer("Passenger Inactive Entity Tick: " + id);
++        // Folia end - profiler
+         this.factory = factory;
+         this.category = category;
+         this.canSpawnFarFromPlayer = canSpawnFarFromPlayer;
+@@ -727,7 +740,7 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T>,
+                 this.descriptionId.get(name),
+                 this.lootTable.get(name),
+                 this.requiredFeatures,
+-                this.allowedInPeaceful
++                this.allowedInPeaceful, name.toString() // Folia - profiler
+             );
+         }
+     }
+diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
+index a8401a953a955a69f39fa13e9678d177796889f0..a0eb1f608a99301e0197ab1d1a6fbbb0a0be4ce0 100644
+--- a/net/minecraft/world/level/Level.java
++++ b/net/minecraft/world/level/Level.java
+@@ -199,6 +199,9 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+     public final ca.spottedleaf.moonrise.patches.chunk_system.level.entity.EntityLookup moonrise$getEntityLookup() {
+         return this.entityLookup;
+     }
++    // Folia start - profiler
++    public final int tickTimerId;
++    // Folia end - profiler
+ 
+     @Override
+     public final void moonrise$setEntityLookup(final ca.spottedleaf.moonrise.patches.chunk_system.level.entity.EntityLookup entityLookup) {
+@@ -891,6 +894,9 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+         this.damageSources = new DamageSources(registryAccess);
+         this.entityLookup = new ca.spottedleaf.moonrise.patches.chunk_system.level.entity.dfl.DefaultEntityLookup(this); // Paper - rewrite chunk system
+         this.chunkPacketBlockController = this.paperConfig().anticheat.antiXray.enabled ? new io.papermc.paper.antixray.ChunkPacketBlockControllerAntiXray(this, executor) : io.papermc.paper.antixray.ChunkPacketBlockController.NO_OPERATION_INSTANCE; // Paper - Anti-Xray
++        // Folia start - profiler
++        this.tickTimerId = ca.spottedleaf.leafprofiler.LProfilerRegistry.GLOBAL_REGISTRY.getOrCreateTimer("Tick World: " + dimension.identifier().toString());
++        // Folia end - profiler
+     }
+ 
+     public int getNextEntityId() {
+@@ -1526,11 +1532,15 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+     }
+ 
+     public void tickBlockEntities() {
++        final ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle profiler = io.papermc.paper.threadedregions.TickRegionScheduler.getProfiler(); // Folia - profiler
+         final io.papermc.paper.threadedregions.RegionizedWorldData regionizedWorldData = this.getCurrentWorldData(); // Folia - regionised ticking
+         regionizedWorldData.setTickingBlockEntities(true); // Folia - regionised ticking
++        profiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.TILE_ENTITY_PENDING); try { // Folia - profiler
+         regionizedWorldData.pushPendingTickingBlockEntities(); // Folia - regionised ticking
++        } finally { profiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.TILE_ENTITY_PENDING); } // Folia - profiler
+         List<TickingBlockEntity> blockEntityTickers = regionizedWorldData.getBlockEntityTickers(); // Folia - regionised ticking
+ 
++        profiler.startTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.TILE_ENTITY_TICK); try { // Folia - profiler
+         // Paper - Fix MC-117075 use removeAll - remove iterator in favour of indexed for loop, ensuring compile error if something uses iter incorrectly
+         boolean tickBlockEntities = this.tickRateManager().runsNormally();
+ 
+@@ -1554,6 +1564,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+         }
+ 
+         blockEntityTickers.removeAll(toRemove); // Paper - Fix MC-117075 use removeAll // Folia - regionised ticking
++        } finally { profiler.stopTimer(ca.spottedleaf.leafprofiler.LProfilerRegistry.TILE_ENTITY_TICK); } // Folia - profiler
+         regionizedWorldData.setTickingBlockEntities(false); // Folia - regionised ticking
+     }
+ 
+diff --git a/net/minecraft/world/level/block/entity/BlockEntityType.java b/net/minecraft/world/level/block/entity/BlockEntityType.java
+index 4c91a0cd674e23ae31e21ba7014fdbb15514cc45..cda0d6d01035570844f03e523db7721cc6cc3e6d 100644
+--- a/net/minecraft/world/level/block/entity/BlockEntityType.java
++++ b/net/minecraft/world/level/block/entity/BlockEntityType.java
+@@ -14,7 +14,11 @@ public class BlockEntityType<T extends BlockEntity> {
+     public final Set<Block> validBlocks;
+     private final Holder.Reference<BlockEntityType<?>> builtInRegistryHolder = BuiltInRegistries.BLOCK_ENTITY_TYPE.createIntrusiveHolder(this);
+ 
+-    public BlockEntityType(final BlockEntityType.BlockEntitySupplier<? extends T> factory, final Set<Block> validBlocks) {
++    // Folia start - profiler
++    public final int tileEntityTimingId;
++    public BlockEntityType(final BlockEntityType.BlockEntitySupplier<? extends T> factory, final Set<Block> validBlocks, net.minecraft.resources.Identifier id) {
++        this.tileEntityTimingId = ca.spottedleaf.leafprofiler.LProfilerRegistry.GLOBAL_REGISTRY.getOrCreateTimer("Tile Entity Tick: " + id.getPath());
++        // Folia end - profiler
+         this.factory = factory;
+         this.validBlocks = validBlocks;
+     }
+diff --git a/net/minecraft/world/level/block/entity/BlockEntityTypes.java b/net/minecraft/world/level/block/entity/BlockEntityTypes.java
+index 74e8606e4c4067312e498ce71120654dbb8996e2..cbf3a6ee786f5df68c777500bc98dc68ca33e04d 100644
+--- a/net/minecraft/world/level/block/entity/BlockEntityTypes.java
++++ b/net/minecraft/world/level/block/entity/BlockEntityTypes.java
+@@ -224,7 +224,7 @@ public class BlockEntityTypes {
+             Util.fetchChoiceType(References.BLOCK_ENTITY, id.getPath());
+         }
+ 
+-        return Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, key, new BlockEntityType<>(factory, Set.of(validBlocks)));
++        return Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, key, new BlockEntityType<>(factory, Set.of(validBlocks), id)); // Folia - profiler
+     }
+ 
+     private static <T extends BlockEntity> BlockEntityType<T> register(
+diff --git a/net/minecraft/world/level/chunk/LevelChunk.java b/net/minecraft/world/level/chunk/LevelChunk.java
+index 6c289eb5779eeb9a23ff3a208547d6b5d73b2010..64e0c4a60a74cd33f2b99f34fa2a419abf3a0c02 100644
+--- a/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -954,9 +954,12 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
+             if (!this.blockEntity.isRemoved() && this.blockEntity.hasLevel()) {
+                 BlockPos pos = this.blockEntity.getBlockPos();
+                 if (LevelChunk.this.isTicking(pos)) {
++                    final ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle foliaProfiler = io.papermc.paper.threadedregions.TickRegionScheduler.getProfiler(); // Folia - profiler
++                    final int timerId = this.blockEntity.getType().tileEntityTimingId; // Folia - profiler
+                     try {
+                         ProfilerFiller profiler = Profiler.get();
+                         profiler.push(this::getType);
++                        foliaProfiler.startTimer(timerId); try { // Folia - profiler
+                         BlockState blockState = LevelChunk.this.getBlockState(pos);
+                         if (this.blockEntity.getType().isValid(blockState)) {
+                             this.ticker.tick(LevelChunk.this.level, this.blockEntity.getBlockPos(), blockState, this.blockEntity);
+@@ -976,6 +979,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
+                                 );
+                             } // Paper - Remove the Block Entity if it's invalid
+                         }
++                        } finally { foliaProfiler.stopTimer(timerId); } // Folia - profiler
+ 
+                         profiler.pop();
+                     } catch (Throwable t) {
+diff --git a/net/minecraft/world/ticks/LevelTicks.java b/net/minecraft/world/ticks/LevelTicks.java
+index b28ca5a7ea4f68993568e74e7e5c1c7c696d7433..52a7da01ce84b93a4444a002effa261d20e1a707 100644
+--- a/net/minecraft/world/ticks/LevelTicks.java
++++ b/net/minecraft/world/ticks/LevelTicks.java
+@@ -248,6 +248,12 @@ public class LevelTicks<T> implements LevelTickAccess<T> {
+     }
+ 
+     private void runCollectedTicks(final BiConsumer<BlockPos, T> output) {
++        // Folia start - profiler
++        io.papermc.paper.threadedregions.TickRegionScheduler.getProfiler().addCounter(
++            ca.spottedleaf.leafprofiler.LProfilerRegistry.BLOCK_OR_FLUID_TICK_COUNT,
++            (long)this.toRunThisTick.size()
++        );
++        // Folia end - profiler
+         while (!this.toRunThisTick.isEmpty()) {
+             ScheduledTick<T> entry = this.toRunThisTick.poll();
+             if (!this.toRunThisTickSet.isEmpty()) {
