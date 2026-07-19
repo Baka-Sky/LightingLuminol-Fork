@@ -1,6 +1,0 @@
-- world loading structure: dubious handling of custom generator spawn selection (MinecraftServer#setInitialSpawn)
-
-repeat:
-- chk player login logic
-- chk entity/player teleport/respawn logic
-- chk getGameTime usages
