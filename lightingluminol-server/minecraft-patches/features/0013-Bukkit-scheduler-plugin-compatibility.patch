@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bacteriawa <A3167717663@hotmail.com>
+Date: Wed, 22 Jul 2026 18:00:00 +0800
+Subject: [PATCH] Bukkit scheduler plugin compatibility
+
+
+diff --git a/io/papermc/paper/threadedregions/RegionizedServer.java b/io/papermc/paper/threadedregions/RegionizedServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/io/papermc/paper/threadedregions/RegionizedServer.java
++++ b/io/papermc/paper/threadedregions/RegionizedServer.java
+@@ -23,6 +23,7 @@ import net.minecraft.server.network.ServerGamePacketListenerImpl;
+ import net.minecraft.world.attribute.EnvironmentAttributeSystem;
+ import net.minecraft.world.level.gamerules.GameRules;
+ import org.bukkit.Bukkit;
++import org.bukkit.craftbukkit.scheduler.CraftScheduler;
+ import org.slf4j.Logger;
+ import java.util.ArrayList;
+ import java.util.Collections;
+@@ -240,6 +241,9 @@ public final class RegionizedServer {
+         // scheduler
+         ((FoliaGlobalRegionScheduler)Bukkit.getGlobalRegionScheduler()).tick();
+ 
++        // bukkit scheduler
++        ((CraftScheduler)Bukkit.getScheduler()).mainThreadHeartbeat();
++
+         // clock tick
+         this.tickClocks();
+ 
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -680,8 +680,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         ((org.bukkit.craftbukkit.help.SimpleHelpMap) this.server.getHelpMap()).initializeCommands();
+         this.server.getPluginManager().callEvent(new org.bukkit.event.server.ServerLoadEvent(org.bukkit.event.server.ServerLoadEvent.LoadType.STARTUP));
+         this.connection.acceptConnections();
++
++        Runnable task;
++        while ((task = this.pluginEnabledCallbacks.pollOrBlockAdds()) != null) {
++            task.run();
++        }
+     }
+     // Paper end - rework world loading process
++    public final ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue<Runnable> pluginEnabledCallbacks = new ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue<>();
+ 
+     protected void forceDifficulty() {
+     }

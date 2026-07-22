@@ -1,0 +1,40 @@
+package net.minecraft.world.entity;
+
+import java.util.function.Consumer;
+import net.minecraft.world.level.block.BaseFireBlock;
+
+public enum InsideBlockEffectType {
+    FREEZE(entity -> {
+        entity.setIsInPowderSnow(true);
+        if (entity.canFreeze() && !entity.freezeLocked) { // Paper - Freeze Tick Lock API
+            entity.setTicksFrozen(Math.min(entity.getTicksRequiredToFreeze(), entity.getTicksFrozen() + 1));
+        }
+    }),
+    CLEAR_FREEZE(Entity::clearFreeze),
+    FIRE_IGNITE(BaseFireBlock::fireIgnite),
+    LAVA_IGNITE((entity, pos) -> entity.lavaIgnite(pos)), // Paper - track lava contact
+    EXTINGUISH(Entity::clearFire);
+
+    private final Applier effect; // Paper - track position inside effect was triggered on
+
+    InsideBlockEffectType(final Consumer<Entity> effect) {
+    // Paper start - track position inside effect was triggered on
+        this((entity, block) -> effect.accept(entity));
+    }
+    InsideBlockEffectType(final Applier effect) {
+    // Paper end - track position inside effect was triggered on
+        this.effect = effect;
+    }
+
+    public Applier effect() { // Paper - track position inside effect was triggered on
+        return this.effect;
+    }
+
+    // Paper start - track position inside effect was triggered on
+    // Use over biconsumer for less fqn spamming.
+    @FunctionalInterface
+    public interface Applier {
+        void affect(final Entity entity, final net.minecraft.core.BlockPos blockPos);
+    }
+    // Paper end - track position inside effect was triggered on
+}

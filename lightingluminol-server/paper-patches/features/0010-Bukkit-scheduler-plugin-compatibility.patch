@@ -1,0 +1,85 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bacteriawa <A3167717663@hotmail.com>
+Date: Wed, 22 Jul 2026 18:00:00 +0800
+Subject: [PATCH] Bukkit scheduler plugin compatibility
+
+
+diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginProviderFactory.java b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginProviderFactory.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginProviderFactory.java
++++ b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginProviderFactory.java
+@@ -24,11 +24,6 @@ class PaperPluginProviderFactory implements PluginTypeFactory<PaperPluginParent,
+ 
+     @Override
+     public PaperPluginParent build(JarFile file, PaperPluginMeta configuration, Path source) {
+-        // Folia start - block plugins not marked as supported
+-        if (!configuration.isFoliaSupported()) {
+-            throw new RuntimeException("Could not load plugin '" + configuration.getDisplayName() + "' as it is not marked as supporting Folia!");
+-        }
+-        // Folia end - block plugins not marked as supported
+         Logger jul = PaperPluginLogger.getLogger(configuration);
+         ComponentLogger logger = ComponentLogger.logger(jul.getName());
+         PluginProviderContext context = PluginProviderContextImpl.create(configuration, logger, source);
+diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProviderFactory.java b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProviderFactory.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProviderFactory.java
++++ b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProviderFactory.java
+@@ -26,11 +26,6 @@ class SpigotPluginProviderFactory implements PluginTypeFactory<SpigotPluginProvi
+ 
+     @Override
+     public SpigotPluginProvider build(JarFile file, PluginDescriptionFile configuration, Path source) throws InvalidDescriptionException {
+-        // Folia start - block plugins not marked as supported
+-        if (!configuration.isFoliaSupported()) {
+-            throw new RuntimeException("Could not load plugin '" + configuration.getDisplayName() + "' as it is not marked as supporting Folia!");
+-        }
+-        // Folia end - block plugins not marked as supported
+         // Copied from SimplePluginManager#loadPlugins
+         // Spigot doesn't validate the name when the config is created, and instead when the plugin is loaded.
+         // Paper plugin configuration will do these checks in config serializer instead of when this is created.
+diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
++++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
+@@ -514,15 +514,23 @@ public class CraftScheduler implements BukkitScheduler {
+     }
+ 
+     protected CraftTask handle(final CraftTask task, final long delay) { // Paper
+-        if (true) throw new UnsupportedOperationException(); // Folia - region threading
++        //if (true) throw new UnsupportedOperationException(); // Folia - region threading
+         // Paper start
++        Runnable taskSubmit = () -> {
+         if (!this.isAsyncScheduler && !task.isSync()) {
+             this.asyncScheduler.handle(task, delay);
+-            return task;
++            return;
+         }
+         // Paper end
+         task.setNextRun(this.currentTick + delay);
+         this.addTask(task);
++        };
++
++        if (net.minecraft.server.MinecraftServer.getServer().pluginEnabledCallbacks.offer(taskSubmit)) {
++            return task;
++        }
++
++        taskSubmit.run();
+         return task;
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -322,12 +322,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
+             throw new InvalidPluginException("Unsupported API version " + descriptionFile.getAPIVersion());
+         }
+ 
+-        // Folia start - block plugins not marked as supported
+-        if (!descriptionFile.isFoliaSupported()) {
+-            throw new InvalidPluginException("Plugin " + descriptionFile.getFullName() + " is not marked as supporting regionised multithreading");
+-        }
+-        // Folia end - block plugins not marked as supported
+-
+         if (toCheck.isOlderThan(minimumVersion)) {
+             // Older than supported
+             throw new InvalidPluginException("Plugin API version " + descriptionFile.getAPIVersion() + " is lower than the minimum allowed version. Please update or replace it.");

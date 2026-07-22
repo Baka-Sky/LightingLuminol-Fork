@@ -1,0 +1,68 @@
+++++ REJECTED HUNK: 1
+@@ -20,8 +20,21 @@
+ paperweight {
+     minecraftVersion = providers.gradleProperty("mcVersion")
++    filterPatches = false
+     gitFilePatches = false
++    val fork = forks.register("lightingluminol") {
++        upstream.patchDir("paperServer") {
++            upstreamPath = "paper-server"
++            excludes = setOf("src/minecraft", "patches", "build.gradle.kts")
++            patchesDir = rootDirectory.dir("lightingluminol-server/paper-patches")
++            outputDir = rootDirectory.dir("paper-server")
++        }
++    }
++
++    activeFork = fork
++
++
+     updatingMinecraft {
+         // oldPaperCommit = "d4fe85375af18bfa88f44d7c1e6a61904ae550cc"
+     }
+++++ END HUNK
+
+++++ REJECTED HUNK: 2
+@@ -86,7 +99,19 @@
+     }
+ }
+-val log4jPlugins = sourceSets.create("log4jPlugins")
++sourceSets {
++    main {
++        java { srcDir("../paper-server/src/main/java"); srcDir("../paper-server/src/generated/java") }
++        resources { srcDir("../paper-server/src/main/resources") }
++        java { srcDir("../lightingluminol-server/src/main/java") }
++        resources { srcDir("../lightingluminol-server/src/main/resources") }
++    }
++    test {
++        java { srcDir("../paper-server/src/test/java") }
++        resources { srcDir("../paper-server/src/test/resources") }
++    }
++}
++val log4jPlugins = sourceSets.create("log4jPlugins") {
++    java { srcDir("../paper-server/src/log4jPlugins/java") }
++}
+ configurations.named(log4jPlugins.compileClasspathConfigurationName) {
+     extendsFrom(configurations.compileClasspath.get())
+ }
+++++ END HUNK
+
+++++ REJECTED HUNK: 3
+@@ -109,7 +134,7 @@
+ }
+ dependencies {
+-    implementation(project(":paper-api"))
++    implementation(project(":lightingluminol-api"))
+     implementation("ca.spottedleaf:leafpile:1.0.0")
+     implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
+     implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
+++++ END HUNK
+
+++++ REJECTED HUNK: 5
+@@ -326,7 +351,7 @@
+ }
+ fill {
+-    project("paper")
++    project("lightingluminol")
+     versionFamily(paperweight.minecraftVersion.map { it.split(".", "-").takeWhile { part -> part.toIntOrNull() != null }.take(2).joinToString(".") })
+     version(paperweight.minecraftVersion)
+++++ END HUNK

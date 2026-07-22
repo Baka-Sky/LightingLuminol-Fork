@@ -1,0 +1,51 @@
+﻿From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bacteriawa <A3167717663@hotmail.com>
+Date: Sat, 6 Jun 2026 22:24:03 +0800
+Subject: [PATCH] Folia scheduler compatibility
+
+
+diff --git a/io/papermc/paper/threadedregions/scheduler/FoliaRegionScheduler.java b/io/papermc/paper/threadedregions/scheduler/FoliaRegionScheduler.java
+index 84fa22ac06f1c2533874e1677f4bbd899288c4d6..cdbd1c9751012750ae113a770bc46544875064b4 100644
+--- a/io/papermc/paper/threadedregions/scheduler/FoliaRegionScheduler.java
++++ b/io/papermc/paper/threadedregions/scheduler/FoliaRegionScheduler.java
+@@ -65,6 +65,11 @@ public final class FoliaRegionScheduler implements RegionScheduler {
+         Objects.requireNonNull(world, "World may not be null");
+         Objects.requireNonNull(run, "Runnable may not be null");
+ 
++        if (meow.bacteriawa.lightingluminol.core.FoliaSchedulerCompatibility.shouldUseBukkitScheduler(plugin)) {
++            meow.bacteriawa.lightingluminol.core.FoliaSchedulerCompatibility.executeOnBukkit(plugin, run, "Region");
++            return;
++        }
++
+         RegionizedServer.getInstance().taskQueue.queueTickTaskQueue(
+             ((CraftWorld) world).getHandle(), chunkX, chunkZ, wrap(plugin, world, chunkX, chunkZ, run)
+         );
+@@ -89,6 +94,10 @@ public final class FoliaRegionScheduler implements RegionScheduler {
+             throw new IllegalPluginAccessException("Plugin attempted to register task while disabled");
+         }
+ 
++        if (meow.bacteriawa.lightingluminol.core.FoliaSchedulerCompatibility.shouldUseBukkitScheduler(plugin)) {
++            return meow.bacteriawa.lightingluminol.core.FoliaSchedulerCompatibility.runDelayedOnBukkit(plugin, task, delayTicks, "Region");
++        }
++
+         final LocationScheduledTask ret = new LocationScheduledTask(plugin, world, chunkX, chunkZ, -1, task);
+ 
+         if (Bukkit.isOwnedByCurrentRegion(world, chunkX, chunkZ)) {
+@@ -122,6 +131,10 @@ public final class FoliaRegionScheduler implements RegionScheduler {
+             throw new IllegalPluginAccessException("Plugin attempted to register task while disabled");
+         }
+ 
++        if (meow.bacteriawa.lightingluminol.core.FoliaSchedulerCompatibility.shouldUseBukkitScheduler(plugin)) {
++            return meow.bacteriawa.lightingluminol.core.FoliaSchedulerCompatibility.runAtFixedRateOnBukkit(plugin, task, initialDelayTicks, periodTicks, "Region");
++        }
++
+         final LocationScheduledTask ret = new LocationScheduledTask(plugin, world, chunkX, chunkZ, periodTicks, task);
+ 
+         if (Bukkit.isOwnedByCurrentRegion(world, chunkX, chunkZ)) {
+@@ -424,4 +437,4 @@ public final class FoliaRegionScheduler implements RegionScheduler {
+             }
+         }
+     }
+-}
+\ No newline at end of file
++}

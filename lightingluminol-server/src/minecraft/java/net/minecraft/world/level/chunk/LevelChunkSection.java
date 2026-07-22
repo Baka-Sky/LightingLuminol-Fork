@@ -1,0 +1,340 @@
+package net.minecraft.world.level.chunk;
+
+import java.util.function.Predicate;
+import net.minecraft.core.Holder;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.BiomeResolver;
+import net.minecraft.world.level.biome.Climate;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FluidState;
+
+public class LevelChunkSection implements ca.spottedleaf.moonrise.patches.block_counting.BlockCountingChunkSection { // Paper - block counting
+    public static final int BIOME_CONTAINER_BITS = 2;
+    short nonEmptyBlockCount; // Paper - package private
+    private short fluidCount;
+    private short tickingBlockCount;
+    private short tickingFluidCount;
+    private final PalettedContainer<BlockState> states;
+    private PalettedContainer<Holder<Biome>> biomes; // CraftBukkit - read/write
+
+    // Paper start - block counting
+    private static final it.unimi.dsi.fastutil.shorts.ShortArrayList FULL_LIST = new it.unimi.dsi.fastutil.shorts.ShortArrayList(16*16*16);
+    static {
+        for (short i = 0; i < (16*16*16); ++i) {
+            FULL_LIST.add(i);
+        }
+    }
+
+    private boolean isClient;
+    private static final short CLIENT_FORCED_SPECIAL_COLLIDING_BLOCKS = (short)9999;
+    private short specialCollidingBlocks;
+    private final ca.spottedleaf.moonrise.common.list.ShortList tickingBlocks = new ca.spottedleaf.moonrise.common.list.ShortList();
+
+    @Override
+    public final boolean moonrise$hasSpecialCollidingBlocks() {
+        return this.specialCollidingBlocks != 0;
+    }
+
+    @Override
+    public final ca.spottedleaf.moonrise.common.list.ShortList moonrise$getTickingBlockList() {
+        return this.tickingBlocks;
+    }
+    // Paper end - block counting
+
+    private LevelChunkSection(final LevelChunkSection source) {
+        this.nonEmptyBlockCount = source.nonEmptyBlockCount;
+        this.fluidCount = source.fluidCount;
+        this.tickingBlockCount = source.tickingBlockCount;
+        this.tickingFluidCount = source.tickingFluidCount;
+        this.states = source.states.copy();
+        this.biomes = source.biomes.copy();
+    }
+
+    public LevelChunkSection(final PalettedContainer<BlockState> states, final PalettedContainer<Holder<Biome>> biomes) { // CraftBukkit - read/write
+        this.states = states;
+        this.biomes = biomes;
+        this.recalcBlockCounts();
+    }
+
+    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - Anti-Xray
+    public LevelChunkSection(final PalettedContainerFactory containerFactory) {
+        // Paper start - Anti-Xray - Add parameters
+        this(containerFactory, null, null, 0);
+    }
+    public LevelChunkSection(final PalettedContainerFactory containerFactory, final net.minecraft.world.level.Level level, final net.minecraft.world.level.ChunkPos chunkPos, final int chunkSectionY) {
+        this.states = containerFactory.createForBlockStates(level, chunkPos, chunkSectionY);
+        // Paper end - Anti-Xray - Add parameters
+        this.biomes = containerFactory.createForBiomes();
+    }
+
+    public BlockState getBlockState(final int sectionX, final int sectionY, final int sectionZ) {
+        return this.states.get(sectionX, sectionY, sectionZ);
+    }
+
+    public FluidState getFluidState(final int sectionX, final int sectionY, final int sectionZ) {
+        return this.states.get(sectionX, sectionY, sectionZ).getFluidState(); // Paper - Perf: Optimise LevelChunk#getFluidState; diff on change - we expect this to be effectively just get(x, y, z).getFluidState(). If this changes we need to check other patches that use BlockBehaviour#getFluidState.
+    }
+
+    public void acquire() {
+        this.states.acquire();
+    }
+
+    public void release() {
+        this.states.release();
+    }
+
+    public BlockState setBlockState(final int sectionX, final int sectionY, final int sectionZ, final BlockState state) {
+        return this.setBlockState(sectionX, sectionY, sectionZ, state, true);
+    }
+
+    // Paper start - block counting
+    private void updateBlockCallback(final int x, final int y, final int z, final BlockState newState,
+                                     final BlockState oldState) {
+        if (oldState == newState) {
+            return;
+        }
+
+        if (this.isClient) {
+            if (ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.isSpecialCollidingBlock(newState)) {
+                this.specialCollidingBlocks = CLIENT_FORCED_SPECIAL_COLLIDING_BLOCKS;
+            }
+            return;
+        }
+
+        final boolean isSpecialOld = ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.isSpecialCollidingBlock(oldState);
+        final boolean isSpecialNew = ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.isSpecialCollidingBlock(newState);
+        if (isSpecialOld != isSpecialNew) {
+            if (isSpecialOld) {
+                --this.specialCollidingBlocks;
+            } else {
+                ++this.specialCollidingBlocks;
+            }
+        }
+
+        final boolean oldTicking = oldState.isRandomlyTicking();
+        final boolean newTicking = newState.isRandomlyTicking();
+        if (oldTicking != newTicking) {
+            final ca.spottedleaf.moonrise.common.list.ShortList tickingBlocks = this.tickingBlocks;
+            final short position = (short)(x | (z << 4) | (y << (4+4)));
+
+            if (oldTicking) {
+                tickingBlocks.remove(position);
+            } else {
+                tickingBlocks.add(position);
+            }
+        }
+    }
+    // Paper end - block counting
+
+    public BlockState setBlockState(final int sectionX, final int sectionY, final int sectionZ, final BlockState state, final boolean checkThreading) {
+        BlockState previous;
+        if (checkThreading) {
+            previous = this.states.getAndSet(sectionX, sectionY, sectionZ, state);
+        } else {
+            previous = this.states.getAndSetUnchecked(sectionX, sectionY, sectionZ, state);
+        }
+
+        if (!previous.isAir()) {
+            this.nonEmptyBlockCount--;
+            if (previous.isRandomlyTicking()) {
+                this.tickingBlockCount--;
+            }
+
+            FluidState previousFluid = previous.getFluidState();
+            if (!previousFluid.isEmpty()) {
+                this.fluidCount--;
+                if (previousFluid.isRandomlyTicking()) {
+                    this.tickingFluidCount--;
+                }
+            }
+        }
+
+        if (!state.isAir()) {
+            this.nonEmptyBlockCount++;
+            if (state.isRandomlyTicking()) {
+                this.tickingBlockCount++;
+            }
+
+            FluidState fluid = state.getFluidState();
+            if (!fluid.isEmpty()) {
+                this.fluidCount++;
+                if (fluid.isRandomlyTicking()) {
+                    this.tickingFluidCount++;
+                }
+            }
+        }
+
+        this.updateBlockCallback(sectionX, sectionY, sectionZ, state, previous); // Paper - block counting
+
+        return previous;
+    }
+
+    public boolean hasOnlyAir() {
+        return this.nonEmptyBlockCount == 0;
+    }
+
+    public boolean hasFluid() {
+        return this.fluidCount > 0;
+    }
+
+    public boolean isRandomlyTicking() {
+        return this.isRandomlyTickingBlocks() || this.isRandomlyTickingFluids();
+    }
+
+    public boolean isRandomlyTickingBlocks() {
+        return this.tickingBlockCount > 0;
+    }
+
+    public boolean isRandomlyTickingFluids() {
+        return this.tickingFluidCount > 0;
+    }
+
+    public void recalcBlockCounts() {
+        // Paper start - block counting
+        // reset, then recalculate
+        this.nonEmptyBlockCount = (short)0;
+        this.fluidCount = (short)0;
+        this.tickingBlockCount = (short)0;
+        this.tickingFluidCount = (short)0;
+        this.specialCollidingBlocks = (short)0;
+        this.tickingBlocks.clear();
+
+        if (this.maybeHas((final BlockState state) -> !state.isAir())) {
+            final PalettedContainer.Data<BlockState> data = this.states.data;
+            final Palette<BlockState> palette = data.palette();
+            final int paletteSize = palette.getSize();
+            final net.minecraft.util.BitStorage storage = data.storage();
+
+            final it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<it.unimi.dsi.fastutil.shorts.ShortArrayList> counts;
+            if (paletteSize == 1) {
+                counts = new it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<>(1);
+                counts.put(0, FULL_LIST);
+            } else {
+                counts = ((ca.spottedleaf.moonrise.patches.block_counting.BlockCountingBitStorage)storage).moonrise$countEntries();
+            }
+
+            for (final java.util.Iterator<it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry<it.unimi.dsi.fastutil.shorts.ShortArrayList>> iterator = counts.int2ObjectEntrySet().fastIterator(); iterator.hasNext();) {
+                final it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry<it.unimi.dsi.fastutil.shorts.ShortArrayList> entry = iterator.next();
+                final int paletteIdx = entry.getIntKey();
+                final it.unimi.dsi.fastutil.shorts.ShortArrayList coordinates = entry.getValue();
+                final int paletteCount = coordinates.size();
+
+                final BlockState state = palette.valueFor(paletteIdx);
+
+                if (state.isAir()) {
+                    continue;
+                }
+
+                if (ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.isSpecialCollidingBlock(state)) {
+                    this.specialCollidingBlocks += (short)paletteCount;
+                }
+                this.nonEmptyBlockCount += (short)paletteCount;
+                if (state.isRandomlyTicking()) {
+                    this.tickingBlockCount += (short) paletteCount;
+                    final short[] raw = coordinates.elements();
+                    final int rawLen = raw.length;
+
+                    final ca.spottedleaf.moonrise.common.list.ShortList tickingBlocks = this.tickingBlocks;
+
+                    tickingBlocks.setMinCapacity(Math.min((rawLen + tickingBlocks.size()) * 3 / 2, 16 * 16 * 16));
+
+                    java.util.Objects.checkFromToIndex(0, paletteCount, raw.length);
+                    for (int i = 0; i < paletteCount; ++i) {
+                        tickingBlocks.add(raw[i]);
+                    }
+                }
+
+                final FluidState fluid = state.getFluidState();
+
+                if (!fluid.isEmpty()) {
+                    this.fluidCount += (short)paletteCount;
+                    if (fluid.isRandomlyTicking()) {
+                        this.tickingFluidCount += (short)paletteCount;
+                    }
+                }
+            }
+        }
+        // Paper end - block counting
+    }
+
+    public PalettedContainer<BlockState> getStates() {
+        return this.states;
+    }
+
+    public PalettedContainerRO<Holder<Biome>> getBiomes() {
+        return this.biomes;
+    }
+
+    public void read(final FriendlyByteBuf buffer) {
+        this.nonEmptyBlockCount = buffer.readShort();
+        this.fluidCount = buffer.readShort();
+        this.states.read(buffer);
+        PalettedContainer<Holder<Biome>> biomes = this.biomes.recreate();
+        biomes.read(buffer);
+        this.biomes = biomes;
+        // Paper start - block counting
+        this.isClient = true;
+        // force has special colliding blocks to be true
+        this.specialCollidingBlocks = this.nonEmptyBlockCount != (short)0 && this.maybeHas(ca.spottedleaf.moonrise.patches.collisions.CollisionUtil::isSpecialCollidingBlock) ? CLIENT_FORCED_SPECIAL_COLLIDING_BLOCKS : (short)0;
+        // Paper end - block counting
+    }
+
+    public void readBiomes(final FriendlyByteBuf buffer) {
+        PalettedContainer<Holder<Biome>> biomes = this.biomes.recreate();
+        biomes.read(buffer);
+        this.biomes = biomes;
+    }
+
+    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - Anti-Xray
+    public void write(final FriendlyByteBuf buffer) {
+        // Paper start - Anti-Xray - Add parameters
+        this.write(buffer, null, 0);
+    }
+    public void write(final FriendlyByteBuf buffer, final io.papermc.paper.antixray.ChunkPacketInfo<BlockState> chunkPacketInfo, final int chunkSectionIndex) {
+        // Paper end - Anti-Xray - Add parameters
+        buffer.writeShort(this.nonEmptyBlockCount);
+        buffer.writeShort(this.fluidCount);
+        this.states.write(buffer, chunkPacketInfo, chunkSectionIndex); // Paper - Anti-Xray
+        this.biomes.write(buffer, null, chunkSectionIndex); // Paper - Anti-Xray
+    }
+
+    public int getSerializedSize() {
+        return 4 + this.states.getSerializedSize() + this.biomes.getSerializedSize();
+    }
+
+    public boolean maybeHas(final Predicate<BlockState> predicate) {
+        return this.states.maybeHas(predicate);
+    }
+
+    public Holder<Biome> getNoiseBiome(final int quartX, final int quartY, final int quartZ) {
+        return this.biomes.get(quartX, quartY, quartZ);
+    }
+
+    // CraftBukkit start
+    public void setNoiseBiome(int quartX, int quartY, int quartZ, Holder<Biome> biome) {
+        this.biomes.set(quartX, quartY, quartZ, biome);
+    }
+    // CraftBukkit end
+
+    public void fillBiomesFromNoise(
+        final BiomeResolver biomeResolver, final Climate.Sampler sampler, final int quartMinX, final int quartMinY, final int quartMinZ
+    ) {
+        PalettedContainer<Holder<Biome>> newBiomes = this.biomes.recreate();
+        int size = 4;
+
+        for (int x = 0; x < 4; x++) {
+            for (int y = 0; y < 4; y++) {
+                for (int z = 0; z < 4; z++) {
+                    newBiomes.getAndSetUnchecked(x, y, z, biomeResolver.getNoiseBiome(quartMinX + x, quartMinY + y, quartMinZ + z, sampler));
+                }
+            }
+        }
+
+        this.biomes = newBiomes;
+    }
+
+    public LevelChunkSection copy() {
+        return new LevelChunkSection(this);
+    }
+}

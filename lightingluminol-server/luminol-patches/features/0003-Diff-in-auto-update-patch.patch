@@ -1,0 +1,140 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bacteriawa <A3167717663@hotmail.com>
+Date: Sat, 21 Mar 2026 18:12:36 +0800
+Subject: [PATCH] Diff in auto-update patch
+
+
+diff --git a/src/main/java/me/earthme/luminol/config/modules/misc/AutoUpdateConfig.java b/src/main/java/me/earthme/luminol/config/modules/misc/AutoUpdateConfig.java
+index ce01352b637547c1cf8308d56d4b3f9c48fcca70..b56322700f654ce1c4e9d7f3c75d99efc17f4aac 100644
+--- a/src/main/java/me/earthme/luminol/config/modules/misc/AutoUpdateConfig.java
++++ b/src/main/java/me/earthme/luminol/config/modules/misc/AutoUpdateConfig.java
+@@ -16,13 +16,13 @@ import java.util.Set;
+         category = EnumConfigCategory.MISC,
+         name = "auto_update",
+         comments = """
+-                Checks GitHub Releases for newer Luminol jars on a schedule.
+-                Downloads are staged under auto_update/luminol and written to auto_update/core.path,
++                Checks GitHub Releases for newer LightingLuminol jars on a schedule.
++                Downloads are staged under auto_update/lightingluminol and written to auto_update/core.path,
+                 which Hyacinthusclip can consume on the next restart.
+                 If target_jar_path is set, Luminol will also try to replace that launcher jar directly."""
+ )
+ public class AutoUpdateConfig implements IConfigModule {
+-    @ConfigInfo(name = "enabled", comments = "Whether Luminol should check for updates automatically.")
++    @ConfigInfo(name = "enabled", comments = "Whether LightingLuminol should check for updates automatically.")
+     public static boolean enabled = false;
+ 
+     @ConfigInfo(name = "check_times", comments = "List of daily check times in HH:mm, based on the server's local time zone.")
+@@ -33,7 +33,7 @@ public class AutoUpdateConfig implements IConfigModule {
+ 
+     @ConfigInfo(name = "target_jar_path", comments = """
+             Optional launcher jar path to replace after a successful download.
+-            Leave this blank to keep the downloaded jar staged in auto_update/luminol
++            Leave this blank to keep the downloaded jar staged in auto_update/lightingluminol
+             and let Hyacinthusclip switch to it through auto_update/core.path on restart.""")
+     public static String targetJarPath = "";
+ 
+diff --git a/src/main/java/me/earthme/luminol/utils/AutoUpdateHelper.java b/src/main/java/me/earthme/luminol/utils/AutoUpdateHelper.java
+index 94a25cd681c9352d6931edafd9ec67fd7ba8a777..ad936efb1a439aa931b6e89fb7bde53bd055fd7c 100644
+--- a/src/main/java/me/earthme/luminol/utils/AutoUpdateHelper.java
++++ b/src/main/java/me/earthme/luminol/utils/AutoUpdateHelper.java
+@@ -35,10 +35,10 @@ public final class AutoUpdateHelper {
+     private final Logger LOGGER = LogUtils.getClassLogger();
+     private final Gson GSON = new Gson();
+ 
+-    private final String GITHUB_API_BASE = "https://api.github.com/repos/LuminolMC/Luminol";
++    private final String GITHUB_API_BASE = "https://api.github.com/repos/LuminolMC/LightingLuminol";
+     private final Path AUTO_UPDATE_DIR = Path.of("auto_update");
+     private final Path CORE_PATH_FILE = AUTO_UPDATE_DIR.resolve("core.path");
+-    private final Path LUMINOL_UPDATE_DIR = AUTO_UPDATE_DIR.resolve("luminol");
++    private final Path LUMINOL_UPDATE_DIR = AUTO_UPDATE_DIR.resolve("lightingluminol");
+     private final Path LATEST_PATH_FILE = LUMINOL_UPDATE_DIR.resolve("latest.path");
+     private final long DAILY_TASK_PERIOD_MILLIS = TimeUnit.DAYS.toMillis(1);
+ 
+@@ -51,13 +51,13 @@ public final class AutoUpdateHelper {
+         ensureWorkingDirectories();
+ 
+         scheduler = Executors.newSingleThreadScheduledExecutor(task -> {
+-            final Thread thread = new Thread(task, "Luminol Auto Update Scheduler");
++            final Thread thread = new Thread(task, "LightingLuminol Auto Update Scheduler");
+             thread.setDaemon(true);
+             return thread;
+         });
+ 
+         if (AutoUpdateConfig.checkTimes.isEmpty()) {
+-            LOGGER.warn("Luminol auto-update is enabled, but misc.auto_update.check_times is empty.");
++            LOGGER.warn("LightingLuminol auto-update is enabled, but misc.auto_update.check_times is empty.");
+             return;
+         }
+ 
+@@ -95,14 +95,14 @@ public final class AutoUpdateHelper {
+ 
+     private void checkForUpdatesSafely() {
+         if (!UPDATE_RUNNING.compareAndSet(false, true)) {
+-            LOGGER.info("A Luminol auto-update check is already running, skipping this schedule.");
++            LOGGER.info("A LightingLuminol auto-update check is already running, skipping this schedule.");
+             return;
+         }
+ 
+         try {
+             checkForUpdates();
+         } catch (Exception e) {
+-            LOGGER.warn("Luminol auto-update failed.", e);
++            LOGGER.warn("LightingLuminol auto-update failed.", e);
+         } finally {
+             UPDATE_RUNNING.set(false);
+         }
+@@ -123,7 +123,7 @@ public final class AutoUpdateHelper {
+ 
+         final ReleaseAssetInfo latestRelease = getLatestCompatibleRelease(mcVersion, gitBranch);
+         if (latestRelease == null) {
+-            LOGGER.warn("No compatible Luminol release was found for Minecraft {}{}.",
++            LOGGER.warn("No compatible LightingLuminol release was found for Minecraft {}{}.",
+                     mcVersion,
+                     gitBranch == null ? "" : " on branch " + gitBranch
+             );
+@@ -132,7 +132,7 @@ public final class AutoUpdateHelper {
+ 
+         final UpdateStatus updateStatus = compareReleaseWithCurrentBuild(latestRelease.releaseCommitHash(), currentGitHash);
+         if (updateStatus == UpdateStatus.UP_TO_DATE) {
+-            LOGGER.info("You are already running the latest compatible Luminol release: {}", latestRelease.tagName());
++            LOGGER.info("You are already running the latest compatible LightingLuminol release: {}", latestRelease.tagName());
+             return;
+         }
+ 
+@@ -154,7 +154,7 @@ public final class AutoUpdateHelper {
+             return;
+         }
+ 
+-        LOGGER.info("Found a newer Luminol release: {}", latestRelease.tagName());
++        LOGGER.info("Found a newer LightingLuminol release: {}", latestRelease.tagName());
+ 
+         final Path stagedJar = downloadAndStageRelease(latestRelease);
+         final Path finalJarPath = tryApplyTargetJar(stagedJar);
+@@ -163,7 +163,7 @@ public final class AutoUpdateHelper {
+ 
+         if (finalJarPath.equals(stagedJar)) {
+             LOGGER.info(
+-                    "Downloaded the latest Luminol jar to {} and refreshed auto_update/core.path for Hyacinthusclip. Please restart your server.",
++                    "Downloaded the latest LightingLuminol jar to {} and refreshed auto_update/core.path for Hyacinthusclip. Please restart your server.",
+                     finalJarPath.toAbsolutePath()
+             );
+         } else {
+@@ -179,7 +179,7 @@ public final class AutoUpdateHelper {
+         try {
+             Files.createDirectories(LUMINOL_UPDATE_DIR);
+         } catch (IOException e) {
+-            throw new RuntimeException("Failed to create Luminol auto update directory", e);
++            throw new RuntimeException("Failed to create LightingLuminol auto update directory", e);
+         }
+     }
+ 
+@@ -440,7 +440,7 @@ public final class AutoUpdateHelper {
+     private @NotNull HttpURLConnection openConnection(String url) throws IOException, URISyntaxException {
+         final HttpURLConnection connection = (HttpURLConnection) new URI(url).toURL().openConnection();
+         connection.setRequestProperty("Accept", "application/vnd.github+json");
+-        connection.setRequestProperty("User-Agent", "Luminol Auto Update");
++        connection.setRequestProperty("User-Agent", "LightingLuminol Auto Update");
+         connection.setConnectTimeout(10000);
+         connection.setReadTimeout(10000);
+         return connection;

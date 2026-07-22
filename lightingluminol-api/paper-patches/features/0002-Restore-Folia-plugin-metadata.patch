@@ -1,0 +1,71 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bacteriawa <A3167717663@hotmail.com>
+Date: Wed, 22 Jul 2026 18:00:00 +0800
+Subject: [PATCH] Restore Folia plugin metadata
+
+
+diff --git a/src/main/java/io/papermc/paper/plugin/configuration/PluginMeta.java b/src/main/java/io/papermc/paper/plugin/configuration/PluginMeta.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/io/papermc/paper/plugin/configuration/PluginMeta.java
++++ b/src/main/java/io/papermc/paper/plugin/configuration/PluginMeta.java
+@@ -189,4 +189,12 @@ public interface PluginMeta extends Namespaced {
+     default String namespace() {
+         return this.getName().toLowerCase(Locale.ROOT);
+     }
++
++    // Folia start - block plugins not marked as supported
++    /**
++     * Returns whether the plugin has been marked to be compatible with regionised threading as provided
++     * by Folia
++     */
++    boolean isFoliaSupported();
++    // Folia end - block plugins not marked as supported
+ }
+diff --git a/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java b/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java
++++ b/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java
+@@ -267,6 +267,19 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
+         return this.paperPluginLoader;
+     }
+     // Paper end - plugin loader api
++    // Folia start - block plugins not marked as supported
++    private String foliaSupported;
++    private static final String FOLIA_SUPPORTED_KEY = "folia-supported";
++
++    /**
++     * Returns whether the plugin has been marked to be compatible with regionised threading as provided
++     * by Folia
++     */
++    @Override
++    public boolean isFoliaSupported() {
++        return this.foliaSupported != null && this.foliaSupported.equalsIgnoreCase("true");
++    }
++    // Folia end - block plugins not marked as supported
+     // Paper start - oh my goddddd
+     /**
+      * @hidden
+@@ -1267,6 +1280,11 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
+         if (map.get("prefix") != null) {
+             prefix = map.get("prefix").toString();
+         }
++        // Folia start - block plugins not marked as supported
++        if (map.get(FOLIA_SUPPORTED_KEY) != null) {
++            foliaSupported = map.get(FOLIA_SUPPORTED_KEY).toString();
++        }
++        // Folia end - block plugins not marked as supported
+     }
+ 
+     @NotNull
+@@ -1343,6 +1361,11 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
+         if (prefix != null) {
+             map.put("prefix", prefix);
+         }
++        // Folia start - block plugins not marked as supported
++        if (foliaSupported != null) {
++            map.put(FOLIA_SUPPORTED_KEY, foliaSupported);
++        }
++        // Folia end - block plugins not marked as supported
+ 
+         return map;
+     }

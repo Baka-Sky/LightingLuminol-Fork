@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bacteriawa <A3167717663@hotmail.com>
+Date: Wed, 22 Jul 2026 18:00:00 +0800
+Subject: [PATCH] Expose regionized data
+
+
+diff --git a/io/papermc/paper/threadedregions/TickRegions.java b/io/papermc/paper/threadedregions/TickRegions.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/io/papermc/paper/threadedregions/TickRegions.java
++++ b/io/papermc/paper/threadedregions/TickRegions.java
+@@ -283,11 +283,11 @@ public final class TickRegions implements ThreadedRegionizer.RegionCallbacks<Tic
+             return this.holderManagerRegionData;
+         }
+ 
+-        <T> T getRegionizedData(final RegionizedData<T> regionizedData) {
++        public <T> T getRegionizedData(final RegionizedData<T> regionizedData) {
+             return (T)this.regionizedData.get(regionizedData);
+         }
+ 
+-        <T> T getOrCreateRegionizedData(final RegionizedData<T> regionizedData) {
++        public <T> T getOrCreateRegionizedData(final RegionizedData<T> regionizedData) {
+             T ret = (T)this.regionizedData.get(regionizedData);
+ 
+             if (ret != null) {

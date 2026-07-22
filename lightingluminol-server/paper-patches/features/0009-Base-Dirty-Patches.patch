@@ -1,0 +1,55 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bacteriawa <A3167717663@hotmail.com>
+Date: Sat, 6 Jun 2026 21:11:39 +0800
+Subject: [PATCH] Base Dirty Patches
+
+
+diff --git a/src/main/java/ca/spottedleaf/moonrise/common/list/ReferenceList.java b/src/main/java/ca/spottedleaf/moonrise/common/list/ReferenceList.java
+index 2e876b918672e8ef3b5197b7e6b1597247fdeaa1..6c4e25e5e21044c0fa9728e475b28f6478783037 100644
+--- a/src/main/java/ca/spottedleaf/moonrise/common/list/ReferenceList.java
++++ b/src/main/java/ca/spottedleaf/moonrise/common/list/ReferenceList.java
+@@ -36,7 +36,7 @@ public final class ReferenceList<E> implements Iterable<E> {
+         return new ReferenceList<>(this.references.clone(), this.count, this.referenceToIndex.clone());
+     }
+ 
+-    public int size() {
++    public synchronized int size() {
+         return this.count;
+     }
+ 
+@@ -40,7 +40,7 @@ public final class ReferenceList<E> implements Iterable<E> {
+         return this.referenceToIndex.containsKey(obj);
+     }
+ 
+-    public boolean remove(final E obj) {
++    public synchronized boolean remove(final E obj) {
+         final int index = this.referenceToIndex.removeInt(obj);
+         if (index == Integer.MIN_VALUE) {
+             return false;
+@@ -63,7 +63,7 @@ public final class ReferenceList<E> implements Iterable<E> {
+         return true;
+     }
+ 
+-    public E getChecked(final int index) {
++    public synchronized E getChecked(final int index) {
+         if (index < 0 || index >= this.count) {
+             throw new IndexOutOfBoundsException("Index: " + index + " is out of bounds, size: " + this.count);
+         }
+@@ -70,7 +70,7 @@ public final class ReferenceList<E> implements Iterable<E> {
+         return this.references[index];
+     }
+ 
+-    public E getUnchecked(final int index) {
++    public synchronized E getUnchecked(final int index) {
+         return this.references[index];
+     }
+ 
+@@ -103,7 +103,7 @@ public final class ReferenceList<E> implements Iterable<E> {
+         return this.references;
+     }
+ 
+-    public void clear() {
++    public synchronized void clear() {
+         this.referenceToIndex.clear();
+         Arrays.fill(this.references, 0, this.count, null);
+         this.count = 0;
