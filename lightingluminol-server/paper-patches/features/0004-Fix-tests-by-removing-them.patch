@@ -1,4 +1,4 @@
-﻿From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Nassim Jahnke <nassim@njahnke.dev>
 Date: Sat, 25 Mar 2023 19:03:42 +0100
 Subject: [PATCH] Fix tests by removing them

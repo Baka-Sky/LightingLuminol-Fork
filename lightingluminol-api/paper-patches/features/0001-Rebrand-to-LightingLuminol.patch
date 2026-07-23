@@ -5,17 +5,18 @@ Subject: [PATCH] Rebrand to LightingLuminol
 
 
 diff --git a/src/main/java/io/papermc/paper/ServerBuildInfo.java b/src/main/java/io/papermc/paper/ServerBuildInfo.java
-index db5e2f10278c20286779362cfdfadb2f42c724e0..b97000999753355f6a5b59f76521cccf06c71b1e 100644
+index 0000000000000000000000000000000000000000..b97000999753355f6a5b59f76521cccf06c71b1e 100644
 --- a/src/main/java/io/papermc/paper/ServerBuildInfo.java
 +++ b/src/main/java/io/papermc/paper/ServerBuildInfo.java
 @@ -28,6 +28,10 @@ public interface ServerBuildInfo {
-      * The brand id for Luminol.
+     /**
+      * The brand id for Paper.
       */
-     Key BRAND_LUMINOL_ID = Key.key("luminolmc", "luminol");
+    Key BRAND_PAPER_ID = Key.key("papermc", "paper");
 +    /**
 +     * The brand id for LightingLuminol.
 +     */
 +    Key BRAND_LIGHTINGLUMINOL_ID = Key.key("luminolmc", "lightingluminol");
-     // Luminol end
- 
+
      /**
+      * Gets the {@code ServerBuildInfo}.
