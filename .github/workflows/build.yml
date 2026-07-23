@@ -19,13 +19,15 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Configure Git Identity
+      - name: Configure Git
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global core.autocrlf false
+          git config --global core.longpaths true
 
       - name: Apply Patches
-        run: .\gradlew.bat applyAllPatches
+        run: .\gradlew.bat applyAllPatches --info
 
       - name: Build Paperclip JAR
         run: .\gradlew.bat createPaperclipJar
