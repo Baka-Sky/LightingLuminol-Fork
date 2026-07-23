@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Baka-Sky <jh_JLXC@outlook.com>
+Date: Thu, 23 Jul 2026 20:02:45 +0800
+Subject: [PATCH] Make command blocks honor Luminol config
+
+
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index c6434ff2e5c211887c2e98c8462a49e0e1cb5b21..ab0a06ec31e0fa4741ba0c4368d3b9e0b586af83 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -2960,7 +2960,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+     }
+ 
+     public boolean isCommandBlockEnabled() {
+-        return this.getGameRules().get(GameRules.COMMAND_BLOCKS_WORK);
++        return meow.bacteriawa.lightingluminol.config.ExperimentConfig.Command.enableCommandBlock;
+     }
+ 
+     public boolean isSpawnerBlockEnabled() {
+diff --git a/net/minecraft/world/level/BaseCommandBlock.java b/net/minecraft/world/level/BaseCommandBlock.java
+index 31f1583f29eebe5e13b5a7ac5116fdafc3592e5c..d85172c5682b368fb2a8c716c5524bbbc2b45c50 100644
+--- a/net/minecraft/world/level/BaseCommandBlock.java
++++ b/net/minecraft/world/level/BaseCommandBlock.java
+@@ -91,7 +91,6 @@ public abstract class BaseCommandBlock {
+     }
+ 
+     public boolean performCommand(final ServerLevel level) {
+-        if (true) return false; // Folia - region threading
+         if (level.getGameTime() == this.lastExecution) {
+             return false;
+         }
