@@ -27,7 +27,7 @@ jobs:
           git config --global core.longpaths true
 
       - name: Apply Patches
-        run: .\gradlew.bat applyAllPatches --info
+        run: .\gradlew.bat applyAllPatches
 
       - name: Build Paperclip JAR
         run: .\gradlew.bat createPaperclipJar
