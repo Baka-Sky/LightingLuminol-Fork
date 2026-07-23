@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -25,10 +25,10 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Apply Patches
-        run: ./gradlew applyAllPatches
+        run: .\gradlew.bat applyAllPatches
 
       - name: Build Paperclip JAR
-        run: ./gradlew createPaperclipJar
+        run: .\gradlew.bat createPaperclipJar
 
       - name: Upload JAR Artifact
         uses: actions/upload-artifact@v4
