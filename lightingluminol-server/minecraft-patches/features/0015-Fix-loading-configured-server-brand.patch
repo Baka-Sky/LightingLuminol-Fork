@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Baka-Sky <jh_JLXC@outlook.com>
+Date: Thu, 23 Jul 2026 18:33:03 +0800
+Subject: [PATCH] Fix loading configured server brand
+
+
+
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index 6fa2c9393e8ee68564ccdde11ed73f6ddc813e73..cd7a8d72dff610d0c399c37996d0769cf055ac2a 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -2075,7 +2075,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     }
+ 
+     public String getServerModName() {
+-        return io.papermc.paper.ServerBuildInfo.buildInfo().brandName(); // Paper
++        return meow.bacteriawa.lightingluminol.config.ServerModNameConfig.serverModName; // LightingLuminol - use config value
+     }
+ 
+     public ServerClockManager clockManager() {
+diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
+index cd5551c0221ad2a7b5c7d452d8d91ffc9711c3ee..021242c36b1aa19a39d1b8ccaf4fb88c0ce93165 100644
+--- a/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -294,6 +294,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         }
+ 
+         // CraftBukkit start
++        meow.bacteriawa.lightingluminol.config.ConfigLoader.load();
+         this.server.loadPlugins();
+         this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.STARTUP);
+         // CraftBukkit end
