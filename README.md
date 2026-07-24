@@ -205,17 +205,6 @@ force_bukkit_scheduler_plugins: []
 
 ---
 
-<div align="center">
-  <p><strong>Star History</strong></p>
-  <a href="https://www.star-history.com/?repos=Baka-Sky%2FLightingLuminol-Fork&type=date&legend=top-left">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Baka-Sky/LightingLuminol-Fork&type=date&theme=dark&legend=top-left&sealed_token=Bz5awiOCm9KiL1lCE5n0-2sTOBcU_KRXDNMdKXV3aA-sSgJJSCbLWlZz02ioDo24rGmJNdF4pWk2ZfaS-kETXFJhdP_dj0C26J9zCUyvYZ8WfdF2GQtqMA" />
-      <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Baka-Sky/LightingLuminol-Fork&type=date&legend=top-left&sealed_token=Bz5awiOCm9KiL1lCE5n0-2sTOBcU_KRXDNMdKXV3aA-sSgJJSCbLWlZz02ioDo24rGmJNdF4pWk2ZfaS-kETXFJhdP_dj0C26J9zCUyvYZ8WfdF2GQtqMA" />
-      <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Baka-Sky/LightingLuminol-Fork&type=date&legend=top-left&sealed_token=Bz5awiOCm9KiL1lCE5n0-2sTOBcU_KRXDNMdKXV3aA-sSgJJSCbLWlZz02ioDo24rGmJNdF4pWk2ZfaS-kETXFJhdP_dj0C26J9zCUyvYZ8WfdF2GQtqMA" />
-    </picture>
-  </a>
-</div>
-
 ---
 
 <div align="center">
