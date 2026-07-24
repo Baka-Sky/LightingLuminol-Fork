@@ -205,8 +205,6 @@ force_bukkit_scheduler_plugins: []
 
 ---
 
----
-
 <div align="center">
   <p><sub>Built by BakaSky -- Licensed under GPLv3</sub></p>
   <p>
