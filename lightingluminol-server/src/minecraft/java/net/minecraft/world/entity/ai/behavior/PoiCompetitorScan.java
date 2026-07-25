@@ -24,12 +24,6 @@ public class PoiCompetitorScan {
                             return true;
                         }
                         // Folia end - region threading
-                        // Luminol - PoiRangeFixes
-                        if (meow.bacteriawa.lightingluminol.config.FixesConfig.PoiRangeFixes.doNotCompetePoiIfUnloaded && level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-                            if (!serverLevel.isLoaded(pos.pos())) {
-                                return true;
-                            }
-                        }
                         level.getPoiManager()
                             .getType(pos.pos())
                             .ifPresent(

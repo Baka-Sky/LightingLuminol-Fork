@@ -44,9 +44,6 @@ public class GoalSelector {
     // Paper start - EAR 2
     public boolean inactiveTick() {
         this.curRate++;
-        if (meow.bacteriawa.lightingluminol.optimization.OptimizationsManager.shouldThrottleGoalSelector()) {
-            return this.curRate % 20 == 0;
-        }
         return this.curRate % 3 == 0; // TODO newGoalRate was already unused in 1.20.4, check if this is correct
     }
 

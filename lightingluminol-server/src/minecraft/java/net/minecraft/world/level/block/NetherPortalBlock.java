@@ -123,9 +123,6 @@ public class NetherPortalBlock extends Block implements Portal {
     ) {
         if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
         if (entity.canUsePortal(false)) {
-            if (!meow.bacteriawa.lightingluminol.function.PortalRateLimitManager.canTeleport(entity)) {
-                return;
-            }
             // CraftBukkit start - Entity in portal
             org.bukkit.event.entity.EntityPortalEnterEvent event = new org.bukkit.event.entity.EntityPortalEnterEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, level), org.bukkit.PortalType.NETHER); // Paper - add portal type
             level.getCraftServer().getPluginManager().callEvent(event);

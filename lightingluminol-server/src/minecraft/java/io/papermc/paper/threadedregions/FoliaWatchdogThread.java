@@ -6,7 +6,6 @@ import net.minecraft.server.MinecraftServer;
 import org.bukkit.Bukkit;
 import org.slf4j.Logger;
 import org.spigotmc.WatchdogThread;
-import meow.bacteriawa.lightingluminol.config.MiscConfig;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -66,7 +65,7 @@ public final class FoliaWatchdogThread extends Thread {
 
             for (final RunningTick tick : ticks) {
                 final long elapsed = now - tick.lastPrint;
-                if (elapsed <= TimeUnit.MILLISECONDS.toNanos(MiscConfig.FoliaWatchdog.tickRegionTimeoutMs)) {
+                if (elapsed <= TimeUnit.SECONDS.toNanos(5L)) {
                     continue;
                 }
                 tick.lastPrint = now;

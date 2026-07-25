@@ -679,7 +679,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         this.server.getCommandMap().registerServerAliases(); // Paper - relocate initial CommandMap#registerServerAliases() call
         ((org.bukkit.craftbukkit.help.SimpleHelpMap) this.server.getHelpMap()).initializeCommands();
         this.server.getPluginManager().callEvent(new org.bukkit.event.server.ServerLoadEvent(org.bukkit.event.server.ServerLoadEvent.LoadType.STARTUP));
-        meow.bacteriawa.lightingluminol.core.LightingLuminolCore.init();
         this.connection.acceptConnections();
 
         Runnable task;

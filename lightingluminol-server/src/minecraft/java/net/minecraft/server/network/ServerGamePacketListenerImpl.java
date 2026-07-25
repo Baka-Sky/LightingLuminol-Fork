@@ -58,7 +58,6 @@ import net.minecraft.network.chat.PlayerChatMessage;
 import net.minecraft.network.chat.RemoteChatSession;
 import net.minecraft.network.chat.SignableCommand;
 import net.minecraft.network.chat.SignedMessageBody;
-import meow.bacteriawa.lightingluminol.config.MiscConfig;
 import net.minecraft.network.chat.SignedMessageChain;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketUtils;
@@ -677,9 +676,7 @@ public class ServerGamePacketListenerImpl
                 boolean fail = false;
                 if (movedDist > org.spigotmc.SpigotConfig.movedWronglyThreshold) { // Spigot
                     fail = true;
-                    if (!MiscConfig.DisableWarning.disableMovedWronglyThresholdWarning) {
-                        LOGGER.warn("{} (vehicle of {}) moved wrongly! {}", vehicle.getPlainTextName(), this.player.getPlainTextName(), Math.sqrt(movedDist));
-                    }
+                    LOGGER.warn("{} (vehicle of {}) moved wrongly! {}", vehicle.getPlainTextName(), this.player.getPlainTextName(), Math.sqrt(movedDist));
                 }
 
                 // Paper start - optimise out extra getCubes
@@ -1687,7 +1684,7 @@ public class ServerGamePacketListenerImpl
                                             targetX, targetY, targetZ, targetYRot, targetXRot, true);
                                     if (!event.isAllowed()) {
                                         movedWrongly = true;
-                                        if (event.getLogWarning() && !MiscConfig.DisableWarning.disableMovedWronglyThresholdWarning)
+                                        if (event.getLogWarning())
                                      // Paper end
                                     LOGGER.warn("{} moved wrongly!", this.player.getPlainTextName());
                                     } // Paper
@@ -3762,10 +3759,6 @@ public class ServerGamePacketListenerImpl
             if (oldProfileKey != null && newProfileKey.expiresAt().isBefore(oldProfileKey.expiresAt())) {
                 this.disconnect(ProfilePublicKey.EXPIRED_PROFILE_PUBLIC_KEY, org.bukkit.event.player.PlayerKickEvent.Cause.EXPIRED_PROFILE_PUBLIC_KEY); // Paper - kick event causes
             } else {
-                if (MiscConfig.VerifyPublicKeyOnlyInOnlineMode.enabled && !this.server.usesAuthentication()) {
-                    LOGGER.info("Skipping chat session public key validation in offline mode for {}", this.player.getGameProfile().name());
-                    return;
-                }
                 try {
                     SignatureValidator profileKeySignatureValidator = this.server.services().profileKeySignatureValidator();
                     if (profileKeySignatureValidator == null) {

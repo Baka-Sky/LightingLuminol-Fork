@@ -149,18 +149,6 @@ public final class ConfigLoader {
                 "\t#Related with RNG cracks\n" +
                 "\tenable_for_player_entity = true\n" +
                 "\n" +
-                "[fixes.tps_sync]\n" +
-                "\tenabled = true\n" +
-                "\n" +
-                "[fixes.fix_entity_dupe]\n" +
-                "\tenabled = true\n" +
-                "\n" +
-                "[fixes.prevent_entity_explosion]\n" +
-                "\tenabled = false\n" +
-                "\n" +
-                "[fixes.prevent_end_gateway_async]\n" +
-                "\tenabled = true\n" +
-                "\n" +
                 "[function.regionbar]\n" +
                 "\tformat = \"<gray>Util<yellow>:</yellow> <util> Chunks<yellow>:</yellow> <green><chunks></green> Players<yellow>:</yellow> <green><players></green> Entities<yellow>:</yellow> <green><entities></green>\"\n" +
                 "\tenabled = false\n" +
@@ -420,10 +408,6 @@ public final class ConfigLoader {
         FixesConfig.FixHighVelocityIssue.enabled = parseBoolean(values.get("fixes.fix_high_velocity_issue.enabled"), true);
         FixesConfig.FixHighVelocityIssue.warnOnDetected = parseBoolean(values.get("fixes.fix_high_velocity_issue.warn_on_detected"), false);
         FixesConfig.UseVanillaRandomSource.enabled = parseBoolean(values.get("fixes.use_vanilla_random_source.enabled"), false);
-        FixesConfig.TpsSync.enabled = parseBoolean(values.get("fixes.tps_sync.enabled"), true);
-        FixesConfig.FixEntityDupe.enabled = parseBoolean(values.get("fixes.fix_entity_dupe.enabled"), true);
-        FixesConfig.PreventEntityExplosion.enabled = parseBoolean(values.get("fixes.prevent_entity_explosion.enabled"), false);
-        FixesConfig.PreventEndGatewayAsync.enabled = parseBoolean(values.get("fixes.prevent_end_gateway_async.enabled"), true);
 
         FunctionConfig.Regionbar.format = parseString(values.get("function.regionbar.format"), "<gray>Util<yellow>:</yellow> <util> Chunks<yellow>:</yellow> <green><chunks></green> Players<yellow>:</yellow> <green><players></green> Entities<yellow>:</yellow> <green><entities></green>");
         FunctionConfig.Regionbar.enabled = parseBoolean(values.get("function.regionbar.enabled"), false);
@@ -479,13 +463,6 @@ public final class ConfigLoader {
         MiscConfig.DisableWarning.disableHeightmapWarning = parseBoolean(values.get("misc.disable_warning.disable_heightmap_warning"), false);
         MiscConfig.DisableWarning.disableOfflineModeWarning = parseBoolean(values.get("misc.disable_warning.disable_offline_mode_warning"), false);
         MiscConfig.DisableWarning.disableMovedWronglyThresholdWarning = parseBoolean(values.get("misc.disable_warning.disable_moved_wrongly_threshold_warning"), false);
-
-        MiscConfig.FoliaWatchdog.tickRegionTimeoutMs = parseInt(values.get("misc.folia_watchdog.tick_region_time_out_ms"), 5000);
-        MiscConfig.UsernameChecks.enabled = parseBoolean(values.get("misc.username_checks.enabled"), true);
-        MiscConfig.SavePortalTickets.doSave = parseBoolean(values.get("misc.save_portal_tickets.do_save"), true);
-        MiscConfig.MojangOutOfOrderChatCheck.enabled = parseBoolean(values.get("misc.mojang_out_of_order_chat_check.enabled"), true);
-        MiscConfig.ForceDisablePacketLimiterOfPaper.forceDisable = parseBoolean(values.get("misc.force_disable_packet_limiter_of_paper.force_disable"), false);
-        MiscConfig.VerifyPublicKeyOnlyInOnlineMode.enabled = parseBoolean(values.get("misc.verify_publickey_only_in_online_mode.enabled"), false);
 
         ServerModNameConfig.serverModName = parseString(values.get("misc.server_mod_name.name"), "LightingLuminol");
         ServerModNameConfig.fakeVanilla = parseBoolean(values.get("misc.server_mod_name.vanilla_spoof"), false);
