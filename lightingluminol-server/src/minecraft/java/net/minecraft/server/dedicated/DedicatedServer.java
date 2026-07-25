@@ -48,6 +48,7 @@ import net.minecraft.server.packs.repository.PackRepository;
 import net.minecraft.server.permissions.LevelBasedPermissionSet;
 import net.minecraft.server.permissions.Permission;
 import net.minecraft.server.permissions.PermissionLevel;
+import meow.bacteriawa.lightingluminol.config.MiscConfig;
 import net.minecraft.server.permissions.PermissionSet;
 import net.minecraft.server.players.NameAndId;
 import net.minecraft.server.players.OldUsersConverter;
@@ -294,6 +295,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface 
         }
 
         // CraftBukkit start
+        meow.bacteriawa.lightingluminol.config.ConfigLoader.load();
         this.server.loadPlugins();
         this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.STARTUP);
         // CraftBukkit end
@@ -303,7 +305,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface 
         String proxyFlavor = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "Velocity" : "BungeeCord";
         String proxyLink = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "https://docs.papermc.io/velocity/security" : "http://www.spigotmc.org/wiki/firewall-guide/";
         // Paper end - Add Velocity IP Forwarding Support
-        if (!this.usesAuthentication()) {
+        if (!this.usesAuthentication() && !MiscConfig.DisableWarning.disableOfflineModeWarning) {
             LOGGER.warn("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
             LOGGER.warn("The server will make no attempt to authenticate usernames. Beware.");
             // Spigot start
@@ -585,6 +587,9 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface 
 
     @Override
     public int getRateLimitPacketsPerSecond() {
+        if (MiscConfig.ForceDisablePacketLimiterOfPaper.forceDisable) {
+            return 0;
+        }
         return this.getProperties().rateLimitPacketsPerSecond;
     }
 

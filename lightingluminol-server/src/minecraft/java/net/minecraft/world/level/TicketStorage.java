@@ -29,6 +29,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
+import meow.bacteriawa.lightingluminol.config.MiscConfig;
 
 public class TicketStorage extends SavedData implements ca.spottedleaf.moonrise.patches.chunk_system.ticket.ChunkSystemTicketStorage { // Paper - rewrite chunk system
     private static final int INITIAL_TICKET_LIST_CAPACITY = 4;
@@ -86,6 +87,9 @@ public class TicketStorage extends SavedData implements ca.spottedleaf.moonrise.
         List<Pair<ChunkPos, Ticket>> tickets = new ArrayList<>();
         this.forEachTicket((pos, ticket) -> {
             if (ticket.getType().persist()) {
+                if (!MiscConfig.SavePortalTickets.doSave && ticket.getType() == TicketType.PORTAL) {
+                    return;
+                }
                 tickets.add(new Pair<>(pos, ticket));
             }
         });

@@ -304,7 +304,17 @@ public class Villager extends AbstractVillager implements VillagerDataHolder, Re
 
     @Override
     public void tick() {
-        super.tick();
+        if (meow.bacteriawa.lightingluminol.optimization.OptimizationsManager.shouldLobotomizeVillager()) {
+            if (this.tickCount % meow.bacteriawa.lightingluminol.optimization.OptimizationsManager.getVillagerCheckInterval() != 0) {
+                return;
+            }
+            if (meow.bacteriawa.lightingluminol.optimization.OptimizationsManager.shouldWaitUntilTradeLocked()
+                && !this.getEntityData().get(DATA_VILLAGER_DATA_FINALIZED)) {
+                super.tick();
+            }
+        } else {
+            super.tick();
+        }
         if (this.getUnhappyCounter() > 0) {
             this.setUnhappyCounter(this.getUnhappyCounter() - 1);
         }

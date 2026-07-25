@@ -30,6 +30,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.FullChunkStatus;
+import meow.bacteriawa.lightingluminol.config.ExperimentConfig;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -1572,6 +1573,9 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
         try {
             tick.accept(entity);
         } catch (Throwable t) {
+            if (ExperimentConfig.DisableEntityExceptionCatchers.enabled) {
+                throw t;
+            }
             // Paper start - Prevent block entity and entity crashes
             final String msg = String.format("Entity threw exception at %s:%s,%s,%s", io.papermc.paper.util.MCUtil.getLevelName(entity.level()), entity.getX(), entity.getY(), entity.getZ());
             MinecraftServer.LOGGER.error(msg, t);

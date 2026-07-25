@@ -679,6 +679,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         this.server.getCommandMap().registerServerAliases(); // Paper - relocate initial CommandMap#registerServerAliases() call
         ((org.bukkit.craftbukkit.help.SimpleHelpMap) this.server.getHelpMap()).initializeCommands();
         this.server.getPluginManager().callEvent(new org.bukkit.event.server.ServerLoadEvent(org.bukkit.event.server.ServerLoadEvent.LoadType.STARTUP));
+        meow.bacteriawa.lightingluminol.core.LightingLuminolCore.init();
         this.connection.acceptConnections();
 
         Runnable task;
@@ -1350,7 +1351,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                 throw new IllegalStateException("Failed to initialize server");
             }
 
-            meow.bacteriawa.lightingluminol.config.ConfigLoader.load();
             this.nextTickTimeNanos = Util.getNanos();
             this.initTickSchedule(); // Paper - improve tick loop
             this.statusIcon = this.loadStatusIcon().orElse(null);
@@ -2076,10 +2076,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
     }
 
     public String getServerModName() {
-        if (meow.bacteriawa.lightingluminol.config.ServerModNameConfig.fakeVanilla) {
-            return "vanilla";
-        }
-        return meow.bacteriawa.lightingluminol.config.ServerModNameConfig.serverModName;
+        return meow.bacteriawa.lightingluminol.config.ServerModNameConfig.serverModName; // LightingLuminol - use config value
     }
 
     public ServerClockManager clockManager() {

@@ -179,6 +179,10 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity {
                                                   net.minecraft.world.entity.Entity toTeleport,
                                                   TheEndGatewayBlockEntity portalTile,
                                                   net.minecraft.world.level.portal.TeleportTransition.PostTeleportTransition post) {
+        // Luminol - PreventEndGatewayAsync
+        if (meow.bacteriawa.lightingluminol.config.FixesConfig.PreventEndGatewayAsync.enabled) {
+            return false;
+        }
         // can we even teleport in this dimension?
         if (portalTile.exitPortal == null && portalWorld.getTypeKey() != net.minecraft.world.level.dimension.LevelStem.END) {
             return false;

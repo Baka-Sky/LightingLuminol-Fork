@@ -52,7 +52,10 @@ public abstract class Sensor<E extends LivingEntity> {
 
     public final void tick(final ServerLevel level, final E body) {
         if (--this.timeToTick <= 0L) {
-            this.timeToTick = java.util.Objects.requireNonNullElse(level.paperConfig().tickRates.sensor.get(body.getType(), this.configKey), this.scanRate); // Paper - configurable sensor tick rate and timings
+            int delay = meow.bacteriawa.lightingluminol.optimization.OptimizationsManager.shouldReduceSensorWork() 
+                ? meow.bacteriawa.lightingluminol.optimization.OptimizationsManager.getSensorDelayTicks()
+                : 0;
+            this.timeToTick = java.util.Objects.requireNonNullElse(level.paperConfig().tickRates.sensor.get(body.getType(), this.configKey), this.scanRate) + delay; // Paper - configurable sensor tick rate and timings
             this.updateTargetingConditionRanges(body);
             this.doTick(level, body);
         }

@@ -218,6 +218,17 @@ public abstract class PathNavigation {
     }
 
     public boolean moveTo(final Entity target, final double speedModifier) {
+        // Luminol start - Do not pathfind to not owned targets
+        if (meow.bacteriawa.lightingluminol.config.FixesConfig.PathfindingFixes.doNotPathfindToNotOwnedTargets && this.level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+            io.papermc.paper.threadedregions.ThreadedRegionizer.ThreadedRegion<io.papermc.paper.threadedregions.TickRegions.TickRegionData, io.papermc.paper.threadedregions.TickRegions.TickRegionSectionData> currentRegion = io.papermc.paper.threadedregions.TickRegionScheduler.getCurrentRegion();
+            if (currentRegion != null) {
+                io.papermc.paper.threadedregions.ThreadedRegionizer.ThreadedRegion<io.papermc.paper.threadedregions.TickRegions.TickRegionData, io.papermc.paper.threadedregions.TickRegions.TickRegionSectionData> targetRegion = serverLevel.regioniser.getRegionAtUnsynchronised(target.blockPosition().getX() >> 4, target.blockPosition().getZ() >> 4);
+                if (targetRegion != currentRegion) {
+                    return false;
+                }
+            }
+        }
+        // Luminol end - Do not pathfind to not owned targets
         // Paper start - Perf: Optimise pathfinding
         if (this.pathfindFailures > 10 && this.path == null && this.tick < this.lastFailure + 40) { // Folia - region threading
             return false;
@@ -272,6 +283,22 @@ public abstract class PathNavigation {
         if (this.hasDelayedRecomputation) {
             this.recomputePath();
         }
+
+        // Luminol start - Pathfinding fixes
+        if (meow.bacteriawa.lightingluminol.config.FixesConfig.PathfindingFixes.breakDownPathfindingWhenOutOfRegion) {
+            if (this.path != null && !this.path.isDone() && this.level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+                io.papermc.paper.threadedregions.ThreadedRegionizer.ThreadedRegion<io.papermc.paper.threadedregions.TickRegions.TickRegionData, io.papermc.paper.threadedregions.TickRegions.TickRegionSectionData> currentRegion = io.papermc.paper.threadedregions.TickRegionScheduler.getCurrentRegion();
+                if (currentRegion != null) {
+                    Vec3 nextPos = this.path.getNextEntityPos(this.mob);
+                    io.papermc.paper.threadedregions.ThreadedRegionizer.ThreadedRegion<io.papermc.paper.threadedregions.TickRegions.TickRegionData, io.papermc.paper.threadedregions.TickRegions.TickRegionSectionData> targetRegion = serverLevel.regioniser.getRegionAtUnsynchronised((int)nextPos.x() >> 4, (int)nextPos.z() >> 4);
+                    if (targetRegion != currentRegion) {
+                        this.path = null;
+                        return;
+                    }
+                }
+            }
+        }
+        // Luminol end - Pathfinding fixes
 
         if (!this.isDone()) {
             if (this.canUpdatePath()) {

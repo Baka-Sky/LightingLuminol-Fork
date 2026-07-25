@@ -236,8 +236,19 @@ public class TripWireBlock extends Block {
             this.updateSource(level, pos, state);
         }
 
+        // Luminol - TripwireDupe behavior
+        String behaviorMode = meow.bacteriawa.lightingluminol.config.FunctionConfig.TripwireDupe.enabled 
+            ? meow.bacteriawa.lightingluminol.config.FunctionConfig.TripwireDupe.behaviorMode 
+            : "VANILLA21";
+        
         if (shouldBePressed) {
-            level.scheduleTick(new BlockPos(pos), this, 10);
+            int delay = switch (behaviorMode) {
+                case "VANILLA20" -> 10;
+                case "VANILLA21" -> 10;
+                case "MIXED" -> 10;
+                default -> 10;
+            };
+            level.scheduleTick(new BlockPos(pos), this, delay);
         } else if (wasPressed) {
             level.scheduleTick(new BlockPos(pos), this, 0);
         }

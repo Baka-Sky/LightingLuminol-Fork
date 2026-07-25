@@ -9,6 +9,7 @@ import net.minecraft.util.Signer;
 import net.minecraft.world.entity.player.ProfilePublicKey;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
+import meow.bacteriawa.lightingluminol.config.MiscConfig;
 
 public class SignedMessageChain {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -49,7 +50,7 @@ public class SignedMessageChain {
                     throw new SignedMessageChain.DecodeException(SignedMessageChain.DecodeException.CHAIN_BROKEN);
                 }
 
-                if (body.timeStamp().isBefore(SignedMessageChain.this.lastTimeStamp)) {
+                if (MiscConfig.MojangOutOfOrderChatCheck.enabled && body.timeStamp().isBefore(SignedMessageChain.this.lastTimeStamp)) {
                     this.setChainBroken();
                     throw new SignedMessageChain.DecodeException(SignedMessageChain.DecodeException.OUT_OF_ORDER_CHAT, org.bukkit.event.player.PlayerKickEvent.Cause.OUT_OF_ORDER_CHAT); // Paper - kick event causes
                 }

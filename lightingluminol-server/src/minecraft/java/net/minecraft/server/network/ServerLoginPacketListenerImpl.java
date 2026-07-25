@@ -28,6 +28,7 @@ import net.minecraft.network.protocol.cookie.ServerboundCookieResponsePacket;
 import net.minecraft.network.protocol.login.ClientboundHelloPacket;
 import net.minecraft.network.protocol.login.ClientboundLoginCompressionPacket;
 import net.minecraft.network.protocol.login.ClientboundLoginDisconnectPacket;
+import meow.bacteriawa.lightingluminol.config.MiscConfig;
 import net.minecraft.network.protocol.login.ClientboundLoginFinishedPacket;
 import net.minecraft.network.protocol.login.ServerLoginPacketListener;
 import net.minecraft.network.protocol.login.ServerboundCustomQueryAnswerPacket;
@@ -169,7 +170,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
         // Paper start - Validate usernames
         if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode()
             && io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.performUsernameValidation
-            && !this.iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation) {
+            && !this.iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation
+            && MiscConfig.UsernameChecks.enabled) {
             Validate.validState(StringUtil.isReasonablePlayerName(packet.name()), "Invalid characters in username");
         }
         this.requestedUuid = packet.profileId();

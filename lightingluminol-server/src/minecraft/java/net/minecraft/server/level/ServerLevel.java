@@ -2960,7 +2960,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
     }
 
     public boolean isCommandBlockEnabled() {
-        return this.getGameRules().get(GameRules.COMMAND_BLOCKS_WORK);
+        return meow.bacteriawa.lightingluminol.config.ExperimentConfig.Command.enableCommandBlock;
     }
 
     public boolean isSpawnerBlockEnabled() {

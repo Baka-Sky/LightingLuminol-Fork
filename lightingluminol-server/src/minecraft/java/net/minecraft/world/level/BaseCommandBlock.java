@@ -91,7 +91,6 @@ public abstract class BaseCommandBlock {
     }
 
     public boolean performCommand(final ServerLevel level) {
-        if (true) return false; // Folia - region threading
         if (level.getGameTime() == this.lastExecution) {
             return false;
         }

@@ -172,7 +172,10 @@ public abstract class Entity
     }
 
     // Paper start - Share random for entities to make them more random
-    public static RandomSource SHARED_RANDOM = io.papermc.paper.threadedregions.util.ThreadLocalRandomSource.INSTANCE; // Folia - region threading
+    // Luminol - UseVanillaRandomSource
+    public static RandomSource SHARED_RANDOM = meow.bacteriawa.lightingluminol.config.FixesConfig.UseVanillaRandomSource.enabled 
+        ? net.minecraft.util.RandomSource.create() 
+        : io.papermc.paper.threadedregions.util.ThreadLocalRandomSource.INSTANCE; // Folia - region threading
     // Paper start - replace random
     private static final class RandomRandomSource extends ca.spottedleaf.moonrise.common.util.ThreadUnsafeRandom {
         public RandomRandomSource() {
@@ -1150,6 +1153,8 @@ public abstract class Entity
     private double moveStartX;
     private double moveStartY;
     private double moveStartZ;
+    // Luminol - PreventIncorrectTeleportAsyncCallsDuringMoveEvent
+    private boolean isMoving = false;
     // Paper end - detailed watchdog information
 
     public void move(final MoverType moverType, Vec3 delta) {
@@ -1161,6 +1166,8 @@ public abstract class Entity
             this.moveStartY = this.getY();
             this.moveStartZ = this.getZ();
             this.moveVector = delta;
+            // Luminol - PreventIncorrectTeleportAsyncCallsDuringMoveEvent
+            this.isMoving = true;
         }
         try {
         // Paper end - detailed watchdog information
@@ -1288,6 +1295,8 @@ public abstract class Entity
         } finally {
             synchronized (this.posLock) { // Paper
                 this.moveVector = null;
+                // Luminol - PreventIncorrectTeleportAsyncCallsDuringMoveEvent
+                this.isMoving = false;
             } // Paper
         }
         // Paper end - detailed watchdog information
@@ -4462,6 +4471,13 @@ public abstract class Entity
     public final boolean teleportAsync(ServerLevel destination, Vec3 pos, Float yaw, Float pitch, Vec3 velocity,
                                        org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, long teleportFlags,
                                        java.util.function.Consumer<Entity> teleportComplete) {
+        // Luminol - PreventIncorrectTeleportAsyncCallsDuringMoveEvent
+        if (meow.bacteriawa.lightingluminol.config.FixesConfig.PreventIncorrectTeleportAsyncCallsDuringMoveEvent.enabled && this.isMoving) {
+            if (meow.bacteriawa.lightingluminol.config.FixesConfig.PreventIncorrectTeleportAsyncCallsDuringMoveEvent.throwWhenCaught) {
+                throw new IllegalStateException("Cannot call teleportAsync during move event");
+            }
+            return false;
+        }
         ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(this, "Cannot teleport entity async");
 
         if (!ServerLevel.isInSpawnableBounds(new BlockPos(ca.spottedleaf.moonrise.common.util.CoordinateUtils.getBlockX(pos), ca.spottedleaf.moonrise.common.util.CoordinateUtils.getBlockY(pos), ca.spottedleaf.moonrise.common.util.CoordinateUtils.getBlockZ(pos)))) {
@@ -4967,7 +4983,8 @@ public abstract class Entity
 
     public @Nullable Entity teleport(TeleportTransition transition) { // Paper - remove param final
         // Folia start - region threading
-        if (true) {
+        // Luminol - AllowUnsafeTeleportation
+        if (true && !meow.bacteriawa.lightingluminol.config.FixesConfig.AllowUnsafeTeleportation.enabled) {
             throw new UnsupportedOperationException("Must use teleportAsync while in region threading");
         }
         // Folia end - region threading
@@ -5928,6 +5945,17 @@ public abstract class Entity
     }
 
     public final void setPosRaw(double x, double y, double z, boolean forceBoundingBoxUpdate) {
+        // Luminol start - Fix high velocity issue
+        if (meow.bacteriawa.lightingluminol.config.FixesConfig.FixHighVelocityIssue.enabled) {
+            double distance = this.position.distanceTo(new Vec3(x, y, z));
+            if (distance > 100.0) {
+                if (meow.bacteriawa.lightingluminol.config.FixesConfig.FixHighVelocityIssue.warnOnDetected) {
+                    LOGGER.warn("High velocity detected for entity {}: moved {} blocks in one tick", this.getType().getDescriptionId(), distance);
+                }
+                return;
+            }
+        }
+        // Luminol end - Fix high velocity issue
         // Paper start - rewrite chunk system
         if (this.updatingSectionStatus) {
             LOGGER.error(
