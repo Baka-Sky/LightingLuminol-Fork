@@ -223,6 +223,7 @@ force_bukkit_scheduler_plugins: []
 |--------|------|
 | **EarthME** | 原 Luminol 项目作者 |
 | **PaperMC** | Folia 和 Paper 服务器框架 |
+| **Arbor** | 基于 Luminol 的二次开发，提供特性参考与代码移植 |
 | **LightingLuminol** | 原版特性修复层 |
 | **BakaSky** | BakaFork 分支维护者 |
 

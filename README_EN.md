@@ -223,6 +223,7 @@ This project is licensed under the **GNU General Public License v3.0**. See [LIC
 |-------------|------|
 | **EarthME** | Original Luminol project author |
 | **PaperMC** | Folia and Paper server framework |
+| **Arbor** | Luminol-based secondary development, providing feature reference and code porting |
 | **LightingLuminol** | Vanilla feature restoration layer |
 | **BakaSky** | BakaFork branch maintainer |
 
