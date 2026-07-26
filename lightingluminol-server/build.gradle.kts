@@ -43,6 +43,7 @@ tasks.generateDevelopmentBundle {
     libraryRepositories.addAll(
         "https://repo.maven.apache.org/maven2/",
         paperMavenPublicUrl,
+        "https://repo.littleovo.cn/public", // LightingLuminol - CPU Affinity
     )
 }
 
@@ -184,6 +185,10 @@ dependencies {
     // Spark
     implementation("me.lucko:spark-api:0.1-20240720.200737-2")
     implementation("me.lucko:spark-paper:1.10.152")
+
+    // LightingLuminol start - CPU Affinity
+    implementation("net.openhft:affinity:3.23.3")
+    // LightingLuminol end - CPU Affinity
 }
 
 tasks.jar {
@@ -225,6 +230,12 @@ tasks.named<JavaCompile>(log4jPlugins.compileJavaTaskName) {
         )
     )
 }
+
+// LightingLuminol start - SIMD support
+tasks.withType<JavaCompile>().configureEach {
+    options.compilerArgs.add("--add-modules=jdk.incubator.vector")
+}
+// LightingLuminol end - SIMD support
 
 // Bump compile tasks to 1GB memory to avoid OOMs
 tasks.withType<JavaCompile>().configureEach {

@@ -128,6 +128,7 @@ public class Heightmap {
         if (rawData.length == data.length) {
             System.arraycopy(data, 0, rawData, 0, data.length);
         } else {
+            if (!meow.bacteriawa.lightingluminol.config.MiscConfig.DisableWarning.disableHeightmapWarning) // LightingLuminol - config for heightmap warning
             LOGGER.warn("Ignoring heightmap data for chunk {}, size does not match; expected: {}, got: {}", chunk.getPos(), rawData.length, data.length);
             primeHeightmaps(chunk, EnumSet.of(type));
         }

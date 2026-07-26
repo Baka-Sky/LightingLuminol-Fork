@@ -61,26 +61,38 @@ public final class ActivationRange {
         if (entity.activationType == ActivationType.VILLAGER) {
             if (inactiveFor > config.wakeUpInactiveVillagersEvery && worldData.wakeupInactiveRemainingVillagers > 0) { // Folia - threaded regions
                 worldData.wakeupInactiveRemainingVillagers--; // Folia - threaded regions
-                return config.wakeUpInactiveVillagersFor;
+                return getWakeUpDurationWithVariance(entity, config.wakeUpInactiveVillagersFor);
             }
         } else if (entity.activationType == ActivationType.ANIMAL) {
             if (inactiveFor > config.wakeUpInactiveAnimalsEvery && worldData.wakeupInactiveRemainingAnimals > 0) { // Folia - threaded regions
                 worldData.wakeupInactiveRemainingAnimals--; // Folia - threaded regions
-                return config.wakeUpInactiveAnimalsFor;
+                return getWakeUpDurationWithVariance(entity, config.wakeUpInactiveAnimalsFor);
             }
         } else if (entity.activationType == ActivationType.FLYING_MONSTER) {
             if (inactiveFor > config.wakeUpInactiveFlyingEvery && worldData.wakeupInactiveRemainingFlying > 0) { // Folia - threaded regions
                 worldData.wakeupInactiveRemainingFlying--; // Folia - threaded regions
-                return config.wakeUpInactiveFlyingFor;
+                return getWakeUpDurationWithVariance(entity, config.wakeUpInactiveFlyingFor);
             }
         } else if (entity.activationType == ActivationType.MONSTER || entity.activationType == ActivationType.RAIDER) {
             if (inactiveFor > config.wakeUpInactiveMonstersEvery && worldData.wakeupInactiveRemainingMonsters > 0) { // Folia - threaded regions
                 worldData.wakeupInactiveRemainingMonsters--; // Folia - threaded regions
-                return config.wakeUpInactiveMonstersFor;
+                return getWakeUpDurationWithVariance(entity, config.wakeUpInactiveMonstersFor);
             }
         }
         return -1;
     }
+
+    // LightingLuminol start - variable entity wake-up duration
+    private static final java.util.concurrent.ThreadLocalRandom wakeUpDurationRandom = java.util.concurrent.ThreadLocalRandom.current();
+
+    private static int getWakeUpDurationWithVariance(Entity entity, int wakeUpDuration) {
+        double deviation = meow.bacteriawa.lightingluminol.config.OptimizationsConfig.VariableEntityWakingUp.entityWakeupDurationRatioStandardDeviation;
+        if (deviation <= 0) {
+            return wakeUpDuration;
+        }
+        return (int) Math.min(Integer.MAX_VALUE, Math.max(1, Math.round(wakeUpDuration * wakeUpDurationRandom.nextGaussian(1, deviation))));
+    }
+    // LightingLuminol end - variable entity wake-up duration
 
     //static AABB maxBB = new AABB(0, 0, 0, 0, 0, 0); // Folia - threaded regions - replaced by local variable
 

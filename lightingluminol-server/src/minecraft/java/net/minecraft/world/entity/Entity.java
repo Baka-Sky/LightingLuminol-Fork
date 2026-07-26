@@ -298,7 +298,7 @@ public abstract class Entity
     public double yOld;
     public double zOld;
     public boolean noPhysics;
-    protected final RandomSource random = SHARED_RANDOM; // Paper - Share random for entities to make them more random
+    public final RandomSource random = meow.bacteriawa.lightingluminol.config.FixesConfig.UseVanillaRandomSource.enabled ? RandomSource.create() : SHARED_RANDOM; // Paper - Share random for entities to make them more random // LightingLuminol - vanilla random
     public int tickCount;
     private int remainingFireTicks;
     private final EntityFluidInteraction fluidInteraction = new EntityFluidInteraction(Set.of(FluidTags.WATER, FluidTags.LAVA));
@@ -1162,6 +1162,16 @@ public abstract class Entity
             this.moveStartZ = this.getZ();
             this.moveVector = delta;
         }
+        // LightingLuminol start - fix high velocity moving
+        if (meow.bacteriawa.lightingluminol.config.FixesConfig.FixHighVelocityIssue.enabled && ca.spottedleaf.moonrise.common.util.TickThread.isTickThread()){
+            var finalPosition = delta.add(this.position);
+            if (!Double.isNaN(finalPosition.x) && !Double.isNaN(finalPosition.y) && !Double.isNaN(finalPosition.z)) {
+                if (!ca.spottedleaf.moonrise.common.util.TickThread.isTickThreadFor(this.level,finalPosition)) {
+                    throw new meow.bacteriawa.lightingluminol.core.EntityMoveOutOfRegionException(this, delta, moverType);
+                }
+            }
+        }
+        // LightingLuminol end
         try {
         // Paper end - detailed watchdog information
         if (this.noPhysics) {
@@ -4459,10 +4469,24 @@ public abstract class Entity
         );
     }
 
+    // LightingLuminol start - Prevent teleportAsync calls in move events
+    public boolean blockTeleportAsync = false;
+    // LightingLuminol end
+
     public final boolean teleportAsync(ServerLevel destination, Vec3 pos, Float yaw, Float pitch, Vec3 velocity,
                                        org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, long teleportFlags,
                                        java.util.function.Consumer<Entity> teleportComplete) {
         ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(this, "Cannot teleport entity async");
+
+        // LightingLuminol start - Prevent teleportAsync calls in move events
+        if (meow.bacteriawa.lightingluminol.config.FixesConfig.PreventIncorrectTeleportAsyncCallsDuringMoveEvent.enabled && this.blockTeleportAsync) {
+            if (meow.bacteriawa.lightingluminol.config.FixesConfig.PreventIncorrectTeleportAsyncCallsDuringMoveEvent.throwWhenCaught) {
+                throw new IllegalStateException("teleportAsync called during move event! Plugin should use PlayerMoveEvent handlers that do not teleport.");
+            }
+            LOGGER.error("teleportAsync called during move event! Plugin should use PlayerMoveEvent handlers that do not teleport.", new Throwable());
+            return false;
+        }
+        // LightingLuminol end
 
         if (!ServerLevel.isInSpawnableBounds(new BlockPos(ca.spottedleaf.moonrise.common.util.CoordinateUtils.getBlockX(pos), ca.spottedleaf.moonrise.common.util.CoordinateUtils.getBlockY(pos), ca.spottedleaf.moonrise.common.util.CoordinateUtils.getBlockZ(pos)))) {
             return false;

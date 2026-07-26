@@ -237,9 +237,12 @@ public abstract class PlayerList {
         // only after setting the connection listener to game type, add the connection to this regions list
         level.getCurrentWorldData().connections.add(connection);
         // Folia end - rewrite login process
+        // LightingLuminol start - async protocol switch
+        if (!meow.bacteriawa.lightingluminol.config.OptimizationsConfig.UseAsyncProtocolSwitching.enabled) {
         connection.setupInboundProtocol(
             GameProtocols.SERVERBOUND_TEMPLATE.bind(RegistryFriendlyByteBuf.decorator(this.server.registryAccess()), playerConnection), playerConnection
         );
+        } // LightingLuminol end
         playerConnection.suspendFlushing();
         GameRules gameRules = level.getGameRules();
         boolean immediateRespawn = gameRules.get(GameRules.IMMEDIATE_RESPAWN);
@@ -403,6 +406,16 @@ public abstract class PlayerList {
             );
         }
         // Paper end - Send empty chunk
+        // LightingLuminol start - async protocol switch
+        if (meow.bacteriawa.lightingluminol.config.OptimizationsConfig.UseAsyncProtocolSwitching.enabled) {
+            connection.setupInboundProtocolAsync(
+                    GameProtocols.SERVERBOUND_TEMPLATE.bind(RegistryFriendlyByteBuf.decorator(this.server.registryAccess()), playerConnection),
+                    playerConnection,
+                    null,
+                    true
+            );
+        }
+        // LightingLuminol end
     }
 
     public void updateEntireScoreboard(final ServerScoreboard scoreboard, final ServerPlayer player) {

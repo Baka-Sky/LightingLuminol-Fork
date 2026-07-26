@@ -49,6 +49,7 @@
      implementation("ca.spottedleaf:leafpile:1.0.0")
      implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
      implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
++    implementation("net.openhft:affinity:3.23.3") // LightingLuminol - CPU Affinity
 @@ -172,14 +196,14 @@
          attributes(
              "Main-Class" to "org.bukkit.craftbukkit.Main",
@@ -75,3 +76,9 @@
 +    project("lightingluminol")
      versionFamily(paperweight.minecraftVersion.map { it.split(".", "-").takeWhile { part -> part.toIntOrNull() != null }.take(2).joinToString(".") })
      version(paperweight.minecraftVersion)
++
++// LightingLuminol start - SIMD support
++tasks.withType<JavaCompile>().configureEach {
++    options.compilerArgs.add("--add-modules=jdk.incubator.vector")
++}
++// LightingLuminol end - SIMD support

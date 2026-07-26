@@ -6,6 +6,12 @@ public final class OptimizationsConfig {
     public static class CpuAffinity {
         public static boolean enabled = false;
         public static List<String> tickregionAffinity = List.of("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31");
+        public static boolean enabledForTickRegion = false;
+        public static boolean enabledForChunkSystemWorker = false;
+        public static boolean enabledForChunkSystemIo = false;
+        public static String tickRegionAffinity = "";
+        public static String chunkSystemWorkerAffinity = "";
+        public static String chunkSystemIoAffinity = "";
     }
 
     public static class ThrottleGoalSelectorTickInInactiveTick {

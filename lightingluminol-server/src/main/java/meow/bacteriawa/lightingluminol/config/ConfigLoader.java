@@ -44,6 +44,18 @@ public final class ConfigLoader {
         } catch (IOException e) {
             LOGGER.severe("Failed to load Luminol config: " + e.getMessage());
         }
+
+        // LightingLuminol start - SIMD detection
+        try {
+            gg.pufferfish.pufferfish.simd.SIMDDetection.isEnabled = gg.pufferfish.pufferfish.simd.SIMDDetection.canEnable(com.mojang.logging.LogUtils.getLogger());
+        } catch (NoClassDefFoundError | Exception ignored) {
+        }
+        if (gg.pufferfish.pufferfish.simd.SIMDDetection.isEnabled) {
+            LOGGER.info("SIMD operations detected as functional. Will replace some operations with faster versions.");
+        } else if (OptimizationsConfig.UseSimd.enabled) {
+            LOGGER.warning("SIMD operations are not available. Add \"--add-modules=jdk.incubator.vector\" to your startup flags.");
+        }
+        // LightingLuminol end - SIMD detection
     }
 
     private static void createDefaultConfig(Path configPath) throws IOException {

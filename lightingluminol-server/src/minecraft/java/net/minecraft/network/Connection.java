@@ -1067,4 +1067,108 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
         }
     }
     // Paper end - Optimize network
+    // LightingLuminol start - async protocol switch
+    public <T extends PacketListener> void setupInboundProtocolAsync(
+            ProtocolInfo<T> protocol,
+            T packetListener,
+            @org.jetbrains.annotations.Nullable Runnable callback,
+            boolean resumeAutoReading
+    ) {
+        this.validateListener(protocol, packetListener);
+        if (protocol.flow() != this.getReceiving()) {
+            throw new IllegalStateException("Invalid inbound protocol: " + protocol.id());
+        } else {
+            this.packetListener = packetListener;
+            this.disconnectListener = null;
+
+            UnconfiguredPipelineHandler.InboundConfigurationTask configMessage = UnconfiguredPipelineHandler.setupInboundProtocol(protocol);
+            BundlerInfo bundlerInfo = protocol.bundlerInfo();
+            if (bundlerInfo != null) {
+                PacketBundlePacker newBundler = new PacketBundlePacker(bundlerInfo);
+                configMessage = configMessage.andThen(context -> context.pipeline().addAfter("decoder", "bundler", newBundler));
+            }
+
+            this.channel.config().setAutoRead(false);
+
+            final UnconfiguredPipelineHandler.InboundConfigurationTask finalInboundConfigurationTask = configMessage;
+            Runnable toExecute = () -> this.channel.writeAndFlush(finalInboundConfigurationTask).addListener(future -> {
+                try {
+                    if (future.isSuccess()) {
+                        if (callback != null) callback.run();
+                        return;
+                    }
+                    final Throwable ex = future.cause();
+                    if (ex instanceof java.nio.channels.ClosedChannelException) {
+                        LOGGER.info("Connection closed during protocol change");
+                    } else {
+                        this.channel.pipeline().fireExceptionCaught(ex);
+                    }
+                } finally {
+                    if (resumeAutoReading) {
+                        this.channel.config().setAutoRead(true);
+                        this.channel.read();
+                    }
+                }
+            });
+
+            if (!this.channel.eventLoop().inEventLoop()) {
+                this.channel.eventLoop().execute(toExecute);
+                return;
+            }
+            toExecute.run();
+        }
+    }
+
+    public void setupOutboundProtocolAsync(
+            ProtocolInfo<?> protocol,
+            @org.jetbrains.annotations.Nullable Runnable callback,
+            boolean resumeAutoReading
+    ) {
+        if (protocol.flow() != this.getSending()) {
+            throw new IllegalStateException("Invalid outbound protocol: " + protocol.id());
+        } else {
+            UnconfiguredPipelineHandler.OutboundConfigurationTask configMessage = UnconfiguredPipelineHandler.setupOutboundProtocol(protocol);
+            BundlerInfo bundlerInfo = protocol.bundlerInfo();
+            if (bundlerInfo != null) {
+                PacketBundleUnpacker newUnbundler = new PacketBundleUnpacker(bundlerInfo);
+                configMessage = configMessage.andThen(
+                        context -> context.pipeline().addAfter("encoder", "unbundler", newUnbundler)
+                );
+            }
+
+            boolean isLoginProtocol = protocol.id() == ConnectionProtocol.LOGIN;
+
+            this.channel.config().setAutoRead(false);
+
+            final UnconfiguredPipelineHandler.OutboundConfigurationTask finalOutboundConfigurationTask = configMessage;
+            final Runnable writeTask = () -> this.channel.writeAndFlush(
+                    finalOutboundConfigurationTask.andThen(context -> this.sendLoginDisconnect = isLoginProtocol)
+            ).addListener(future -> {
+                try {
+                    if (future.isSuccess()) {
+                        if (callback != null) callback.run();
+                        return;
+                    }
+                    final Throwable ex = future.cause();
+                    if (ex instanceof java.nio.channels.ClosedChannelException) {
+                        LOGGER.info("Connection closed during protocol change");
+                    } else {
+                        this.channel.pipeline().fireExceptionCaught(ex);
+                    }
+                } finally {
+                    if (resumeAutoReading) {
+                        this.channel.config().setAutoRead(true);
+                        this.channel.read();
+                    }
+                }
+            });
+
+            if (!this.channel.eventLoop().inEventLoop()) {
+                this.channel.eventLoop().execute(writeTask);
+                return;
+            }
+            writeTask.run();
+        }
+    }
+    // LightingLuminol end
 }

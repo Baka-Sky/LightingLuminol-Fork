@@ -190,6 +190,45 @@ public class Villager extends AbstractVillager implements VillagerDataHolder, Re
         this.setCanPickUpLoot(true);
     }
 
+    // LightingLuminol start - Lobotomize stuck villagers
+    private boolean isLobotomized = false; public boolean isLobotomized() { return this.isLobotomized; }
+    private int notLobotomizedCount = 0;
+
+    private boolean checkLobotomized() {
+        int interval = meow.bacteriawa.lightingluminol.config.OptimizationsConfig.LobotomizeVillager.checkInterval;
+        boolean shouldCheckForTradeLocked = meow.bacteriawa.lightingluminol.config.OptimizationsConfig.LobotomizeVillager.waitUntilTradeLocked;
+        if (this.notLobotomizedCount > 3) {
+            interval *= 2;
+        }
+        if (this.level().getGameTime() % interval == 0) {
+            this.isLobotomized = !(shouldCheckForTradeLocked && this.getVillagerXp() == 0) && !canTravelFrom(net.minecraft.core.BlockPos.containing(this.position().x, this.getBoundingBox().minY + 0.0625D, this.position().z));
+            if (this.isLobotomized) {
+                this.notLobotomizedCount = 0;
+            } else {
+                this.notLobotomizedCount++;
+            }
+        }
+        return this.isLobotomized;
+    }
+
+    private boolean canTravelFrom(net.minecraft.core.BlockPos pos) {
+        return canTravelTo(pos.east()) || canTravelTo(pos.west()) || canTravelTo(pos.north()) || canTravelTo(pos.south());
+    }
+
+    private boolean canTravelTo(net.minecraft.core.BlockPos pos) {
+        net.minecraft.world.level.block.state.BlockState state = this.level().getBlockStateIfLoaded(pos);
+        if (state == null) return false;
+        net.minecraft.world.level.block.Block bottom = state.getBlock();
+        if (bottom instanceof net.minecraft.world.level.block.FenceBlock ||
+                bottom instanceof net.minecraft.world.level.block.FenceGateBlock ||
+                bottom instanceof net.minecraft.world.level.block.WallBlock) {
+            return false;
+        }
+        net.minecraft.world.level.block.Block top = level().getBlockState(pos.above()).getBlock();
+        return !bottom.hasCollision && !top.hasCollision;
+    }
+    // LightingLuminol end - Lobotomize stuck villagers
+
     @Override
     public Brain<Villager> getBrain() {
         return (Brain<Villager>)super.getBrain();
@@ -259,11 +298,19 @@ public class Villager extends AbstractVillager implements VillagerDataHolder, Re
         // Paper start - EAR 2
         this.customServerAiStep(level, false);
     }
-    protected void customServerAiStep(ServerLevel level, final boolean inactive) {
+    protected void customServerAiStep(ServerLevel level, boolean inactive) { // LightingLuminol - remove final for lobotomize
         // Paper end - EAR 2
         ProfilerFiller profiler = Profiler.get();
         profiler.push("villagerBrain");
+        // LightingLuminol start - Lobotomize stuck villagers
+        if (meow.bacteriawa.lightingluminol.config.OptimizationsConfig.LobotomizeVillager.enabled) {
+            inactive = inactive || checkLobotomized();
+        } else {
+            this.isLobotomized = false;
+        }
+        // LightingLuminol end
         if (!inactive) this.getBrain().tick(level, this); // Paper - EAR 2
+        else if (this.isLobotomized && shouldRestock(level)) restock(); // LightingLuminol - Lobotomize stuck villagers
         profiler.pop();
         if (this.assignProfessionWhenSpawned) {
             this.assignProfessionWhenSpawned = false;

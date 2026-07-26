@@ -101,6 +101,14 @@ public final class CollisionUtil {
                (box1.minZ - box2.maxZ) < -COLLISION_EPSILON && (box1.maxZ - box2.minZ) > COLLISION_EPSILON;
     }
 
+    // LightingLuminol start - Configurable collision behavior
+    public static boolean voxelShapeIntersectVanilla(final AABB box1, final AABB box2) {
+        return box1.minX < box2.maxX && box1.maxX > box2.minX &&
+               box1.minY < box2.maxY && box1.maxY > box2.minY &&
+               box1.minZ < box2.maxZ && box1.maxZ > box2.minZ;
+    }
+    // LightingLuminol end - Configurable collision behavior
+
     // assume !isEmpty(target) && abs(source_move) >= COLLISION_EPSILON
     public static double collideX(final AABB target, final AABB source, final double source_move) {
         if ((source.minY - target.maxY) < -COLLISION_EPSILON && (source.maxY - target.minY) > COLLISION_EPSILON &&
@@ -2033,7 +2041,7 @@ public final class CollisionUtil {
                                                 continue;
                                             }
                                         } else {
-                                            if (!voxelShapeIntersect(aabb, singleAABB)) {
+                                            if (shouldSkip(aabb, blockCollision, singleAABB)) { // LightingLuminol - Configurable collision behavior
                                                 continue;
                                             }
                                         }
@@ -2086,6 +2094,19 @@ public final class CollisionUtil {
 
         return ret;
     }
+
+    // LightingLuminol start - Configurable collision behavior
+    private static boolean shouldSkip(AABB aabb, VoxelShape blockCollision, AABB singleAABB) {
+        boolean isBlockShape = blockCollision == Shapes.block();
+        String mode = meow.bacteriawa.lightingluminol.config.FixesConfig.CollisionBehavior.mode;
+        return switch (mode) {
+            case "VANILLA" -> !voxelShapeIntersectVanilla(aabb, singleAABB);
+            case "PAPER" -> !voxelShapeIntersect(aabb, singleAABB);
+            default -> isBlockShape && !voxelShapeIntersectVanilla(aabb, singleAABB) || !isBlockShape && !voxelShapeIntersect(aabb, singleAABB);
+            // All other values as BLOCK_SHAPE_VANILLA
+        };
+    }
+    // LightingLuminol end - Configurable collision behavior
 
     public static boolean getEntityHardCollisions(final Level world, final Entity entity, AABB aabb,
                                                   final List<AABB> into, final int collisionFlags, final Predicate<Entity> predicate) {

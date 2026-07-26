@@ -10,4 +10,8 @@ public interface PositionTracker {
     BlockPos currentBlockPosition();
 
     boolean isVisibleBy(final LivingEntity body);
+
+    // LightingLuminol start - Fix a series issue around entity memory typed GlobalPos and WalkTarget
+    boolean checkThread(net.minecraft.world.level.Level currOwnedByLevel);
+    // LightingLuminol end
 }

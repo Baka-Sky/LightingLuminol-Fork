@@ -33,13 +33,36 @@
 
 ## Features
 
-| Feature | Description | Status |
-|---------|-------------|--------|
-| **Bukkit Plugin Compatibility** | `FoliaSchedulerCompatibility` auto-detects plugin scheduling needs and bridges Bukkit scheduler tasks to Folia's region scheduler or falls back to the main thread; supports forced scheduling policy | Implemented |
-| **Complete Configuration Framework** | Full migration of Luminol's configuration loading logic, fully compatible with Luminol 26.1.2 — supports brand name customization, experimental feature toggles, fixes, performance optimizations, etc. | Implemented |
-| **Region Architecture Enhancements** | Max pending logins limit, block update protection, vehicle sync, reference-counted regionized world data pool | Implemented |
-| **Performance Monitoring** | TpsBar, Region Profiler, Watchdog thread, chunk system throughput counters | Implemented |
-| **Base Dirty Patches** | Fixes known thread-safety issues, block updates, entity teleportation and other issues under Folia's regionized architecture | Implemented |
+| Category | Feature | Description | Status |
+|----------|---------|-------------|--------|
+| **Compat** | Bukkit Plugin Compat | `FoliaSchedulerCompatibility` auto-detects plugin scheduling needs, bridges to Folia region scheduler or falls back | Implemented |
+| **Compat** | Async Protocol Switch | Async login/config/game protocol switching, reducing main thread blocking | Implemented |
+| **Config** | Complete Config Framework | TOML config auto-loading, compatible with Luminol 26.1.2 structure | Implemented |
+| **Fixes** | Collision Behavior | Configurable VANILLA / PAPER / BLOCK_SHAPE_VANILLA collision detection | Implemented |
+| **Fixes** | Pathfinding Fixes | Detects cross-region pathfinding and delays recomputation | Implemented |
+| **Fixes** | High Velocity Fix | Detects cross-region entity movement and handles via teleportAsync | Implemented |
+| **Fixes** | POI Range Fix | Avoids loading distant POI chunks | Implemented |
+| **Fixes** | Item Multitask | Allows item usage during block interaction (Crystal PVP) | Implemented |
+| **Fixes** | Vanilla Random Source | Optional restore of independent entity random source | Implemented |
+| **Fixes** | Memory Cleanup | Auto-clears entity/blockpos/position memories outside current region | Implemented |
+| **Fixes** | teleportAsync Guard | Prevents incorrect teleportAsync calls during move events | Implemented |
+| **Fixes** | Movement Warnings | Configurable disable of moved too quickly / moved wrongly warnings | Implemented |
+| **Perf** | Lobotomize Villagers | Detects stuck villagers and skips Brain AI tick | Implemented |
+| **Perf** | Sensor Throttling | Reduces entity sensor tick frequency (default every 10 ticks) | Implemented |
+| **Perf** | Goal Selector Throttle | Inactive entity AI goal selector runs every 20 ticks | Implemented |
+| **Perf** | Projectile Chunk Limit | Limits chunk loading triggered by projectiles | Implemented |
+| **Perf** | Variable Entity Wakeup | Gaussian-distributed wakeup timing to avoid mass wakeups | Implemented |
+| **Perf** | Dragon Respawn Optimize | Cached search positions for faster ender dragon respawn | Implemented |
+| **Perf** | SIMD Vectorization | Detects CPU SIMD support, auto-enables vectorized operations | Implemented |
+| **Perf** | CPU Affinity | Thread-to-core binding for big.LITTLE optimization | Implemented |
+| **Feature** | Tripwire Dupe | Configurable tripwire behavior (VANILLA20/21/MIXED) | Implemented |
+| **Feature** | Portal Rate Limiter | Limits portal teleportations per tick | Implemented |
+| **Feature** | Command Block Toggle | Enable/disable command blocks via config | Implemented |
+| **Feature** | Disable Async Catchers | Disable Folia thread safety checks (experimental) | Implemented |
+| **Feature** | Disable Entity Exception | Entity tick exceptions thrown instead of silent removal | Implemented |
+| **Arch** | Regionized Multithreading | Folia-based regionized threading model | Implemented |
+| **Arch** | Region Data Management | Reference-counted regionized world data pool | Implemented |
+| **Monitor** | Performance Monitoring | Region Profiler, Watchdog thread, chunk throughput counters | Implemented |
 
 ---
 

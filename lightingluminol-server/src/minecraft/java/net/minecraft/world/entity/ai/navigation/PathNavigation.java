@@ -300,6 +300,15 @@ public abstract class PathNavigation {
         Vec3 mobPos = this.getTempMobPos();
         this.maxDistanceToWaypoint = this.mob.getBbWidth() > 0.75F ? this.mob.getBbWidth() / 2.0F : 0.75F - this.mob.getBbWidth() / 2.0F;
         Vec3i currentNodePos = this.path.getNextNodePos();
+        // LightingLuminol start - pathfinding fix
+        if (meow.bacteriawa.lightingluminol.config.FixesConfig.PathfindingFixes.breakDownPathfindingWhenOutOfRegion) {
+            BlockPos blockPos = new BlockPos(currentNodePos.getX(), currentNodePos.getY(), currentNodePos.getZ());
+            if (!ca.spottedleaf.moonrise.common.util.TickThread.isTickThreadFor(this.level, blockPos)) {
+                this.hasDelayedRecomputation = true;
+                return;
+            }
+        }
+        // LightingLuminol end
         double xDistance = Math.abs(this.mob.getX() - (currentNodePos.getX() + 0.5));
         double yDistance = Math.abs(this.mob.getY() - currentNodePos.getY());
         double zDistance = Math.abs(this.mob.getZ() - (currentNodePos.getZ() + 0.5));

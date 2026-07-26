@@ -58,6 +58,37 @@ public abstract class Projectile extends Entity implements TraceableEntity {
         this.setOwner(EntityReference.of(owner));
     }
 
+    // LightingLuminol start - Pufferfish projectile limiter
+    private int loadedLifetime = 0;
+    @Override
+    public void setPos(double x, double y, double z) {
+        var currRegionData = io.papermc.paper.threadedregions.TickRegionScheduler.getCurrentRegionizedWorldData();
+        if (currRegionData == null || currRegionData.world != this.level()) {
+            return;
+        }
+        long currentTick = currRegionData.getRedstoneGameTime();
+        if (currRegionData.pufferfish$loadedTick != currentTick) {
+            currRegionData.pufferfish$loadedTick = currentTick;
+            currRegionData.pufferfish$loadedThisTick = 0L;
+        }
+        int previousX = Mth.floor(this.getX()) >> 4, previousZ = Mth.floor(this.getZ()) >> 4;
+        int newX = Mth.floor(x) >> 4, newZ = Mth.floor(z) >> 4;
+        if (previousX != newX || previousZ != newZ) {
+            boolean isLoaded = ((net.minecraft.server.level.ServerChunkCache) this.level().getChunkSource()).getChunkAtIfLoadedImmediately(newX, newZ) != null;
+            if (!isLoaded) {
+                if (currRegionData.pufferfish$loadedThisTick > meow.bacteriawa.lightingluminol.config.OptimizationsConfig.Projectile.maxLoadsPerTick) {
+                    if (++this.loadedLifetime > meow.bacteriawa.lightingluminol.config.OptimizationsConfig.Projectile.maxLoadsPerProjectile) {
+                        this.discard();
+                    }
+                    return;
+                }
+                currRegionData.pufferfish$loadedThisTick++;
+            }
+        }
+        super.setPos(x, y, z);
+    }
+    // LightingLuminol end
+
     // Folia start - region threading
     // In general, this is an entire mess. At the time of writing, there are fifty usages of getOwner.
     // Usage of this function is to avoid concurrency issues, even if it sacrifices behavior.

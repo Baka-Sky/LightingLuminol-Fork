@@ -1936,6 +1936,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             //level.updateLagCompensationTick(); // Paper - lag compensation // Folia - region threading
             //net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = level.paperConfig().hopper.disableMoveEvent || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper - Perf: Optimize Hoppers // Folia - region threading
             profiler.push(() -> level + " " + level.dimension().identifier());
+            // LightingLuminol start - Portal rate limiter
+            regionizedWorldData.portalRateThrottler.begin();
+            // LightingLuminol end
             profiler.push("tick");
 
             try {
@@ -1951,6 +1954,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             profiler.pop();
             profiler.pop();
             regionizedWorldData.explosionDensityCache.clear(); // Paper - Optimize explosions // Folia - region threading
+            // LightingLuminol start - Portal rate limiter
+            regionizedWorldData.portalRateThrottler.done();
+            // LightingLuminol end
         }
         //this.isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked // Folia - region threading
 

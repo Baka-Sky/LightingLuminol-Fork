@@ -188,8 +188,8 @@ public class ServerConfigurationPacketListenerImpl extends ServerCommonPacketLis
     public void handleConfigurationFinished(final ServerboundFinishConfigurationPacket packet) {
         PacketUtils.ensureRunningOnSameThread(packet, this, this.server.packetProcessor());
         this.finishCurrentTask(JoinWorldTask.TYPE);
-        this.connection.setupOutboundProtocol(GameProtocols.CLIENTBOUND_TEMPLATE.bind(RegistryFriendlyByteBuf.decorator(this.server.registryAccess())));
-
+        // LightingLuminol start - async protocol switch
+        Runnable afterSwitch = () -> { // wrapped callback
         try {
             PlayerList playerList = this.server.getPlayerList();
             if (playerList.getPlayer(this.gameProfile.id()) != null) {
@@ -235,6 +235,17 @@ public class ServerConfigurationPacketListenerImpl extends ServerCommonPacketLis
             LOGGER.error("Couldn't place player in world", e);
             this.disconnect(DISCONNECT_REASON_INVALID_DATA);
         }
+        // LightingLuminol start - async protocol switch
+        };
+        if (!meow.bacteriawa.lightingluminol.config.OptimizationsConfig.UseAsyncProtocolSwitching.enabled) {
+            this.connection.setupOutboundProtocol(GameProtocols.CLIENTBOUND_TEMPLATE.bind(RegistryFriendlyByteBuf.decorator(this.server.registryAccess())));
+            afterSwitch.run();
+        } else {
+            this.connection.setupOutboundProtocolAsync(GameProtocols.CLIENTBOUND_TEMPLATE.bind(RegistryFriendlyByteBuf.decorator(this.server.registryAccess())), () -> {
+                io.papermc.paper.threadedregions.RegionizedServer.getInstance().addTask(afterSwitch);
+            }, false);
+        }
+        // LightingLuminol end
     }
 
     @Override
