@@ -3066,6 +3066,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
     // Paper start - per-world game rules
     public <T> void onGameRuleChanged(final ServerLevel level, final GameRule<T> rule, final T value) {
         this.notificationManager().onGameRuleChanged(level, rule, value);
+        this.savedDataStorage.saveMaps();
         // Paper end - per-world game rules
         if (rule == GameRules.REDUCED_DEBUG_INFO) {
             byte event = (byte)((Boolean)value ? 22 : 23);

@@ -933,10 +933,8 @@ public abstract class Entity
 
         if (this.isInLava()) {
             this.fallDistance *= 0.5;
-            // CraftBukkit start
         } else {
             this.lastLavaContact = null;
-            // CraftBukkit end
         }
 
         this.checkBelowWorld();
@@ -1951,6 +1949,14 @@ public abstract class Entity
     public boolean collidedWithShapeMovingFrom(final Vec3 from, final Vec3 to, final List<AABB> aabbs) {
         AABB boundingBoxAtFrom = this.makeBoundingBox(from);
         Vec3 travelVector = to.subtract(from);
+        if (travelVector.lengthSqr() < 1.0E-12) {
+            for (AABB aabb : aabbs) {
+                if (boundingBoxAtFrom.intersects(aabb)) {
+                    return true;
+                }
+            }
+            return false;
+        }
         return boundingBoxAtFrom.collidedAlongVector(travelVector, aabbs);
     }
 
