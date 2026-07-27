@@ -74,6 +74,7 @@
 | **Folia** | 26.2 | 区域化多线程服务器核心 |
 | **Paper** | `1569b8dc` ref | 上游 Paper 提交 |
 | **Luminol** | `ba28403f` ref | Luminol 26.1.2 参考提交 |
+| **Arbor** | 26.2 | 基于 Luminol 的特性参考与代码移植 |
 | **Java** | 25 | 编译与运行时 JDK |
 | **Gradle** | 9.x | 构建工具（自带 wrapper） |
 | **Paperweight Patcher** | 2.0.0-beta.21 | 补丁应用与项目管理插件 |

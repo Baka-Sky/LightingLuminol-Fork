@@ -74,6 +74,7 @@
 | **Folia** | 26.2 | Regionized multi-threaded server core |
 | **Paper** | `1569b8dc` ref | Upstream Paper commit |
 | **Luminol** | `ba28403f` ref | Luminol 26.1.2 reference commit |
+| **Arbor** | 26.2 | Feature reference and code porting based on Luminol |
 | **Java** | 25 | Compile and runtime JDK |
 | **Gradle** | 9.x | Build tool (wrapper included) |
 | **Paperweight Patcher** | 2.0.0-beta.21 | Patch application and project management plugin |
