@@ -240,3 +240,9 @@ force_bukkit_scheduler_plugins: []
     <a href="https://github.com/Baka-Sky/LightingLuminol-Fork/releases">发布版本</a>
   </p>
 </div>
+
+---
+
+![Renegade Cow](public/image/renegadecow.png)
+
+**这个项目具有超级牛力**

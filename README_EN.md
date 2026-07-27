@@ -240,3 +240,9 @@ This project is licensed under the **GNU General Public License v3.0**. See [LIC
     <a href="https://github.com/Baka-Sky/LightingLuminol-Fork/releases">Releases</a>
   </p>
 </div>
+
+---
+
+![Renegade Cow](public/image/renegadecow.png)
+
+**This Project has a Super Cow Power**
