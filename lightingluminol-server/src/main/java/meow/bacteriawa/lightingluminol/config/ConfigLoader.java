@@ -443,6 +443,11 @@ public final class ConfigLoader {
         FunctionConfig.RegionFormat.blinearIoThreadCount = parseInt(values.get("function.region_format.blinear_io_thread_count"), 6);
         FunctionConfig.RegionFormat.format = parseString(values.get("function.region_format.format"), "MCA");
         FunctionConfig.RegionFormat.linearUseVirtualThread = parseBoolean(values.get("function.region_format.linear_use_virtual_thread"), true);
+        // LightingLuminol start - Configurable region file format
+        // Sync the parsed config into the RegionFormatConfig bridge used by the
+        // Arbor-originated region format classes (EnumRegionFormat, LinearRegionFile, etc.)
+        zone.little.arbor.config.modules.function.RegionFormatConfig.syncFromFunctionConfig();
+        // LightingLuminol end - Configurable region file format
         FunctionConfig.Tpsbar.pingColorList = parseList(values.get("function.tpsbar.ping_color_list"));
         FunctionConfig.Tpsbar.precisionOfMsptValue = parseInt(values.get("function.tpsbar.precision_of_mspt_value"), 2);
         FunctionConfig.Tpsbar.precisionOfTpsValue = parseInt(values.get("function.tpsbar.precision_of_tps_value"), 2);

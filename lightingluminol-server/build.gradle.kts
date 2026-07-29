@@ -189,6 +189,11 @@ dependencies {
     // LightingLuminol start - CPU Affinity
     implementation("net.openhft:affinity:3.23.3")
     // LightingLuminol end - CPU Affinity
+
+    // LightingLuminol start - Configurable region file format (Linear/BLinear)
+    implementation("com.github.luben:zstd-jni:1.5.4-1")
+    implementation("net.openhft:zero-allocation-hashing:0.16")
+    // LightingLuminol end - Configurable region file format
 }
 
 tasks.jar {

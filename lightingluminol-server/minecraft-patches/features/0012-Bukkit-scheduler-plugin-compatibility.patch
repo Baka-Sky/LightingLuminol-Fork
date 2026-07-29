@@ -5,7 +5,7 @@ Subject: [PATCH] Bukkit scheduler plugin compatibility
 
 
 diff --git a/io/papermc/paper/threadedregions/RegionizedServer.java b/io/papermc/paper/threadedregions/RegionizedServer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+index aa575f3b76ef70ffb9f0410e7e5cfe7af384bfbd..5b2153e0c51f4399b607777e8344c8405ddac078 100644
 --- a/io/papermc/paper/threadedregions/RegionizedServer.java
 +++ b/io/papermc/paper/threadedregions/RegionizedServer.java
 @@ -23,6 +23,7 @@ import net.minecraft.server.network.ServerGamePacketListenerImpl;
@@ -27,7 +27,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.tickClocks();
  
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+index 6f13870a1b463049dd37cf1c65d0bdecfc35b5c4..6fa2c9393e8ee68564ccdde11ed73f6ddc813e73 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
 @@ -680,8 +680,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa

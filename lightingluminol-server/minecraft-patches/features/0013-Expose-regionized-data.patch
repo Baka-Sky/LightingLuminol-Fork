@@ -5,7 +5,7 @@ Subject: [PATCH] Expose regionized data
 
 
 diff --git a/io/papermc/paper/threadedregions/TickRegions.java b/io/papermc/paper/threadedregions/TickRegions.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+index a6ab9cb01f4f49f5f44b6ed324fa6d51139aabb6..b3917508ade9188530191078c920feffbc0ccf2d 100644
 --- a/io/papermc/paper/threadedregions/TickRegions.java
 +++ b/io/papermc/paper/threadedregions/TickRegions.java
 @@ -283,11 +283,11 @@ public final class TickRegions implements ThreadedRegionizer.RegionCallbacks<Tic

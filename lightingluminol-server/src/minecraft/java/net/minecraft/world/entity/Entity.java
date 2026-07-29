@@ -933,6 +933,19 @@ public abstract class Entity
 
         if (this.isInLava()) {
             this.fallDistance *= 0.5;
+            // LightingLuminol start - fix lava damage not applying reliably under Folia region threading
+            // In 26.2 lava damage relies on the InsideBlockEffect mechanism (LavaFluid.entityInside),
+            // which is gated by Folia's isTickThreadFor() check in checkInsideBlocks(). After region
+            // reassignment that check may skip the fluid entityInside, so lava stops dealing damage.
+            // As a reliable fallback (mirroring pre-26.2 vanilla which called lavaHurt directly here),
+            // apply lava ignite + hurt every tick while submerged. invulnerableTime (decremented in
+            // LivingEntity.tick / ServerPlayer.tick) prevents double-damage when the InsideBlockEffect
+            // path also fires on the same tick.
+            if (this.level() instanceof ServerLevel) {
+                this.lavaIgnite();
+                this.lavaHurt();
+            }
+            // LightingLuminol end
         } else {
             this.lastLavaContact = null;
         }
