@@ -933,6 +933,10 @@ public abstract class Entity
 
         if (this.isInLava()) {
             this.fallDistance *= 0.5;
+            if (this.level() instanceof ServerLevel) {
+                this.lavaIgnite();
+                this.lavaHurt();
+            }
         } else {
             this.lastLavaContact = null;
         }
