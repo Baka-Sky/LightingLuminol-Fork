@@ -933,10 +933,6 @@ public abstract class Entity
 
         if (this.isInLava()) {
             this.fallDistance *= 0.5;
-            if (this.level() instanceof ServerLevel) {
-                this.lavaIgnite();
-                this.lavaHurt();
-            }
         } else {
             this.lastLavaContact = null;
         }
@@ -1880,7 +1876,20 @@ public abstract class Entity
 
                 // Folia start - region threading
                 if (!ca.spottedleaf.moonrise.common.util.TickThread.isTickThreadFor(Entity.this.level, blockIntersection, 16)) {
-                    return false;
+                    // LightingLuminol start - fix fluid damage (lava) not applying after region reassignment
+                    // Fluid entityInside (e.g. lava damage) is read-only, safe cross-region
+                    BlockState earlyState = this.level().getBlockState(blockIntersection);
+                    if (earlyState.getFluidState().isEmpty()) {
+                        return false;
+                    }
+                    iterations.set(iteration);
+                    boolean insideFluid = this.collidedWithFluid(earlyState.getFluidState(), blockIntersection, from, to);
+                    if (insideFluid && visitedBlocks.add(blockIntersection.asLong())) {
+                        effectCollector.advanceStep(iteration, blockIntersection);
+                        earlyState.getFluidState().entityInside(this.level(), blockIntersection, this, effectCollector);
+                    }
+                    return true;
+                    // LightingLuminol end
                 }
                 // Folia end - region threading
                 iterations.set(iteration);
