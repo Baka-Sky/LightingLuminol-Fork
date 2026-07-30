@@ -907,7 +907,7 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
         }
 
         @Override
-        public final void moonrise$write(final RegionFile regionFile) throws IOException {
+        public final void moonrise$write(final abomination.IRegionFile regionFile) throws IOException {
             regionFile.write(this.pos, ByteBuffer.wrap(this.buf, 0, this.count));
         }
         // Paper end - rewrite chunk system
