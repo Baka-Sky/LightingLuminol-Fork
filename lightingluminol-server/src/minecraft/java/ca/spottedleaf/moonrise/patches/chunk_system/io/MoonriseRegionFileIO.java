@@ -1273,7 +1273,7 @@ public final class MoonriseRegionFileIO {
                 this.regionDataController.finishWrite(this.chunkX, this.chunkZ, writeData);
                 // Paper start - flush regionfiles on save
                 if (this.world.paperConfig().chunks.flushRegionsOnSave) {
-                    final RegionFile regionFile = this.regionDataController.getCache().moonrise$getRegionFileIfLoaded(this.chunkX, this.chunkZ);
+                    final abomination.IRegionFile regionFile = this.regionDataController.getCache().moonrise$getRegionFileIfLoaded(this.chunkX, this.chunkZ); // Arbor - Configurable region file format
                     if (regionFile != null) {
                         regionFile.flush();
                     } // else: evicted from cache, which should have called flush
@@ -1489,7 +1489,7 @@ public final class MoonriseRegionFileIO {
 
         public static interface IORunnable {
 
-            public void run(final RegionFile regionFile) throws IOException;
+            public void run(final abomination.IRegionFile regionFile) throws IOException; // Arbor - Configurable region file format
 
         }
     }

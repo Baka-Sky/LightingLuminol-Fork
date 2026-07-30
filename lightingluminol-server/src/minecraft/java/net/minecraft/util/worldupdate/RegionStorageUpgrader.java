@@ -36,7 +36,7 @@ import org.slf4j.Logger;
 public class RegionStorageUpgrader {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String NEW_DIRECTORY_PREFIX = "new_";
-    private static final Pattern REGEX = Pattern.compile("^r\\.(-?[0-9]+)\\.(-?[0-9]+)\\.mca$");
+    private static final Pattern REGEX = Pattern.compile("^r\\.(-?[0-9]+)\\.(-?[0-9]+)\\." + zone.little.arbor.config.modules.function.RegionFormatConfig.regionFormat.getArgument() + "$"); // Arbor - Configurable region file format
     private final DataFixer dataFixer;
     private final UpgradeProgress upgradeProgress;
     private final String type;
@@ -162,7 +162,7 @@ public class RegionStorageUpgrader {
     }
 
     private static List<FileToUpgrade> getAllChunkPositions(final RegionStorageInfo info, final Path regionFolder) {
-        File[] files = regionFolder.toFile().listFiles((dir, name) -> name.endsWith(".mca"));
+        File[] files = regionFolder.toFile().listFiles((dir, name) -> name.endsWith("." + zone.little.arbor.config.modules.function.RegionFormatConfig.regionFormat.getArgument())); // Arbor - Configurable region file format
         if (files == null) {
             return List.of();
         }
@@ -176,7 +176,7 @@ public class RegionStorageUpgrader {
                 int zOffset = Integer.parseInt(regex.group(2)) << 5;
                 List<ChunkPos> chunkPositions = Lists.newArrayList();
 
-                try (RegionFile regionSource = new RegionFile(info, regionFile.toPath(), regionFolder, true)) {
+                try (abomination.IRegionFile regionSource = zone.little.arbor.config.modules.function.RegionFormatConfig.regionFormat.getCreator().create(new zone.little.arbor.utils.RegionCreatorInfo(info, regionFile.toPath(), regionFolder, true))) { // Arbor - Configurable region file format
                     for (int x = 0; x < 32; x++) {
                         for (int z = 0; z < 32; z++) {
                             ChunkPos pos = new ChunkPos(x + xOffset, z + zOffset);
@@ -253,7 +253,7 @@ public class RegionStorageUpgrader {
         return storage.upgradeChunkTag(chunkTag, this.defaultVersion, this.dataFixContextTag, targetVersion);
     }
 
-    private void onFileFinished(final RegionFile regionFile) {
+    private void onFileFinished(final abomination.IRegionFile regionFile) { // Arbor - Configurable region file format
         if (this.recreateRegionFiles) {
             if (this.previousWriteFuture != null) {
                 this.previousWriteFuture.join();

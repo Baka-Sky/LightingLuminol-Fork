@@ -8,5 +8,5 @@ public interface ChunkSystemChunkBuffer {
 
     public void moonrise$setWriteOnClose(final boolean value);
 
-    public void moonrise$write(final RegionFile regionFile) throws IOException;
+    public void moonrise$write(final abomination.IRegionFile regionFile) throws IOException; // Arbor - Configurable region file format
 }
