@@ -22,7 +22,7 @@ import net.minecraft.world.level.ChunkPos;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
-public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patches.chunk_system.storage.ChunkSystemRegionFile { // Paper - rewrite chunk system
+public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patches.chunk_system.storage.ChunkSystemRegionFile, abomination.IRegionFile { // Paper - rewrite chunk system
     private static final Logger LOGGER = LogUtils.getLogger();
     public static final int MAX_CHUNK_SIZE = 500 * 1024 * 1024; // Paper - don't write garbage data to disk if writing serialization fails
     private static final int SECTOR_BYTES = 4096;
@@ -130,7 +130,7 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
         return this.recalculateCount.get();
     }
 
-    boolean recalculateHeader() throws IOException {
+    public boolean recalculateHeader() throws IOException {
         if (!this.canRecalcHeader) {
             return false;
         }
@@ -789,7 +789,7 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
         }
     }
 
-    protected synchronized void write(final ChunkPos pos, final ByteBuffer data) throws IOException {
+    public synchronized void write(final ChunkPos pos, final ByteBuffer data) throws IOException {
         int offsetIndex = getOffsetIndex(pos);
         int offset = this.offsets.get(offsetIndex);
         int sectorNumber = getSectorNumber(offset);
@@ -973,11 +973,11 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
         return (x & 31) + (z & 31) * 32;
     }
 
-    synchronized boolean isOversized(int x, int z) {
+    public synchronized boolean isOversized(int x, int z) {
         return this.oversized[getChunkIndex(x, z)] == 1;
     }
 
-    synchronized void setOversized(int x, int z, boolean oversized) throws IOException {
+    public synchronized void setOversized(int x, int z, boolean oversized) throws IOException {
         final int offset = getChunkIndex(x, z);
         boolean previous = this.oversized[offset] == 1;
         this.oversized[offset] = (byte) (oversized ? 1 : 0);
@@ -1016,7 +1016,7 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
         return this.path.getParent().resolve(this.path.getFileName().toString().replaceAll("\\.mca$", "") + "_oversized_" + x + "_" + z + ".nbt");
     }
 
-    synchronized net.minecraft.nbt.CompoundTag getOversizedData(int x, int z) throws IOException {
+    public synchronized net.minecraft.nbt.CompoundTag getOversizedData(int x, int z) throws IOException {
         Path file = getOversizedFile(x, z);
         try (DataInputStream out = new DataInputStream(new java.io.BufferedInputStream(new java.util.zip.InflaterInputStream(Files.newInputStream(file))))) {
             return net.minecraft.nbt.NbtIo.read((java.io.DataInput) out);
