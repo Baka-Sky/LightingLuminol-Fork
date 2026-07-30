@@ -112,10 +112,24 @@ cd LightingLuminol-Fork
 
 The `applyAllPatches` task will: pull upstream Paper 26.2 source via `paperRef` → apply `lightingluminol-api/paper-patches` → apply `lightingluminol-server/{paper,minecraft,luminol}-patches` → merge the Luminol core sources under `src/main/java` into the compile path.
 
+> **Note:** `applyAllPatches` will overwrite `src/minecraft/java/` with decompiled sources, reverting committed modifications (e.g. `ChunkStatus.SPAWN` in `EntityFluidInteraction.java`, `IRegionFile` interface in `RegionFile.java`). After running `applyAllPatches`, you must restore these files before building:
+>
+> ```bash
+> git checkout -- lightingluminol-server/src/minecraft/java/
+> ```
+
 ### One-click Build
 
 ```bash
-.\gradlew.bat applyAllPatches createPaperclipJar
+# Windows
+.\gradlew.bat applyAllPatches
+git checkout -- lightingluminol-server/src/minecraft/java/
+.\gradlew.bat createPaperclipJar
+
+# Linux / macOS
+./gradlew applyAllPatches
+git checkout -- lightingluminol-server/src/minecraft/java/
+./gradlew createPaperclipJar
 ```
 
 ### Available Gradle Tasks
