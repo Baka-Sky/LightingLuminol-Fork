@@ -26,10 +26,15 @@ jobs:
           git config --global core.autocrlf false
           git config --global core.longpaths true
 
-      # Note: src/minecraft contains committed source modifications.
-      # Running applyAllPatches here would regenerate them from decompiled
-      # sources and overwrite those modifications (e.g. RegionFile -> IRegionFile,
-      # EntityFluidInteraction ChunkStatus.SPAWN). Build directly instead.
+      # applyAllPatches sets up the Paper environment (paper-server classpath),
+      # but also overwrites src/minecraft/java with decompiled sources.
+      # We must restore our committed source modifications before building.
+      - name: Apply Patches
+        run: .\gradlew.bat applyAllPatches
+
+      - name: Restore committed source modifications
+        run: git checkout -- lightingluminol-server/src/minecraft/java/
+
       - name: Build Paperclip JAR
         run: .\gradlew.bat createPaperclipJar
 
