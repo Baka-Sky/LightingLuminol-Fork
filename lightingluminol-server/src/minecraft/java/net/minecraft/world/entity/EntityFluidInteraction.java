@@ -104,7 +104,7 @@ public class EntityFluidInteraction {
 
         for (int chunkZ = sectionZ0; chunkZ <= sectionZ1; chunkZ++) {
             for (int chunkX = sectionX0; chunkX <= sectionX1; chunkX++) {
-                ChunkAccess chunk = level.getChunk(chunkX, chunkZ, ChunkStatus.FULL, false);
+                ChunkAccess chunk = level.getChunk(chunkX, chunkZ, ChunkStatus.SPAWN, false);
                 if (chunk == null) {
                     return false;
                 }
