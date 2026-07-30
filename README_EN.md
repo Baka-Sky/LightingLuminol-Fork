@@ -105,6 +105,10 @@ cd LightingLuminol-Fork
 .\gradlew.bat applyAllPatches          # Windows
 ./gradlew applyAllPatches              # Linux / macOS
 
+# ⚠️ REQUIRED: restore committed source modifications (lava fix + B_LINEAR/LINEAR_V2 region support)
+# applyAllPatches overwrites src/minecraft/java with decompiled sources — DO NOT SKIP this step!
+git checkout -- lightingluminol-server/src/minecraft/java/   # required on all platforms
+
 # Build the runnable Paperclip JAR
 .\gradlew.bat createPaperclipJar       # Windows
 ./gradlew createPaperclipJar           # Linux / macOS
@@ -112,10 +116,15 @@ cd LightingLuminol-Fork
 
 The `applyAllPatches` task will: pull upstream Paper 26.2 source via `paperRef` → apply `lightingluminol-api/paper-patches` → apply `lightingluminol-server/{paper,minecraft,luminol}-patches` → merge the Luminol core sources under `src/main/java` into the compile path.
 
+> **⚠️ Important** : `applyAllPatches` resets `lightingluminol-server/src/minecraft/java/` to the upstream decompiled sources. Any changes committed directly in that directory (lava damage fix, B_LINEAR / LINEAR_V2 region format support, etc.) will be lost. **You MUST run `git checkout -- lightingluminol-server/src/minecraft/java/` BEFORE `createPaperclipJar`**, otherwise the built JAR will be missing these modifications.
+
 ### One-click Build
 
 ```bash
-.\gradlew.bat applyAllPatches createPaperclipJar
+# NOTE: the git checkout step CANNOT be skipped. Run each command separately as shown:
+.\gradlew.bat applyAllPatches
+git checkout -- lightingluminol-server/src/minecraft/java/
+.\gradlew.bat createPaperclipJar
 ```
 
 ### Available Gradle Tasks

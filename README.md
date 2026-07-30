@@ -105,6 +105,10 @@ cd LightingLuminol-Fork
 .\gradlew.bat applyAllPatches          # Windows
 ./gradlew applyAllPatches              # Linux / macOS
 
+# ⚠️ 必须执行：恢复岩浆修复与 B_LINEAR/LINEAR_V2 区域格式等已提交的源码修改
+# applyAllPatches 会用反编译源码覆盖 src/minecraft/java，漏掉这步会丢失修改！
+git checkout -- lightingluminol-server/src/minecraft/java/   # Windows / Linux / macOS 均需执行
+
 # 构建 Paperclip 可运行 JAR
 .\gradlew.bat createPaperclipJar       # Windows
 ./gradlew createPaperclipJar           # Linux / macOS
@@ -112,10 +116,15 @@ cd LightingLuminol-Fork
 
 `applyAllPatches` 任务会：从 `paperRef` 拉取上游 Paper 26.2 源码 → 应用 `lightingluminol-api/paper-patches` → 应用 `lightingluminol-server/{paper,minecraft,luminol}-patches` → 合并 `src/main/java` 下的 Luminol 核心源码到编译路径。
 
+> **⚠️ 重要提醒**：`applyAllPatches` 会把 `lightingluminol-server/src/minecraft/java/` 重置为上游反编译源码，所有直接提交到该目录的修改（如岩浆修复、B_LINEAR / LINEAR_V2 区域格式支持等）都会被覆盖。**请务必在 `createPaperclipJar` 之前执行 `git checkout -- lightingluminol-server/src/minecraft/java/`**，否则编译出的 JAR 会缺少这些修改。
+
 ### 一键构建
 
 ```bash
-.\gradlew.bat applyAllPatches createPaperclipJar
+# 注意：无法省略中间的 git checkout，推荐按上面的步骤分步执行
+.\gradlew.bat applyAllPatches
+git checkout -- lightingluminol-server/src/minecraft/java/
+.\gradlew.bat createPaperclipJar
 ```
 
 ### 可用 Gradle 任务
