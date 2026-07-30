@@ -26,9 +26,10 @@ jobs:
           git config --global core.autocrlf false
           git config --global core.longpaths true
 
-      - name: Apply Patches
-        run: .\gradlew.bat applyAllPatches
-
+      # Note: src/minecraft contains committed source modifications.
+      # Running applyAllPatches here would regenerate them from decompiled
+      # sources and overwrite those modifications (e.g. RegionFile -> IRegionFile,
+      # EntityFluidInteraction ChunkStatus.SPAWN). Build directly instead.
       - name: Build Paperclip JAR
         run: .\gradlew.bat createPaperclipJar
 
