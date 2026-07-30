@@ -201,17 +201,10 @@ public class TripWireHookBlock extends Block {
                     BlockPos testPos = pos.relative(direction, i);
                     BlockState wireData = wireStates[i];
                     if (wireData != null) {
-                        // LightingLuminol start - tripwire dupe
-                        if (meow.bacteriawa.lightingluminol.config.FunctionConfig.TripwireDupe.enabled) {
-                            level.setBlock(testPos, wireData.trySetValue(ATTACHED, attached), 3);
-                            level.getBlockState(testPos);
-                        } else {
-                            BlockState testPosState = level.getBlockState(testPos);
-                            if (testPosState.is(Blocks.TRIPWIRE) || testPosState.is(Blocks.TRIPWIRE_HOOK)) {
-                                if (!io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableTripwireUpdates || !testPosState.is(Blocks.TRIPWIRE)) level.setBlock(testPos, wireData.trySetValue(ATTACHED, attached), Block.UPDATE_ALL); // Paper - prevent tripwire from updating
-                            }
+                        BlockState testPosState = level.getBlockState(testPos);
+                        if (testPosState.is(Blocks.TRIPWIRE) || testPosState.is(Blocks.TRIPWIRE_HOOK)) {
+                            if (!io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableTripwireUpdates || !testPosState.is(Blocks.TRIPWIRE)) level.setBlock(testPos, wireData.trySetValue(ATTACHED, attached), Block.UPDATE_ALL); // Paper - prevent tripwire from updating
                         }
-                        // LightingLuminol end - tripwire dupe
                     }
                 }
             }

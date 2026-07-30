@@ -50,7 +50,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LevelEvent;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.TheEndPortalBlockEntity;
-import net.minecraft.world.level.block.entity.TheEndGatewayBlockEntity;
 import net.minecraft.world.level.block.state.pattern.BlockInWorld;
 import net.minecraft.world.level.block.state.pattern.BlockPattern;
 import net.minecraft.world.level.block.state.pattern.BlockPatternBuilder;
@@ -318,66 +317,7 @@ public class EnderDragonFight extends SavedData {
         return false;
     }
 
-    // LightingLuminol start - optimizedDragonRespawn
-    private int cachePortalChunkIteratorX = -8;
-    private int cachePortalChunkIteratorZ = -8;
-    private int cachePortalOriginIteratorY = -1;
-
     public BlockPattern.@Nullable BlockPatternMatch findExitPortal() {
-        if (meow.bacteriawa.lightingluminol.config.OptimizationsConfig.EndDragon.optimizedDragonRespawn) {
-            int i, j;
-            for (i = cachePortalChunkIteratorX; i <= 8; ++i) {
-                for (j = cachePortalChunkIteratorZ; j <= 8; ++j) {
-                    LevelChunk worldChunk = this.level.getChunk(i, j);
-                    for (BlockEntity blockEntity : worldChunk.getBlockEntities().values()) {
-                        if (blockEntity instanceof net.minecraft.world.level.block.entity.TheEndGatewayBlockEntity) {
-                            continue;
-                        }
-                        if (blockEntity instanceof TheEndPortalBlockEntity) {
-                            BlockPattern.BlockPatternMatch blockPatternMatch = this.exitPortalPattern.find(this.level, blockEntity.getBlockPos());
-                            if (blockPatternMatch != null) {
-                                BlockPos blockPos = blockPatternMatch.getBlock(3, 3, 3).getPos();
-                                if (this.exitPortalLocation == null) {
-                                    this.exitPortalLocation = blockPos;
-                                }
-                                cachePortalChunkIteratorX = i;
-                                cachePortalChunkIteratorZ = j;
-                                return blockPatternMatch;
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (this.needsStateScanning || this.exitPortalLocation == null) {
-                if (cachePortalOriginIteratorY != -1) {
-                    i = cachePortalOriginIteratorY;
-                } else {
-                    i = this.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, EndPodiumFeature.getLocation(BlockPos.ZERO)).getY();
-                }
-                boolean notFirstSearch = false;
-                for (j = i; j >= 0; --j) {
-                    BlockPattern.BlockPatternMatch result2 = null;
-                    if (notFirstSearch) {
-                        result2 = this.exitPortalPattern.find(this.level, new BlockPos(EndPodiumFeature.getLocation(BlockPos.ZERO).getX(), j, EndPodiumFeature.getLocation(BlockPos.ZERO).getZ()));
-                    } else {
-                        result2 = this.exitPortalPattern.find(this.level, new BlockPos(EndPodiumFeature.getLocation(BlockPos.ZERO).getX(), j, EndPodiumFeature.getLocation(BlockPos.ZERO).getZ()));
-                    }
-                    if (result2 != null) {
-                        if (this.exitPortalLocation == null) {
-                            this.exitPortalLocation = result2.getBlock(3, 3, 3).getPos();
-                        }
-                        cachePortalOriginIteratorY = j;
-                        return result2;
-                    }
-                    notFirstSearch = true;
-                }
-            }
-
-            return null;
-        }
-        // LightingLuminol end - optimizedDragonRespawn
-
         ChunkPos chunkOrigin = ChunkPos.containing(this.origin);
 
         for (int x = -8 + chunkOrigin.x(); x <= 8 + chunkOrigin.x(); x++) {
@@ -685,11 +625,6 @@ public class EnderDragonFight extends SavedData {
     }
 
     public boolean respawnDragon(final List<EndCrystal> crystals) { // CraftBukkit - return boolean
-        // LightingLuminol start - optimizedDragonRespawn
-        cachePortalChunkIteratorX = -8;
-        cachePortalChunkIteratorZ = -8;
-        cachePortalOriginIteratorY = -1;
-        // LightingLuminol end - optimizedDragonRespawn
         if (this.dragonKilled && this.respawnStage == null) {
             for (BlockPattern.BlockPatternMatch portal = this.findExitPortal(); portal != null; portal = this.findExitPortal()) {
                 for (int x = 0; x < this.exitPortalPattern.getWidth(); x++) {

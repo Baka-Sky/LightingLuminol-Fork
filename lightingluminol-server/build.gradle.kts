@@ -182,6 +182,11 @@ dependencies {
     testImplementation("org.ow2.asm:asm-tree:9.9.1")
     testImplementation("org.junit-pioneer:junit-pioneer:2.3.0") // CartesianTest
 
+    // LightingLuminol start - Dependencies for region format support
+    implementation("com.github.luben:zstd-jni:1.5.4-1")
+    implementation("net.openhft:zero-allocation-hashing:0.16")
+    // LightingLuminol end
+
     // Spark
     implementation("me.lucko:spark-api:0.1-20240720.200737-2")
     implementation("me.lucko:spark-paper:1.10.152")
@@ -189,11 +194,6 @@ dependencies {
     // LightingLuminol start - CPU Affinity
     implementation("net.openhft:affinity:3.23.3")
     // LightingLuminol end - CPU Affinity
-
-    // LightingLuminol start - Configurable region file format (Linear/BLinear)
-    implementation("com.github.luben:zstd-jni:1.5.4-1")
-    implementation("net.openhft:zero-allocation-hashing:0.16")
-    // LightingLuminol end - Configurable region file format
 }
 
 tasks.jar {

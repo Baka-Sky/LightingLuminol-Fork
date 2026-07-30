@@ -1,19 +1,11 @@
 package zone.little.arbor.config.modules.function;
 
 import abomination.LinearRegionFile;
+import meow.bacteriawa.lightingluminol.config.FunctionConfig;
 import zone.little.arbor.enums.EnumRegionFormat;
 import zone.little.arbor.utils.BufferedLinearRegionFileFlusher;
-import net.minecraft.server.MinecraftServer;
 
-/**
- * LightingLuminol - Region format config bridge.
- *
- * Delegates to meow.bacteriawa.lightingluminol.config.FunctionConfig.RegionFormat
- * so the Arbor-originated region format classes (which reference this class) work
- * without modification. Initialised by ConfigLoader after parsing the TOML file.
- */
-public final class RegionFormatConfig {
-
+public class RegionFormatConfig {
     public static EnumRegionFormat regionFormat = EnumRegionFormat.MCA;
     public static int linearCompressionLevel = 1;
     public static int linearIoThreadCount = 6;
@@ -24,30 +16,29 @@ public final class RegionFormatConfig {
 
     public static BufferedLinearRegionFileFlusher blinearFlusher = null;
 
-    private RegionFormatConfig() {
-    }
+    public static void onLoaded() {
+        // Sync from FunctionConfig
+        linearCompressionLevel = FunctionConfig.RegionFormat.linearCompressionLevel;
+        linearIoFlushDelayMs = FunctionConfig.RegionFormat.linearIoFlushDelayMs;
+        blinearIoFlushDelayMs = FunctionConfig.RegionFormat.blinearIoFlushDelayMs;
+        linearIoThreadCount = FunctionConfig.RegionFormat.linearIoThreadCount;
+        blinearIoThreadCount = FunctionConfig.RegionFormat.blinearIoThreadCount;
+        linearUseVirtualThread = FunctionConfig.RegionFormat.linearUseVirtualThread;
 
-    /**
-     * Called by ConfigLoader after FunctionConfig.RegionFormat fields are populated.
-     * Translates the String format into the enum and applies runtime settings.
-     */
-    public static void syncFromFunctionConfig() {
-        // Map the string config value to the enum
-        String fmt = meow.bacteriawa.lightingluminol.config.FunctionConfig.RegionFormat.format;
-        if (fmt != null) {
-            switch (fmt.toUpperCase(java.util.Locale.ROOT)) {
-                case "LINEAR_V2", "LINEAR" -> regionFormat = EnumRegionFormat.LINEAR_V2;
-                case "B_LINEAR", "BLINEAR" -> regionFormat = EnumRegionFormat.B_LINEAR;
-                default -> regionFormat = EnumRegionFormat.MCA;
-            }
+        String formatStr = FunctionConfig.RegionFormat.format.toUpperCase();
+        switch (formatStr) {
+            case "B_LINEAR":
+                regionFormat = EnumRegionFormat.B_LINEAR;
+                break;
+            case "LINEAR_V2":
+            case "LINEAR":
+                regionFormat = EnumRegionFormat.LINEAR_V2;
+                break;
+            case "MCA":
+            default:
+                regionFormat = EnumRegionFormat.MCA;
+                break;
         }
-
-        linearCompressionLevel = meow.bacteriawa.lightingluminol.config.FunctionConfig.RegionFormat.linearCompressionLevel;
-        linearIoThreadCount = meow.bacteriawa.lightingluminol.config.FunctionConfig.RegionFormat.linearIoThreadCount;
-        linearIoFlushDelayMs = meow.bacteriawa.lightingluminol.config.FunctionConfig.RegionFormat.linearIoFlushDelayMs;
-        blinearIoFlushDelayMs = meow.bacteriawa.lightingluminol.config.FunctionConfig.RegionFormat.blinearIoFlushDelayMs;
-        blinearIoThreadCount = meow.bacteriawa.lightingluminol.config.FunctionConfig.RegionFormat.blinearIoThreadCount;
-        linearUseVirtualThread = meow.bacteriawa.lightingluminol.config.FunctionConfig.RegionFormat.linearUseVirtualThread;
 
         if (regionFormat == EnumRegionFormat.LINEAR_V2) {
             checkCompressionLevel();
@@ -57,20 +48,21 @@ public final class RegionFormatConfig {
         }
 
         if (regionFormat == EnumRegionFormat.B_LINEAR) {
-            if (blinearFlusher == null) {
+            try {
                 blinearFlusher = new BufferedLinearRegionFileFlusher(blinearIoThreadCount, 20, blinearIoFlushDelayMs);
+                checkCompressionLevel();
                 Runtime.getRuntime().addShutdownHook(new Thread(() -> blinearFlusher.shutdown()));
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to initialize B_LINEAR region format", e);
             }
-            checkCompressionLevel();
         }
     }
 
     private static void checkCompressionLevel() {
         if (linearCompressionLevel > 23 || linearCompressionLevel < 1) {
-            MinecraftServer.LOGGER.error("Linear or BufferedLinear region compression level should be between 1 and 22 in config: {}", linearCompressionLevel);
-            MinecraftServer.LOGGER.error("Falling back to compression level 1.");
+            System.err.println("Linear or BufferedLinear region compression level should be between 1 and 22 in config: " + linearCompressionLevel);
+            System.err.println("Falling back to compression level 1.");
             linearCompressionLevel = 1;
-            meow.bacteriawa.lightingluminol.config.FunctionConfig.RegionFormat.linearCompressionLevel = 1;
         }
     }
 }

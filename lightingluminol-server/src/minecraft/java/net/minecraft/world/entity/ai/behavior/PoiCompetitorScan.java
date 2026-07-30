@@ -24,13 +24,8 @@ public class PoiCompetitorScan {
                             return true;
                         }
                         // Folia end - region threading
-                        // LightingLuminol start - POI fixes
-                        var blockPosOfJobSite = pos.pos();
-                        var sectionPosOfJobSite = net.minecraft.core.SectionPos.asLong(blockPosOfJobSite);
-                        var poiManager = level.getPoiManager();
-                        var poiChunk = meow.bacteriawa.lightingluminol.config.FixesConfig.PoiRangeFixes.doNotCompetePoiIfUnloaded ? poiManager.get(sectionPosOfJobSite) : poiManager.getOrLoad(sectionPosOfJobSite);
-                        poiChunk.flatMap(poiSection -> poiSection.getType(blockPosOfJobSite))
-                        // LightingLuminol end - POI fixes
+                        level.getPoiManager()
+                            .getType(pos.pos())
                             .ifPresent(
                                 // Paper start - Improve performance of PoiCompetitorScan by unrolling stream
                                 // The previous logic used Stream#reduce to simulate a form of single-iteration bubble sort

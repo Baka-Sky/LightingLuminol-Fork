@@ -76,12 +76,6 @@ public class EndPortalBlock extends BaseEntityBlock implements Portal {
                 if (level.paperConfig().misc.disableEndCredits) {player.seenCredits = true; return;} // Paper - Option to disable end credits
                 player.showEndCredits();
             } else {
-                // LightingLuminol start - unsafe teleportation
-                if (meow.bacteriawa.lightingluminol.config.FixesConfig.AllowUnsafeTeleportation.enabled && !(entity instanceof net.minecraft.world.entity.player.Player)) {
-                    entity.endPortalLogicAsync(pos);
-                    return;
-                }
-                // LightingLuminol end
                 entity.setAsInsidePortal(this, pos);
             }
         }

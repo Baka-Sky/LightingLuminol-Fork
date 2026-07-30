@@ -13,7 +13,7 @@ public class MemorySlot<T> {
         this.timeToLive = timeToLive;
     }
 
-    public void tick(net.minecraft.world.entity.Entity owner) { // LightingLuminol - Add config to force clean entity memory that don't belong to current tick region
+    public void tick() {
         if (this.hasValue() && this.canExpire()) {
             if (this.hasExpired()) {
                 this.clear();
@@ -21,40 +21,6 @@ public class MemorySlot<T> {
                 this.timeToLive--;
             }
         }
-        // LightingLuminol start - Add config to force clean entity memory that don't belong to current tick region
-        final net.minecraft.world.level.Level ownerLevel = owner.level();
-
-        // type: entity
-        if (meow.bacteriawa.lightingluminol.config.FixesConfig.ForceCleanupDropNonOwnedEntityMemoryModule.enabledForEntity && this.value instanceof net.minecraft.world.entity.Entity entity) {
-            if (!ca.spottedleaf.moonrise.common.util.TickThread.isTickThreadFor(entity)) {
-                this.clear();
-            }
-        }
-
-        // type: block_pos
-        if (meow.bacteriawa.lightingluminol.config.FixesConfig.ForceCleanupDropNonOwnedEntityMemoryModule.enabledForBlockPos && this.value instanceof net.minecraft.core.BlockPos blockPos) {
-            if (!ca.spottedleaf.moonrise.common.util.TickThread.isTickThreadFor(ownerLevel, blockPos)) {
-                this.clear();
-            }
-        }
-
-        // type: position_tracker and walk_target
-        if (meow.bacteriawa.lightingluminol.config.FixesConfig.ForceCleanupDropNonOwnedEntityMemoryModule.enabledForPositionTracker) {
-            net.minecraft.world.entity.ai.behavior.PositionTracker tracker = null;
-
-            if (value instanceof net.minecraft.world.entity.ai.behavior.PositionTracker positionTracker) {
-                tracker = positionTracker;
-            }
-
-            if (value instanceof net.minecraft.world.entity.ai.memory.WalkTarget walkTarget) {
-                tracker = walkTarget.getTarget();
-            }
-
-            if (tracker != null && !tracker.checkThread(owner.level())) {
-                this.clear();
-            }
-        }
-        // LightingLuminol end
     }
 
     public static <T> MemorySlot<T> create() {

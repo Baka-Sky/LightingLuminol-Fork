@@ -70,7 +70,7 @@ public class FallingBlockEntity extends Entity {
     public int fallDamageMax = 40;
     public float fallDamagePerDistance = 0.0F;
     public @Nullable CompoundTag blockData;
-    public boolean forceTickAfterTeleportToDuplicate = meow.bacteriawa.lightingluminol.config.FixesConfig.AllowUnsafeTeleportation.enabled; // LightingLuminol - unsafe teleportation
+    public boolean forceTickAfterTeleportToDuplicate;
     protected static final EntityDataAccessor<BlockPos> DATA_START_POS = SynchedEntityData.defineId(FallingBlockEntity.class, EntityDataSerializers.BLOCK_POS);
     public boolean autoExpire = true; // Paper - Expand FallingBlock API
 
@@ -384,7 +384,7 @@ public class FallingBlockEntity extends Entity {
         ResourceKey<Level> oldDimension = this.level().dimension();
         boolean fromOrToEnd = (oldDimension == Level.END || newDimension == Level.END) && oldDimension != newDimension;
         Entity newEntity = super.teleport(transition);
-        this.forceTickAfterTeleportToDuplicate = newEntity != null && fromOrToEnd && (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowUnsafeEndPortalTeleportation || meow.bacteriawa.lightingluminol.config.FixesConfig.AllowUnsafeTeleportation.enabled); // Paper // LightingLuminol - unsafe teleportation
+        this.forceTickAfterTeleportToDuplicate = newEntity != null && fromOrToEnd && io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowUnsafeEndPortalTeleportation; // Paper
         return newEntity;
     }
 }

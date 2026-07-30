@@ -157,10 +157,6 @@ public final class RegionizedWorldData {
             for (final ChunkHolder chunkHolder : from.chunkHoldersToBroadcast) {
                 into.chunkHoldersToBroadcast.add(chunkHolder);
             }
-            // LightingLuminol start - Portal rate limiter
-            into.portalRateThrottler.mergeWith(from.portalRateThrottler);
-            from.portalRateThrottler.destroy();
-            // LightingLuminol end
         }
 
         @Override
@@ -326,34 +322,12 @@ public final class RegionizedWorldData {
                     into.chunkHoldersToBroadcast.add(chunkHolder);
                 }
             }
-            // LightingLuminol start - Portal rate limiter
-            for (var worldData : dataSet) {
-                from.portalRateThrottler.splitInto(worldData.portalRateThrottler);
-            }
-            from.portalRateThrottler.destroy();
-            // LightingLuminol end
         }
     };
 
     public final ServerLevel world;
 
     private RegionizedServer.WorldLevelData tickData;
-
-    // LightingLuminol start - Portal rate limiter
-    public final meow.bacteriawa.lightingluminol.core.RateThrottler portalRateThrottler = new meow.bacteriawa.lightingluminol.core.RateThrottler();
-
-    public boolean isPortalTeleportationOutOfRate() {
-        if (!meow.bacteriawa.lightingluminol.config.FunctionConfig.PortalRateLimit.enable) {
-            return false;
-        }
-        return this.portalRateThrottler.isOutOfRate(meow.bacteriawa.lightingluminol.config.FunctionConfig.PortalRateLimit.maximumPortalTeleportsPerTick);
-    }
-    // LightingLuminol end
-
-    // LightingLuminol start - Pufferfish projectile limiter
-    public long pufferfish$loadedThisTick = 0L;
-    public long pufferfish$loadedTick = 0L;
-    // LightingLuminol end
 
     // connections
     public final List<Connection> connections = new ArrayList<>();

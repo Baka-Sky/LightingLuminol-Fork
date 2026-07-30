@@ -383,7 +383,7 @@ public class Brain<E extends LivingEntity> {
     }
 
     public void tick(final ServerLevel level, final E body) {
-        this.forgetOutdatedMemories(body); // LightingLuminol - Add config to force clean entity memory that don't belong to current tick region
+        this.forgetOutdatedMemories();
         this.tickSensors(level, body);
         this.startEachNonRunningBehavior(level, body);
         this.tickEachRunningBehavior(level, body);
@@ -395,8 +395,8 @@ public class Brain<E extends LivingEntity> {
         }
     }
 
-    private void forgetOutdatedMemories(E body) { // LightingLuminol - Add config to force clean entity memory that don't belong to current tick region
-        this.memories.values().forEach(slot -> slot.tick(body)); // LightingLuminol - Add config to force clean entity memory that don't belong to current tick region
+    private void forgetOutdatedMemories() {
+        this.memories.values().forEach(MemorySlot::tick);
     }
 
     public void stopAll(final ServerLevel level, final E body) {

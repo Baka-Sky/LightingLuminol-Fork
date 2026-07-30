@@ -55,11 +55,4 @@ public class EntityTracker implements PositionTracker {
     public String toString() {
         return "EntityTracker for " + this.entity;
     }
-
-    // LightingLuminol start - Fix a series issue around entity memory typed GlobalPos and WalkTarget
-    @Override
-    public boolean checkThread(net.minecraft.world.level.Level currOwnedByLevel) {
-        return ca.spottedleaf.moonrise.common.util.TickThread.isTickThreadFor(this.entity);
-    }
-    // LightingLuminol end
 }

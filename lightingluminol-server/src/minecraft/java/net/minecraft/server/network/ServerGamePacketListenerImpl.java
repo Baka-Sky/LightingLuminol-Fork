@@ -644,7 +644,7 @@ public class ServerGamePacketListenerImpl
                     return;
                 }
                 // Paper end - Prevent moving into unloaded chunks
-                if (!meow.bacteriawa.lightingluminol.config.MiscConfig.DisableWarning.disableMovedWronglyThresholdWarning && movedDist - expectedDist > Math.max(100.0, Mth.square(org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) i * speed)) && !this.isSingleplayerOwner()) { // LightingLuminol
+                if (movedDist - expectedDist > Math.max(100.0, Mth.square(org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) i * speed)) && !this.isSingleplayerOwner()) {
                     // CraftBukkit end
                     LOGGER.warn(
                         "{} (vehicle of {}) moved too quickly! {},{},{}", vehicle.getPlainTextName(), this.player.getPlainTextName(), xDist, yDist, zDist
@@ -674,7 +674,7 @@ public class ServerGamePacketListenerImpl
                 zDist = targetZ - vehicle.getZ();
                 movedDist = xDist * xDist + yDist * yDist + zDist * zDist;
                 boolean fail = false;
-                if (!meow.bacteriawa.lightingluminol.config.MiscConfig.DisableWarning.disableMovedWronglyThresholdWarning && movedDist > org.spigotmc.SpigotConfig.movedWronglyThreshold) { // Spigot // LightingLuminol
+                if (movedDist > org.spigotmc.SpigotConfig.movedWronglyThreshold) { // Spigot
                     fail = true;
                     LOGGER.warn("{} (vehicle of {}) moved wrongly! {}", vehicle.getPlainTextName(), this.player.getPlainTextName(), Math.sqrt(movedDist));
                 }
@@ -730,9 +730,7 @@ public class ServerGamePacketListenerImpl
 
                     Location oldTo = to.clone();
                     PlayerMoveEvent event = new PlayerMoveEvent(player, from, to);
-                    this.player.blockTeleportAsync = true; // LightingLuminol - Prevent teleportAsync calls during move events
                     this.cserver.getPluginManager().callEvent(event);
-                    this.player.blockTeleportAsync = false; // LightingLuminol - Prevent teleportAsync calls during move events
 
                     // If the event is cancelled we move the player back to their old location.
                     if (event.isCancelled()) {
@@ -1614,7 +1612,7 @@ public class ServerGamePacketListenerImpl
 
                                     if (this.shouldCheckPlayerMovement(isFallFlying)) {
                                         float metersPerTick = isFallFlying ? 300.0F : 100.0F;
-                                        if (!meow.bacteriawa.lightingluminol.config.MiscConfig.DisableWarning.disableMovedWronglyThresholdWarning && movedDist - expectedDist > Math.max(metersPerTick, Mth.square(org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) deltaPackets * speed))) { // LightingLuminol
+                                        if (movedDist - expectedDist > Math.max(metersPerTick, Mth.square(org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) deltaPackets * speed))) {
                                             // CraftBukkit end
                                             // Paper start - Add fail move event
                                             io.papermc.paper.event.player.PlayerFailMoveEvent event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.MOVED_TOO_QUICKLY,
@@ -1675,8 +1673,7 @@ public class ServerGamePacketListenerImpl
                                 zDist = targetZ - this.player.getZ();
                                 movedDist = xDist * xDist + yDist * yDist + zDist * zDist;
                                 boolean movedWrongly = false; // Paper - Add fail move event; rename
-                                if (!meow.bacteriawa.lightingluminol.config.MiscConfig.DisableWarning.disableMovedWronglyThresholdWarning // LightingLuminol
-                                    && !this.player.isChangingDimension()
+                                if (!this.player.isChangingDimension()
                                     && movedDist > org.spigotmc.SpigotConfig.movedWronglyThreshold // Spigot
                                     && !this.player.isSleeping()
                                     && !this.player.isCreative()
@@ -1743,9 +1740,7 @@ public class ServerGamePacketListenerImpl
 
                                         Location oldTo = to.clone();
                                         PlayerMoveEvent event = new PlayerMoveEvent(player, from, to);
-                                        this.player.blockTeleportAsync = true; // LightingLuminol - Prevent teleportAsync calls during move events
                                         this.cserver.getPluginManager().callEvent(event);
-                                        this.player.blockTeleportAsync = false; // LightingLuminol - Prevent teleportAsync calls during move events
 
                                         // If the event is cancelled we move the player back to their old location.
                                         if (event.isCancelled()) {
@@ -2187,9 +2182,7 @@ public class ServerGamePacketListenerImpl
                                 this.player.sendSpawnProtectionMessage(pos);
                             } else if (this.awaitingPositionFromClient == null && (level.mayInteract(this.player, pos) || passthroughSignInteraction)) {
                                 // Paper end - Allow using signs inside spawn protection
-                                 if (!meow.bacteriawa.lightingluminol.config.FixesConfig.ItemMultitask.enabled) { // LightingLuminol
                                 this.player.stopUsingItem(); // CraftBukkit - SPIGOT-4706
-                                } // LightingLuminol
                                 InteractionResult interactionResult = this.player.gameMode.useItemOn(this.player, level, itemStack, hand, blockHit);
                                 if (interactionResult.consumesAction()) {
                                     CriteriaTriggers.ANY_BLOCK_USE.trigger(this.player, blockHit.getBlockPos(), itemStack);
@@ -2388,13 +2381,9 @@ public class ServerGamePacketListenerImpl
                 return;
             }
             // CraftBukkit end
-            // LightingLuminol start - item multitask
-            if (!meow.bacteriawa.lightingluminol.config.FixesConfig.ItemMultitask.enabled) {
-                if (this.player.getInventory().getSelectedSlot() != packet.getSlot() && this.player.getUsedItemHand() == InteractionHand.MAIN_HAND) {
-                    this.player.stopUsingItem();
-                }
+            if (this.player.getInventory().getSelectedSlot() != packet.getSlot() && this.player.getUsedItemHand() == InteractionHand.MAIN_HAND) {
+                this.player.stopUsingItem();
             }
-            // LightingLuminol end
 
             this.player.getInventory().setSelectedSlot(packet.getSlot());
             this.player.resetLastActionTime();
@@ -2908,13 +2897,7 @@ public class ServerGamePacketListenerImpl
         } // Folia end - rewrite login process - move connection ownership to global region
         this.waitingForSwitchToConfig = true; // Folia - rewrite login process - fix bad ordering of this field write - moved down
         this.send(ClientboundStartConfigurationPacket.INSTANCE);
-        // LightingLuminol start - async protocol switch
-        if (!meow.bacteriawa.lightingluminol.config.OptimizationsConfig.UseAsyncProtocolSwitching.enabled) {
-            this.connection.setupOutboundProtocol(ConfigurationProtocols.CLIENTBOUND);
-        } else {
-            this.connection.setupOutboundProtocolAsync(ConfigurationProtocols.CLIENTBOUND, null, true);
-        }
-        // LightingLuminol end
+        this.connection.setupOutboundProtocol(ConfigurationProtocols.CLIENTBOUND);
     }
 
     @Override
@@ -3799,25 +3782,12 @@ public class ServerGamePacketListenerImpl
         }
 
         final ServerConfigurationPacketListenerImpl listener = new ServerConfigurationPacketListenerImpl(this.server, this.connection, this.createCookie(this.player.clientInformation())); // Paper
-        // LightingLuminol start - async protocol switch
-        if (!meow.bacteriawa.lightingluminol.config.OptimizationsConfig.UseAsyncProtocolSwitching.enabled) {
-            this.connection
-                .setupInboundProtocol(
-                    ConfigurationProtocols.SERVERBOUND,
-                    listener
-                );
-            new io.papermc.paper.event.connection.configuration.PlayerConnectionReconfigureEvent(listener.paperConnection).callEvent();
-        } else {
-            this.connection.setupInboundProtocolAsync(
-                    ConfigurationProtocols.SERVERBOUND,
-                    listener,
-                    () -> {
-                        new io.papermc.paper.event.connection.configuration.PlayerConnectionReconfigureEvent(listener.paperConnection).callEvent();
-                    },
-                    true
+        this.connection
+            .setupInboundProtocol(
+                ConfigurationProtocols.SERVERBOUND,
+                listener // Paper
             );
-        }
-        // LightingLuminol end
+        new io.papermc.paper.event.connection.configuration.PlayerConnectionReconfigureEvent(listener.paperConnection).callEvent(); // Paper
     }
 
     @Override

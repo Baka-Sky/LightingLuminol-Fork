@@ -298,7 +298,7 @@ public abstract class Entity
     public double yOld;
     public double zOld;
     public boolean noPhysics;
-    public final RandomSource random = meow.bacteriawa.lightingluminol.config.FixesConfig.UseVanillaRandomSource.enabled ? RandomSource.create() : SHARED_RANDOM; // Paper - Share random for entities to make them more random // LightingLuminol - vanilla random
+    protected final RandomSource random = SHARED_RANDOM; // Paper - Share random for entities to make them more random
     public int tickCount;
     private int remainingFireTicks;
     private final EntityFluidInteraction fluidInteraction = new EntityFluidInteraction(Set.of(FluidTags.WATER, FluidTags.LAVA));
@@ -933,21 +933,10 @@ public abstract class Entity
 
         if (this.isInLava()) {
             this.fallDistance *= 0.5;
-            // LightingLuminol start - fix lava damage not applying reliably under Folia region threading
-            // In 26.2 lava damage relies on the InsideBlockEffect mechanism (LavaFluid.entityInside),
-            // which is gated by Folia's isTickThreadFor() check in checkInsideBlocks(). After region
-            // reassignment that check may skip the fluid entityInside, so lava stops dealing damage.
-            // As a reliable fallback (mirroring pre-26.2 vanilla which called lavaHurt directly here),
-            // apply lava ignite + hurt every tick while submerged. invulnerableTime (decremented in
-            // LivingEntity.tick / ServerPlayer.tick) prevents double-damage when the InsideBlockEffect
-            // path also fires on the same tick.
-            if (this.level() instanceof ServerLevel) {
-                this.lavaIgnite();
-                this.lavaHurt();
-            }
-            // LightingLuminol end
+            // CraftBukkit start
         } else {
             this.lastLavaContact = null;
+            // CraftBukkit end
         }
 
         this.checkBelowWorld();
@@ -1173,16 +1162,6 @@ public abstract class Entity
             this.moveStartZ = this.getZ();
             this.moveVector = delta;
         }
-        // LightingLuminol start - fix high velocity moving
-        if (meow.bacteriawa.lightingluminol.config.FixesConfig.FixHighVelocityIssue.enabled && ca.spottedleaf.moonrise.common.util.TickThread.isTickThread()){
-            var finalPosition = delta.add(this.position);
-            if (!Double.isNaN(finalPosition.x) && !Double.isNaN(finalPosition.y) && !Double.isNaN(finalPosition.z)) {
-                if (!ca.spottedleaf.moonrise.common.util.TickThread.isTickThreadFor(this.level,finalPosition)) {
-                    throw new meow.bacteriawa.lightingluminol.core.EntityMoveOutOfRegionException(this, delta, moverType);
-                }
-            }
-        }
-        // LightingLuminol end
         try {
         // Paper end - detailed watchdog information
         if (this.noPhysics) {
@@ -1889,20 +1868,7 @@ public abstract class Entity
 
                 // Folia start - region threading
                 if (!ca.spottedleaf.moonrise.common.util.TickThread.isTickThreadFor(Entity.this.level, blockIntersection, 16)) {
-                    // LightingLuminol start - fix fluid damage (lava) not applying after region reassignment
-                    // Fluid entityInside (e.g. lava damage) is read-only, safe cross-region
-                    BlockState earlyState = this.level().getBlockState(blockIntersection);
-                    if (earlyState.getFluidState().isEmpty()) {
-                        return false;
-                    }
-                    iterations.set(iteration);
-                    boolean insideFluid = this.collidedWithFluid(earlyState.getFluidState(), blockIntersection, from, to);
-                    if (insideFluid && visitedBlocks.add(blockIntersection.asLong())) {
-                        effectCollector.advanceStep(iteration, blockIntersection);
-                        earlyState.getFluidState().entityInside(this.level(), blockIntersection, this, effectCollector);
-                    }
-                    return true;
-                    // LightingLuminol end
+                    return false;
                 }
                 // Folia end - region threading
                 iterations.set(iteration);
@@ -1975,14 +1941,6 @@ public abstract class Entity
     public boolean collidedWithShapeMovingFrom(final Vec3 from, final Vec3 to, final List<AABB> aabbs) {
         AABB boundingBoxAtFrom = this.makeBoundingBox(from);
         Vec3 travelVector = to.subtract(from);
-        if (travelVector.lengthSqr() < 1.0E-12) {
-            for (AABB aabb : aabbs) {
-                if (boundingBoxAtFrom.intersects(aabb)) {
-                    return true;
-                }
-            }
-            return false;
-        }
         return boundingBoxAtFrom.collidedAlongVector(travelVector, aabbs);
     }
 
@@ -4501,24 +4459,10 @@ public abstract class Entity
         );
     }
 
-    // LightingLuminol start - Prevent teleportAsync calls in move events
-    public boolean blockTeleportAsync = false;
-    // LightingLuminol end
-
     public final boolean teleportAsync(ServerLevel destination, Vec3 pos, Float yaw, Float pitch, Vec3 velocity,
                                        org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, long teleportFlags,
                                        java.util.function.Consumer<Entity> teleportComplete) {
         ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(this, "Cannot teleport entity async");
-
-        // LightingLuminol start - Prevent teleportAsync calls in move events
-        if (meow.bacteriawa.lightingluminol.config.FixesConfig.PreventIncorrectTeleportAsyncCallsDuringMoveEvent.enabled && this.blockTeleportAsync) {
-            if (meow.bacteriawa.lightingluminol.config.FixesConfig.PreventIncorrectTeleportAsyncCallsDuringMoveEvent.throwWhenCaught) {
-                throw new IllegalStateException("teleportAsync called during move event! Plugin should use PlayerMoveEvent handlers that do not teleport.");
-            }
-            LOGGER.error("teleportAsync called during move event! Plugin should use PlayerMoveEvent handlers that do not teleport.", new Throwable());
-            return false;
-        }
-        // LightingLuminol end
 
         if (!ServerLevel.isInSpawnableBounds(new BlockPos(ca.spottedleaf.moonrise.common.util.CoordinateUtils.getBlockX(pos), ca.spottedleaf.moonrise.common.util.CoordinateUtils.getBlockY(pos), ca.spottedleaf.moonrise.common.util.CoordinateUtils.getBlockZ(pos)))) {
             return false;

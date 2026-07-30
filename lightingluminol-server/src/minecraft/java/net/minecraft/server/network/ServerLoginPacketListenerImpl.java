@@ -435,25 +435,12 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
     public void handleLoginAcknowledgement(final ServerboundLoginAcknowledgedPacket packet) {
         net.minecraft.network.protocol.PacketUtils.ensureRunningOnSameThread(packet, this, this.server.packetProcessor()); // CraftBukkit
         Validate.validState(this.state == ServerLoginPacketListenerImpl.State.PROTOCOL_SWITCHING, "Unexpected login acknowledgement packet");
-        // LightingLuminol start - async protocol switch
+        this.connection.setupOutboundProtocol(ConfigurationProtocols.CLIENTBOUND);
         CommonListenerCookie cookie = CommonListenerCookie.createInitial(Objects.requireNonNull(this.authenticatedProfile), this.transferred);
         ServerConfigurationPacketListenerImpl configPacketListener = new ServerConfigurationPacketListenerImpl(this.server, this.connection, cookie);
-
-        Runnable afterSwitch = () -> io.papermc.paper.threadedregions.RegionizedServer.getInstance().addTask(configPacketListener::startConfiguration);
-
-        if (!meow.bacteriawa.lightingluminol.config.OptimizationsConfig.UseAsyncProtocolSwitching.enabled) {
-            this.connection.setupOutboundProtocol(ConfigurationProtocols.CLIENTBOUND);
-            this.connection.setupInboundProtocol(ConfigurationProtocols.SERVERBOUND, configPacketListener);
-            afterSwitch.run();
-            this.state = ServerLoginPacketListenerImpl.State.ACCEPTED;
-            return;
-        }
-
-        this.connection.setupInboundProtocolAsync(ConfigurationProtocols.SERVERBOUND, configPacketListener, () -> {
-            this.connection.setupOutboundProtocolAsync(ConfigurationProtocols.CLIENTBOUND, afterSwitch, true);
-        }, false);
+        this.connection.setupInboundProtocol(ConfigurationProtocols.SERVERBOUND, configPacketListener);
+        configPacketListener.startConfiguration();
         this.state = ServerLoginPacketListenerImpl.State.ACCEPTED;
-        // LightingLuminol end
     }
 
     @Override

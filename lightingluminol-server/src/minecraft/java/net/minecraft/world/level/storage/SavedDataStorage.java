@@ -194,6 +194,10 @@ public class SavedDataStorage implements AutoCloseable {
                 continue;
             }
 
+            if (!(state instanceof net.minecraft.world.level.saveddata.maps.MapItemSavedData || state instanceof net.minecraft.world.level.saveddata.maps.MapIndex)) {
+                continue;
+            }
+
             state.setDirty(false);
 
             savedData.put(key, this.encodeUnchecked(key, state, registryOps));

@@ -216,13 +216,11 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
     }
 
     // Paper start
-    int _pufferfish_inactiveTickDisableCounter = 0; // LightingLuminol - throttle inactive goal selector ticking
     @Override
     public void inactiveTick() {
         super.inactiveTick();
         if (!this.aware) return; // Paper - Do not tick AI for inactive unaware mobs
-        boolean _pufferfish_isThrottled = meow.bacteriawa.lightingluminol.config.OptimizationsConfig.ThrottleGoalSelectorTickInInactiveTick.enabled && _pufferfish_inactiveTickDisableCounter++ % 20 != 0; // LightingLuminol - throttle inactive goal selector ticking
-        if (this.goalSelector.inactiveTick() && !_pufferfish_isThrottled) { // LightingLuminol
+        if (this.goalSelector.inactiveTick()) {
             this.goalSelector.tick();
         }
         if (this.targetSelector.inactiveTick()) {
@@ -837,11 +835,11 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
             return;
         }
         // Paper end - Allow nerfed mobs to jump and float
-        int idBasedTickCount = this.tickCount + this.getId(); // LightingLuminol - move up
         ProfilerFiller profiler = Profiler.get();
         profiler.push("sensing");
-        if (idBasedTickCount % meow.bacteriawa.lightingluminol.config.OptimizationsConfig.ReduceSensorWork.delayTicks == 0 || !meow.bacteriawa.lightingluminol.config.OptimizationsConfig.ReduceSensorWork.enabled) this.sensing.tick(); // LightingLuminol - reduce sensor work
+        this.sensing.tick();
         profiler.pop();
+        int idBasedTickCount = this.tickCount + this.getId();
         if (idBasedTickCount % 2 != 0 && this.tickCount > 1) {
             profiler.push("targetSelector");
             this.targetSelector.tickRunningGoals(false);

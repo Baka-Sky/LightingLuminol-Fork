@@ -1571,30 +1571,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
     public <T extends Entity> void guardEntityTick(final Consumer<T> tick, final T entity) {
         try {
             tick.accept(entity);
-        } catch (meow.bacteriawa.lightingluminol.core.EntityMoveOutOfRegionException moveOutOfRegionException) {
-            // LightingLuminol start - teleport async if entity was moving to another region
-            final Entity ent = moveOutOfRegionException.getEntity();
-            var toPosition = moveOutOfRegionException.getMovement().add(ent.position());
-
-            if (meow.bacteriawa.lightingluminol.config.FixesConfig.FixHighVelocityIssue.warnOnDetected) {
-                MinecraftServer.LOGGER.warn("Entity {} with entityId {} has tried moving to another region!", ent, ent.getId());
-            }
-
-            ent.getBukkitEntity().taskScheduler.schedule(entityFresh -> entityFresh.teleportAsync(
-                    (net.minecraft.server.level.ServerLevel) entityFresh.level(),
-                    toPosition,
-                    entityFresh.getYRot(), entityFresh.getXRot(),
-                    entityFresh.getDeltaMovement(), org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.UNKNOWN,
-                    Entity.TELEPORT_FLAG_LOAD_CHUNK | Entity.TELEPORT_FLAG_TELEPORT_PASSENGERS,
-                    null
-            ), null, 1L);
-            // LightingLuminol end
         } catch (Throwable t) {
-            // LightingLuminol start - config to disable entity exception catchers
-            if (meow.bacteriawa.lightingluminol.config.ExperimentConfig.DisableEntityExceptionCatchers.enabled) {
-                throw t;
-            }
-            // LightingLuminol end
             // Paper start - Prevent block entity and entity crashes
             final String msg = String.format("Entity threw exception at %s:%s,%s,%s", io.papermc.paper.util.MCUtil.getLevelName(entity.level()), entity.getX(), entity.getY(), entity.getZ());
             MinecraftServer.LOGGER.error(msg, t);

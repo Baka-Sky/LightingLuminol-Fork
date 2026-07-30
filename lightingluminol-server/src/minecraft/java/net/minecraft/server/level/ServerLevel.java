@@ -1499,15 +1499,8 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
             // removed from region while ticking
             return;
         }
-        // LightingLuminol start - Portal rate limiter
-        var ll$worldData = entity.level().getCurrentWorldData();
-        if (entity.portalProcess != null && ll$worldData.isPortalTeleportationOutOfRate()) {
-            return;
-        }
-        // LightingLuminol end
         if (entity.handlePortal()) {
             // portalled
-            ll$worldData.portalRateThrottler.increase(); // LightingLuminol - Portal rate limiter
             return;
         }
         // Folia end - region threading
@@ -1549,15 +1542,8 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
                 // removed from region while ticking
                 return;
             }
-            // LightingLuminol start - Portal rate limiter
-            var ll$worldData = entity.level().getCurrentWorldData();
-            if (entity.portalProcess != null && ll$worldData.isPortalTeleportationOutOfRate()) {
-                return;
-            }
-            // LightingLuminol end
             if (entity.handlePortal()) {
                 // portalled
-                ll$worldData.portalRateThrottler.increase(); // LightingLuminol - Portal rate limiter
                 return;
             }
             // Folia end - region threading
