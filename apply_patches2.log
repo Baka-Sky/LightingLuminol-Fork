@@ -1,0 +1,68 @@
+﻿Starting a Gradle Daemon, 1 incompatible and 2 stopped Daemons could not be reused, use --status for details
+
+> Configure project :
+paperweight-patcher v2.0.0-beta.21 (running on 'Windows 11')
+
+> Configure project :lightingluminol-server
+paperweight-core v2.0.0-beta.21 (running on 'Windows 11')
+
+> Task :checkoutPaperRepo
+> Task :filterPaperApiFromPaper
+
+> Task :applyPaperApiFilePatches
+Applied 0 patches
+
+> Task :applyPaperApiFeaturePatches
+> Task :applyPaperApiPatches
+> Task :filterPaperServerFromPaper
+
+> Task :applyPaperServerFilePatches
+Applied 0 patches
+
+> Task :applyPaperServerFeaturePatches
+> Task :applyPaperServerPatches
+> Task :applyPaperSingleFilePatches
+> Task :applyPaperPatches
+
+> Configure project :LightingLuminol
+paperweight-patcher v2.0.0-beta.21 (running on 'Windows 11')
+
+> Configure project :LightingLuminol:lightingluminol-server
+paperweight-core v2.0.0-beta.21 (running on 'Windows 11')
+
+> Task :LightingLuminol:lightingluminol-server:downloadMcManifest
+> Task :LightingLuminol:lightingluminol-server:downloadMcVersionManifest
+> Task :LightingLuminol:lightingluminol-server:downloadServerJar
+> Task :LightingLuminol:lightingluminol-server:extractFromBundler
+
+> Task :LightingLuminol:lightingluminol-server:setupMacheResources
+Copy initial sources...
+Setup git repo...
+
+> Task :applyAllPatches
+> Task :LightingLuminol:lightingluminol-server:extractMacheResources
+
+> Task :LightingLuminol:lightingluminol-server:applyPaperMinecraftResourcePatches
+Applied 6 patches
+
+> Task :LightingLuminol:lightingluminol-server:applyMinecraftResourcePatches
+Applied 0 patches
+
+> Task :LightingLuminol:lightingluminol-server:downloadMcLibrariesSources
+> Task :LightingLuminol:lightingluminol-server:downloadRuntimeClasspathSources
+> Task :LightingLuminol:lightingluminol-server:macheRemapJar
+> Task :LightingLuminol:lightingluminol-server:indexLibraryFiles
+
+> Task :LightingLuminol:lightingluminol-server:importPaperLibraryFiles
+Importing 14 classes from library sources...
+
+> Task :LightingLuminol:lightingluminol-server:macheDecompileJar
+> Task :LightingLuminol:lightingluminol-server:collectPaperATsFromPatches
+> Task :LightingLuminol:lightingluminol-server:mergePaperATs
+
+> Task :LightingLuminol:lightingluminol-server:setupMacheSources
+Copy initial sources...
+Setup git repo...
+Applying mache patches...
+Applied 105 mache patches
+Applying access transformers...

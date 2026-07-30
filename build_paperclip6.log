@@ -1,0 +1,23 @@
+﻿Reusing configuration cache.
+> Task :lightingluminol-server:processLog4jPluginsResources NO-SOURCE
+> Task :lightingluminol-api:processResources NO-SOURCE
+> Task :lightingluminol-api:generateApiVersioningFile UP-TO-DATE
+> Task :lightingluminol-api:compileJava UP-TO-DATE
+> Task :lightingluminol-api:classes UP-TO-DATE
+> Task :lightingluminol-api:jar UP-TO-DATE
+> Task :lightingluminol-server:processResources UP-TO-DATE
+> Task :lightingluminol-server:compileLog4jPluginsJava UP-TO-DATE
+> Task :lightingluminol-server:log4jPluginsClasses UP-TO-DATE
+> Task :lightingluminol-server:compileJava UP-TO-DATE
+> Task :lightingluminol-server:classes UP-TO-DATE
+> Task :lightingluminol-server:jar UP-TO-DATE
+> Task :lightingluminol-server:downloadMcManifest
+> Task :lightingluminol-server:downloadMcVersionManifest UP-TO-DATE
+> Task :lightingluminol-server:downloadServerJar UP-TO-DATE
+> Task :lightingluminol-server:extractFromBundler UP-TO-DATE
+> Task :lightingluminol-server:createBundlerJar UP-TO-DATE
+> Task :lightingluminol-server:createPaperclipJar UP-TO-DATE
+
+BUILD SUCCESSFUL in 9s
+13 actionable tasks: 1 executed, 12 up-to-date
+Configuration cache entry reused.

@@ -1,0 +1,474 @@
+﻿Starting a Gradle Daemon, 1 busy and 2 stopped Daemons could not be reused, use --status for details
+
+> Configure project :
+paperweight-patcher v2.0.0-beta.21 (running on 'Windows 11')
+
+> Configure project :lightingluminol-server
+paperweight-core v2.0.0-beta.21 (running on 'Windows 11')
+
+> Task :lightingluminol-server:downloadMcManifest
+> Task :lightingluminol-server:downloadMcVersionManifest UP-TO-DATE
+> Task :lightingluminol-server:downloadServerJar UP-TO-DATE
+> Task :lightingluminol-server:extractFromBundler UP-TO-DATE
+> Task :lightingluminol-api:compileJava UP-TO-DATE
+> Task :lightingluminol-api:processResources NO-SOURCE
+> Task :lightingluminol-api:classes UP-TO-DATE
+> Task :lightingluminol-api:generateApiVersioningFile UP-TO-DATE
+> Task :lightingluminol-api:jar UP-TO-DATE
+> Task :lightingluminol-server:processResources UP-TO-DATE
+> Task :lightingluminol-server:compileLog4jPluginsJava UP-TO-DATE
+> Task :lightingluminol-server:compileJava
+.\gradlew.bat : I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\entity\CraftEntity.java:570: 警告: [
+removal] Entity 中的 setLastDamageCause(@org.jetbrains.annotations.Nullable EntityDamageEvent) 已过时, 且标记为待删除
+At line:15 char:7854
++ ... ingLuminol; .\gradlew.bat createPaperclipJar --no-configuration-cache ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (I:\LightingLumi...t) 已过时, 且标记为待删除:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+    public void setLastDamageCause(EntityDamageEvent event) {
+                ^
+I:\LightingLuminol\lightingluminol-server\src\minecraft\java\net\minecraft\world\level\Level.java:1089: 警告: [removal] o
+rg.bukkit.craftbukkit.block 中的 CapturedBlockState 已过时, 且标记为待删除
+                blockstate = org.bukkit.craftbukkit.block.CapturedBlockState.getTreeBlockState(this, pos, updateFlags);
+                                                         ^
+I:\LightingLuminol\lightingluminol-server\src\minecraft\java\net\minecraft\world\entity\player\Player.java:1989: 警告: [r
+emoval] com.destroystokyo.paper.event.player 中的 PlayerAttackEntityCooldownResetEvent 已过时, 且标记为待删除
+            if (new com.destroystokyo.paper.event.player.PlayerAttackEntityCooldownResetEvent((org.bukkit.entity.Player
+) this.getBukkitEntity(), entity.getBukkitEntity(), this.getAttackStrengthScale(0F)).callEvent()) {
+                                                        ^
+I:\LightingLuminol\lightingluminol-server\src\minecraft\java\net\minecraft\server\level\ServerPlayer.java:3161: 警告: [re
+moval] org.bukkit.event.player 中的 PlayerSpawnChangeEvent 已过时, 且标记为待删除
+        org.bukkit.event.player.PlayerSpawnChangeEvent dumbEvent = new org.bukkit.event.player.PlayerSpawnChangeEvent(
+                               ^
+I:\LightingLuminol\lightingluminol-server\src\minecraft\java\net\minecraft\server\level\ServerPlayer.java:3161: 警告: [re
+moval] org.bukkit.event.player 中的 PlayerSpawnChangeEvent 已过时, 且标记为待删除
+        org.bukkit.event.player.PlayerSpawnChangeEvent dumbEvent = new org.bukkit.event.player.PlayerSpawnChangeEvent(
+                                                                                              ^
+I:\LightingLuminol\lightingluminol-server\src\minecraft\java\net\minecraft\server\level\ServerPlayer.java:3166: 警告: [re
+moval] org.bukkit.event.player 中的 PlayerSpawnChangeEvent 已过时, 且标记为待删除
+                ? org.bukkit.event.player.PlayerSpawnChangeEvent.Cause.RESET
+                                         ^
+I:\LightingLuminol\lightingluminol-server\src\minecraft\java\net\minecraft\server\level\ServerPlayer.java:3167: 警告: [re
+moval] org.bukkit.event.player 中的 PlayerSpawnChangeEvent 已过时, 且标记为待删除
+                : org.bukkit.event.player.PlayerSpawnChangeEvent.Cause.valueOf(cause.name())
+                                         ^
+I:\LightingLuminol\paper-server\src\main\java\io\papermc\paper\command\brigadier\PaperCommandSourceStack.java:15: 警告: [
+removal] com.destroystokyo.paper.brigadier 中的 BukkitBrigadierCommandSource 已过时, 且标记为待删除
+public interface PaperCommandSourceStack extends CommandSourceStack, BukkitBrigadierCommandSource {
+                                                                     ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\entity\CraftLivingEntity.java:948: 警告: [removal] L
+ivingEntity 中的 getCategory() 已过时, 且标记为待删除
+    public EntityCategory getCategory() {
+                          ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\entity\CraftLivingEntity.java:346: 警告: [removal] L
+ivingEntity 中的 setItemInUseTicks(int) 已过时, 且标记为待删除
+    public void setItemInUseTicks(int ticks) {
+                ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\entity\CraftLivingEntity.java:341: 警告: [removal] L
+ivingEntity 中的 getItemInUseTicks() 已过时, 且标记为待删除
+    public int getItemInUseTicks() {
+               ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\entity\CraftLivingEntity.java:335: 警告: [removal] L
+ivingEntity 中的 getItemInUse() 已过时, 且标记为待删除
+    public ItemStack getItemInUse() {
+                     ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\entity\CraftLivingEntity.java:265: 警告: [removal] L
+ivingEntity 中的 getTargetEntityInfo(int,boolean) 已过时, 且标记为待删除
+    public com.destroystokyo.paper.entity.TargetEntityInfo getTargetEntityInfo(int maxDistance, boolean ignoreBlocks) {
+                                                           ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\entity\CraftLivingEntity.java:252: 警告: [removal] L
+ivingEntity 中的 getTargetBlockInfo(int,@org.jetbrains.annotations.NotNull FluidMode) 已过时, 且标记为待删除
+    public com.destroystokyo.paper.block.TargetBlockInfo getTargetBlockInfo(int maxDistance, com.destroystokyo.paper.bl
+ock.TargetBlockInfo.FluidMode fluidMode) {
+                                                         ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\entity\CraftLivingEntity.java:241: 警告: [removal] L
+ivingEntity 中的 getTargetBlockFace(int,@org.jetbrains.annotations.NotNull FluidMode) 已过时, 且标记为待删除
+    public org.bukkit.block.BlockFace getTargetBlockFace(int maxDistance, com.destroystokyo.paper.block.TargetBlockInfo
+.FluidMode fluidMode) {
+                                      ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\entity\CraftLivingEntity.java:236: 警告: [removal] L
+ivingEntity 中的 getTargetBlock(int,@org.jetbrains.annotations.NotNull FluidMode) 已过时, 且标记为待删除
+    public Block getTargetBlock(int maxDistance, com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode) {
+                 ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\entity\CraftLivingEntity.java:236: 警告: [removal] c
+om.destroystokyo.paper.block 中的 TargetBlockInfo 已过时, 且标记为待删除
+    public Block getTargetBlock(int maxDistance, com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode) {
+                                                                              ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\entity\CraftLivingEntity.java:236: 警告: [removal] T
+argetBlockInfo 中的 FluidMode 已过时, 且标记为待删除
+    public Block getTargetBlock(int maxDistance, com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode) {
+                                                                                              ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\entity\CraftLivingEntity.java:241: 警告: [removal] c
+om.destroystokyo.paper.block 中的 TargetBlockInfo 已过时, 且标记为待删除
+    public org.bukkit.block.BlockFace getTargetBlockFace(int maxDistance, com.destroystokyo.paper.block.TargetBlockInfo
+.FluidMode fluidMode) {
+                                                                                                       ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\entity\CraftLivingEntity.java:241: 警告: [removal] T
+argetBlockInfo 中的 FluidMode 已过时, 且标记为待删除
+    public org.bukkit.block.BlockFace getTargetBlockFace(int maxDistance, com.destroystokyo.paper.block.TargetBlockInfo
+.FluidMode fluidMode) {
+                                                                                                                       
+^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\entity\CraftLivingEntity.java:252: 警告: [removal] c
+om.destroystokyo.paper.block 中的 TargetBlockInfo 已过时, 且标记为待删除
+    public com.destroystokyo.paper.block.TargetBlockInfo getTargetBlockInfo(int maxDistance, com.destroystokyo.paper.bl
+ock.TargetBlockInfo.FluidMode fluidMode) {
+                                        ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\entity\CraftLivingEntity.java:252: 警告: [removal] c
+om.destroystokyo.paper.block 中的 TargetBlockInfo 已过时, 且标记为待删除
+    public com.destroystokyo.paper.block.TargetBlockInfo getTargetBlockInfo(int maxDistance, com.destroystokyo.paper.bl
+ock.TargetBlockInfo.FluidMode fluidMode) {
+                                                                                                                       
+   ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\entity\CraftLivingEntity.java:252: 警告: [removal] T
+argetBlockInfo 中的 FluidMode 已过时, 且标记为待删除
+    public com.destroystokyo.paper.block.TargetBlockInfo getTargetBlockInfo(int maxDistance, com.destroystokyo.paper.bl
+ock.TargetBlockInfo.FluidMode fluidMode) {
+                                                                                                                       
+                   ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\entity\CraftLivingEntity.java:255: 警告: [removal] c
+om.destroystokyo.paper.block 中的 TargetBlockInfo 已过时, 且标记为待删除
+            return new com.destroystokyo.paper.block.TargetBlockInfo(result.getHitBlock(), result.getHitBlockFace());
+                                                    ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\entity\CraftLivingEntity.java:265: 警告: [removal] c
+om.destroystokyo.paper.entity 中的 TargetEntityInfo 已过时, 且标记为待删除
+    public com.destroystokyo.paper.entity.TargetEntityInfo getTargetEntityInfo(int maxDistance, boolean ignoreBlocks) {
+                                         ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\entity\CraftLivingEntity.java:267: 警告: [removal] c
+om.destroystokyo.paper.entity 中的 TargetEntityInfo 已过时, 且标记为待删除
+        return rayTrace == null ? null : new com.destroystokyo.paper.entity.TargetEntityInfo(rayTrace.getEntity().getBu
+kkitEntity(), new org.bukkit.util.Vector(rayTrace.getLocation().x, rayTrace.getLocation().y, rayTrace.getLocation().z))
+;
+                                                                           ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\entity\CraftHumanEntity.java:613: 警告: [removal] Hu
+manEntity 中的 setWindowProperty(Property,int) 已过时, 且标记为待删除
+    public boolean setWindowProperty(InventoryView.Property prop, int value) {
+                   ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\entity\CraftHumanEntity.java:613: 警告: [removal] In
+ventoryView 中的 Property 已过时, 且标记为待删除
+    public boolean setWindowProperty(InventoryView.Property prop, int value) {
+                                                  ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\CraftServer.java:2800: 警告: [removal] Server 中的 spi
+got() 已过时, 且标记为待删除
+    public org.bukkit.Server.Spigot spigot() {
+                                    ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\CraftServer.java:274: 警告: [removal] org.bukkit.plu
+gin 中的 SimplePluginManager 已过时, 且标记为待删除
+    private final SimplePluginManager pluginManager; // Paper - Move down
+                  ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\CraftServer.java:410: 警告: [removal] org.bukkit.plu
+gin 中的 SimplePluginManager 已过时, 且标记为待删除
+        this.pluginManager = new SimplePluginManager(this, commandMap);
+                                 ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\CraftServer.java:2721: 警告: [removal] RegistryAcces
+s 中的 <T>getRegistry(Class<T>) 已过时, 且标记为待删除
+        return io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(aClass);
+                                                                        ^
+  其中, T是类型变量:
+    T扩展已在方法 <T>getRegistry(Class<T>)中声明的Keyed
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\CraftServer.java:2761: 警告: [removal] Spigot 中的 get
+Config() 已过时, 且标记为待删除
+        public YamlConfiguration getConfig() {
+                                 ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\CraftServer.java:2766: 警告: [removal] Spigot 中的 get
+BukkitConfig() 已过时, 且标记为待删除
+        public YamlConfiguration getBukkitConfig() {
+                                 ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\CraftServer.java:2771: 警告: [removal] Spigot 中的 get
+SpigotConfig() 已过时, 且标记为待删除
+        public YamlConfiguration getSpigotConfig() {
+                                 ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\CraftServer.java:2776: 警告: [removal] Spigot 中的 get
+PaperConfig() 已过时, 且标记为待删除
+        public YamlConfiguration getPaperConfig() {
+                                 ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\CraftServer.java:2781: 警告: [removal] Spigot 中的 res
+tart() 已过时, 且标记为待删除
+        public void restart() {
+                    ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftAbstractInventoryView.java:236: 警告:
+ [removal] InventoryView 中的 Property 已过时, 且标记为待删除
+    public boolean setProperty(@NotNull final Property prop, final int value) {
+                                              ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftAbstractInventoryView.java:237: 警告:
+ [removal] HumanEntity 中的 setWindowProperty(Property,int) 已过时, 且标记为待删除
+        return this.getPlayer().setWindowProperty(prop, value);
+                               ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftInventoryAnvil.java:74: 警告: [remova
+l] AnvilInventory 中的 setMaximumRepairCost(int) 已过时, 且标记为待删除
+    public void setMaximumRepairCost(int levels) {
+                ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftInventoryAnvil.java:68: 警告: [remova
+l] AnvilInventory 中的 getMaximumRepairCost() 已过时, 且标记为待删除
+    public int getMaximumRepairCost() {
+               ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftInventoryAnvil.java:62: 警告: [remova
+l] AnvilInventory 中的 setRepairCost(int) 已过时, 且标记为待删除
+    public void setRepairCost(int i) {
+                ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftInventoryAnvil.java:56: 警告: [remova
+l] AnvilInventory 中的 getRepairCost() 已过时, 且标记为待删除
+    public int getRepairCost() {
+               ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftInventoryAnvil.java:50: 警告: [remova
+l] AnvilInventory 中的 setRepairCostAmount(int) 已过时, 且标记为待删除
+    public void setRepairCostAmount(int amount) {
+                ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftInventoryAnvil.java:44: 警告: [remova
+l] AnvilInventory 中的 getRepairCostAmount() 已过时, 且标记为待删除
+    public int getRepairCostAmount() {
+               ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftInventoryAnvil.java:38: 警告: [remova
+l] AnvilInventory 中的 getRenameText() 已过时, 且标记为待删除
+    public String getRenameText() {
+                  ^
+I:\LightingLuminol\paper-server\src\main\java\io\papermc\paper\plugin\manager\PaperPluginManagerImpl.java:239: 警告: [rem
+oval] PluginManager 中的 registerInterface(@org.jetbrains.annotations.NotNull Class<? extends PluginLoader>) 已过时, 且标记为待删除
+    public void registerInterface(@NotNull Class<? extends PluginLoader> loader) throws IllegalArgumentException {
+                ^
+I:\LightingLuminol\paper-server\src\main\java\io\papermc\paper\plugin\manager\PaperPluginManagerImpl.java:37: 警告: [remo
+val] org.bukkit.plugin 中的 SimplePluginManager 已过时, 且标记为待删除
+    public PaperPluginManagerImpl(Server server, CommandMap commandMap, @Nullable SimplePluginManager permissionManager
+) {
+                                                                                  ^
+I:\LightingLuminol\paper-server\src\main\java\io\papermc\paper\plugin\manager\PaperPluginManagerImpl.java:235: 警告: [rem
+oval] co.aikar.timings 中的 Timings 已过时, 且标记为待删除
+        return co.aikar.timings.Timings.isTimingsEnabled();
+                               ^
+I:\LightingLuminol\paper-server\src\main\java\io\papermc\paper\plugin\manager\PaperPluginManagerImpl.java:239: 警告: [rem
+oval] org.bukkit.plugin 中的 PluginLoader 已过时, 且标记为待删除
+    public void registerInterface(@NotNull Class<? extends PluginLoader> loader) throws IllegalArgumentException {
+                                                           ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\entity\CraftPlayer.java:2218: 警告: [removal] org.bu
+kkit.conversations 中的 Conversation 已过时, 且标记为待删除
+    public boolean beginConversation(Conversation conversation) {
+                                     ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\entity\CraftPlayer.java:2223: 警告: [removal] org.bu
+kkit.conversations 中的 Conversation 已过时, 且标记为待删除
+    public void abandonConversation(Conversation conversation) {
+                                    ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\entity\CraftPlayer.java:2224: 警告: [removal] org.bu
+kkit.conversations 中的 ConversationAbandonedEvent 已过时, 且标记为待删除
+        this.conversationTracker.abandonConversation(conversation, new ConversationAbandonedEvent(conversation, new Man
+uallyAbandonedConversationCanceller()));
+                                                                       ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\entity\CraftPlayer.java:2224: 警告: [removal] org.bu
+kkit.conversations 中的 ManuallyAbandonedConversationCanceller 已过时, 且标记为待删除
+        this.conversationTracker.abandonConversation(conversation, new ConversationAbandonedEvent(conversation, new Man
+uallyAbandonedConversationCanceller()));
+                                                                                                                    ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\entity\CraftPlayer.java:2228: 警告: [removal] org.bu
+kkit.conversations 中的 Conversation 已过时, 且标记为待删除
+    public void abandonConversation(Conversation conversation, ConversationAbandonedEvent details) {
+                                    ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\entity\CraftPlayer.java:2228: 警告: [removal] org.bu
+kkit.conversations 中的 ConversationAbandonedEvent 已过时, 且标记为待删除
+    public void abandonConversation(Conversation conversation, ConversationAbandonedEvent details) {
+                                                               ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\entity\CraftPlayer.java:2440: 警告: [removal] Invent
+oryView 中的 Property 已过时, 且标记为待删除
+    public boolean setWindowProperty(Property prop, int value) {
+                                     ^
+I:\LightingLuminol\paper-server\src\main\java\io\papermc\paper\potion\PaperPotionBrewer.java:24: 警告: [removal] PotionBr
+ewer 中的 getEffects(@org.jetbrains.annotations.NotNull PotionType,boolean,boolean) 已过时, 且标记为待删除
+    public Collection<PotionEffect> getEffects(PotionType type, boolean upgraded, boolean extended) {
+                                    ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\CraftWorld.java:1693: 警告: [removal] World 中的 setGa
+meRuleValue(@org.jetbrains.annotations.NotNull String,@org.jetbrains.annotations.NotNull String) 已过时, 且标记为待删除
+    public boolean setGameRuleValue(String rule, String value) {
+                   ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\CraftWorld.java:1677: 警告: [removal] World 中的 getGa
+meRuleValue(@org.jetbrains.annotations.Nullable String) 已过时, 且标记为待删除
+    public String getGameRuleValue(String rule) {
+                  ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\CraftWorld.java:1358: 警告: [removal] World 中的 getAl
+lowAnimals() 已过时, 且标记为待删除
+    public boolean getAllowAnimals() {
+                   ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\CraftWorld.java:1353: 警告: [removal] World 中的 setSp
+awnFlags(boolean,boolean) 已过时, 且标记为待删除
+    public void setSpawnFlags(boolean allowMonsters, boolean allowAnimals) {
+                ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\CraftWorld.java:1314: 警告: [removal] World 中的 spawn
+FallingBlock(@org.jetbrains.annotations.NotNull Location,@org.jetbrains.annotations.NotNull Material,byte) 已过时, 且标记为待删除
+    public FallingBlock spawnFallingBlock(Location location, org.bukkit.Material material, byte data) throws IllegalArg
+umentException {
+                        ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\CraftWorld.java:1308: 警告: [removal] World 中的 spawn
+FallingBlock(@org.jetbrains.annotations.NotNull Location,@org.jetbrains.annotations.NotNull MaterialData) 已过时, 且标记为待删除
+    public FallingBlock spawnFallingBlock(Location location, MaterialData data) throws IllegalArgumentException {
+                        ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\CraftWorld.java:1308: 警告: [removal] org.bukkit.mat
+erial 中的 MaterialData 已过时, 且标记为待删除
+    public FallingBlock spawnFallingBlock(Location location, MaterialData data) throws IllegalArgumentException {
+                                                             ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\CraftWorld.java:1683: 警告: [removal] GameRule 中的 <T
+>getByName(@org.jetbrains.annotations.NotNull String) 已过时, 且标记为待删除
+        org.bukkit.GameRule<?> bukkit = org.bukkit.GameRule.getByName(rule);
+                                                           ^
+  其中, T是类型变量:
+    T扩展已在方法 <T>getByName(@org.jetbrains.annotations.NotNull String)中声明的Object
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\CraftWorld.java:1698: 警告: [removal] GameRule 中的 <T
+>getByName(@org.jetbrains.annotations.NotNull String) 已过时, 且标记为待删除
+        org.bukkit.GameRule<?> bukkit = org.bukkit.GameRule.getByName(rule);
+                                                           ^
+  其中, T是类型变量:
+    T扩展已在方法 <T>getByName(@org.jetbrains.annotations.NotNull String)中声明的Object
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\CraftWorld.java:1722: 警告: [removal] GameRule 中的 <T
+>getByName(@org.jetbrains.annotations.NotNull String) 已过时, 且标记为待删除
+        org.bukkit.GameRule<?> bukkit = org.bukkit.GameRule.getByName(rule);
+                                                           ^
+  其中, T是类型变量:
+    T扩展已在方法 <T>getByName(@org.jetbrains.annotations.NotNull String)中声明的Object
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\CraftWorld.java:2015: 警告: [removal] World 中的 Spigo
+t 已过时, 且标记为待删除
+    private final org.bukkit.World.Spigot spigot = new org.bukkit.World.Spigot() {
+                                  ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\CraftWorld.java:2015: 警告: [removal] World 中的 Spigo
+t 已过时, 且标记为待删除
+    private final org.bukkit.World.Spigot spigot = new org.bukkit.World.Spigot() {
+                                                                       ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\CraftWorld.java:2028: 警告: [removal] World 中的 Spigo
+t 已过时, 且标记为待删除
+    public org.bukkit.World.Spigot spigot() {
+                           ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftItemFactory.java:230: 警告: [removal]
+ ItemFactory 中的 getI18NDisplayName(@org.jetbrains.annotations.Nullable ItemStack) 已过时, 且标记为待删除
+    public String getI18NDisplayName(ItemStack item) {
+                  ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftMetaItem.java:2632: 警告: [removal] I
+temMeta 中的 hasDestroyableKeys() 已过时, 且标记为待删除
+    public boolean hasDestroyableKeys() {
+                   ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftMetaItem.java:2627: 警告: [removal] I
+temMeta 中的 hasPlaceableKeys() 已过时, 且标记为待删除
+    public boolean hasPlaceableKeys() {
+                   ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftMetaItem.java:2587: 警告: [removal] I
+temMeta 中的 setPlaceableKeys(@org.jetbrains.annotations.NotNull Collection<Namespaced>) 已过时, 且标记为待删除
+    public void setPlaceableKeys(final Collection<com.destroystokyo.paper.Namespaced> canPlaceOn) {
+                ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftMetaItem.java:2582: 警告: [removal] I
+temMeta 中的 getPlaceableKeys() 已过时, 且标记为待删除
+    public Set<com.destroystokyo.paper.Namespaced> getPlaceableKeys() {
+                                                   ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftMetaItem.java:2575: 警告: [removal] I
+temMeta 中的 setDestroyableKeys(@org.jetbrains.annotations.NotNull Collection<Namespaced>) 已过时, 且标记为待删除
+    public void setDestroyableKeys(final Collection<com.destroystokyo.paper.Namespaced> canDestroy) {
+                ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftMetaItem.java:2570: 警告: [removal] I
+temMeta 中的 getDestroyableKeys() 已过时, 且标记为待删除
+    public Set<com.destroystokyo.paper.Namespaced> getDestroyableKeys() {
+                                                   ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftMetaItem.java:2550: 警告: [removal] I
+temMeta 中的 setCanPlaceOn(Set<Material>) 已过时, 且标记为待删除
+    public void setCanPlaceOn(final Set<Material> canPlaceOn) {
+                ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftMetaItem.java:2545: 警告: [removal] I
+temMeta 中的 getCanPlaceOn() 已过时, 且标记为待删除
+    public Set<Material> getCanPlaceOn() {
+                         ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftMetaItem.java:2539: 警告: [removal] I
+temMeta 中的 setCanDestroy(Set<Material>) 已过时, 且标记为待删除
+    public void setCanDestroy(final Set<Material> canDestroy) {
+                ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftMetaItem.java:2534: 警告: [removal] I
+temMeta 中的 getCanDestroy() 已过时, 且标记为待删除
+    public Set<Material> getCanDestroy() {
+                         ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftMetaItem.java:1204: 警告: [removal] I
+temMeta 中的 setLocalizedName(@org.jetbrains.annotations.Nullable String) 已过时, 且标记为待删除
+    public void setLocalizedName(String name) {
+                ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftMetaItem.java:1199: 警告: [removal] I
+temMeta 中的 getLocalizedName() 已过时, 且标记为待删除
+    public String getLocalizedName() {
+                  ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftMetaItem.java:1208: 警告: [removal] I
+temMeta 中的 hasLocalizedName() 已过时, 且标记为待删除
+    public boolean hasLocalizedName() {
+                   ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftMetaItem.java:1897: 警告: [removal] o
+rg.bukkit.inventory.meta.tags 中的 CustomItemTagContainer 已过时, 且标记为待删除
+    public CustomItemTagContainer getCustomTagContainer() {
+           ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftMetaItem.java:2570: 警告: [removal] c
+om.destroystokyo.paper 中的 Namespaced 已过时, 且标记为待删除
+    public Set<com.destroystokyo.paper.Namespaced> getDestroyableKeys() {
+                                      ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftMetaItem.java:2575: 警告: [removal] c
+om.destroystokyo.paper 中的 Namespaced 已过时, 且标记为待删除
+    public void setDestroyableKeys(final Collection<com.destroystokyo.paper.Namespaced> canDestroy) {
+                                                                           ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftMetaItem.java:2582: 警告: [removal] c
+om.destroystokyo.paper 中的 Namespaced 已过时, 且标记为待删除
+    public Set<com.destroystokyo.paper.Namespaced> getPlaceableKeys() {
+                                      ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftMetaItem.java:2587: 警告: [removal] c
+om.destroystokyo.paper 中的 Namespaced 已过时, 且标记为待删除
+    public void setPlaceableKeys(final Collection<com.destroystokyo.paper.Namespaced> canPlaceOn) {
+                                                                         ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftMetaItem.java:2593: 警告: [removal] c
+om.destroystokyo.paper 中的 Namespaced 已过时, 且标记为待删除
+    private static List<net.minecraft.advancements.predicates.BlockPredicate> convertFromLegacyNamespaced(final Collect
+ion<com.destroystokyo.paper.Namespaced> namespaceds) {
+                                                                                                                       
+                           ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftMetaItem.java:2596: 警告: [removal] c
+om.destroystokyo.paper 中的 Namespaced 已过时, 且标记为待删除
+        for (final com.destroystokyo.paper.Namespaced namespaced : namespaceds) {
+                                          ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftMetaItem.java:2599: 警告: [removal] c
+om.destroystokyo.paper 中的 NamespacedTag 已过时, 且标记为待删除
+            } else if (namespaced instanceof final com.destroystokyo.paper.NamespacedTag tag) {
+                                                                          ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftMetaItem.java:2606: 警告: [removal] c
+om.destroystokyo.paper 中的 Namespaced 已过时, 且标记为待删除
+    private static Set<com.destroystokyo.paper.Namespaced> convertToLegacyNamespaced(final Collection<net.minecraft.adv
+ancements.predicates.BlockPredicate> predicates) {
+                                              ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftMetaItem.java:2607: 警告: [removal] c
+om.destroystokyo.paper 中的 Namespaced 已过时, 且标记为待删除
+        final Set<com.destroystokyo.paper.Namespaced> namespaceds = Sets.newHashSet();
+                                         ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftMetaItem.java:2614: 警告: [removal] c
+om.destroystokyo.paper 中的 NamespacedTag 已过时, 且标记为待删除
+                namespaceds.add(new com.destroystokyo.paper.NamespacedTag(named.key().location().getNamespace(), named.
+key().location().getPath()));
+                                                           ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftMetaItem.java:2637: 警告: [removal] c
+om.destroystokyo.paper 中的 Namespaced 已过时, 且标记为待删除
+    private static boolean ofAcceptableType(final Collection<com.destroystokyo.paper.Namespaced> namespacedResources) {
+                                                                                    ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftMetaItem.java:2638: 警告: [removal] c
+om.destroystokyo.paper 中的 Namespaced 已过时, 且标记为待删除
+        for (com.destroystokyo.paper.Namespaced resource : namespacedResources) {
+                                    ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\inventory\CraftMetaItem.java:2639: 警告: [removal] c
+om.destroystokyo.paper 中的 NamespacedTag 已过时, 且标记为待删除
+            if (!(resource instanceof org.bukkit.NamespacedKey || resource instanceof com.destroystokyo.paper.Namespace
+dTag)) {
+                                                                                                             ^
+I:\LightingLuminol\paper-server\src\main\java\org\bukkit\craftbukkit\map\CraftMapCanvas.java:79: 警告: [removal] MapCanva
+s 中的 getBasePixel(int,int) 已过时, 且标记为待删除
+    public byte getBasePixel(int x, int y) {
+                ^
+注: 某些输入文件使用或覆盖了已过时的 API。
+注: 有关详细信息, 请使用 -Xlint:deprecation 重新编译。
+注: 某些输入文件额外使用或覆盖了标记为待删除的已过时 API。
+注: 某些输入文件使用了未经检查或不安全的操作。
+注: 有关详细信息, 请使用 -Xlint:unchecked 重新编译。
+100 个警告
+
+> Task :lightingluminol-server:classes
+> Task :lightingluminol-server:processLog4jPluginsResources NO-SOURCE
+> Task :lightingluminol-server:log4jPluginsClasses UP-TO-DATE
+> Task :lightingluminol-server:jar
+> Task :lightingluminol-server:createBundlerJar
+> Task :lightingluminol-server:createPaperclipJar
+
+[Incubating] Problems report is available at: file:///I:/LightingLuminol/build/reports/problems/problems-report.html
+
+BUILD SUCCESSFUL in 3m 34s
+13 actionable tasks: 5 executed, 8 up-to-date

@@ -1,0 +1,95 @@
+﻿
+> Configure project :
+paperweight-patcher v2.0.0-beta.21 (running on 'Windows 11')
+
+> Configure project :lightingluminol-server
+paperweight-core v2.0.0-beta.21 (running on 'Windows 11')
+
+> Task :checkoutPaperRepo
+> Task :filterPaperApiFromPaper UP-TO-DATE
+
+> Task :applyPaperApiFilePatches
+Applied 0 patches
+
+> Task :applyPaperApiFeaturePatches
+> Task :applyPaperApiPatches
+> Task :filterPaperServerFromPaper UP-TO-DATE
+
+> Task :applyPaperServerFilePatches
+Applied 0 patches
+
+> Task :applyPaperServerFeaturePatches
+> Task :applyPaperServerPatches
+> Task :applyPaperSingleFilePatches
+> Task :applyPaperPatches
+
+> Configure project :LightingLuminol
+paperweight-patcher v2.0.0-beta.21 (running on 'Windows 11')
+
+> Configure project :LightingLuminol:lightingluminol-server
+paperweight-core v2.0.0-beta.21 (running on 'Windows 11')
+
+> Task :LightingLuminol:lightingluminol-server:downloadMcManifest
+> Task :LightingLuminol:lightingluminol-server:downloadMcVersionManifest UP-TO-DATE
+> Task :LightingLuminol:lightingluminol-server:downloadServerJar UP-TO-DATE
+> Task :LightingLuminol:lightingluminol-server:extractFromBundler UP-TO-DATE
+> Task :LightingLuminol:lightingluminol-server:setupMacheResources UP-TO-DATE
+> Task :LightingLuminol:lightingluminol-server:extractMacheResources UP-TO-DATE
+> Task :LightingLuminol:lightingluminol-server:applyPaperMinecraftResourcePatches UP-TO-DATE
+
+> Task :LightingLuminol:lightingluminol-server:applyMinecraftResourcePatches
+Applied 0 patches
+
+> Task :LightingLuminol:lightingluminol-server:downloadMcLibrariesSources UP-TO-DATE
+> Task :LightingLuminol:lightingluminol-server:downloadRuntimeClasspathSources UP-TO-DATE
+> Task :LightingLuminol:lightingluminol-server:indexLibraryFiles UP-TO-DATE
+> Task :LightingLuminol:lightingluminol-server:importPaperLibraryFiles UP-TO-DATE
+> Task :LightingLuminol:lightingluminol-server:macheRemapJar UP-TO-DATE
+> Task :LightingLuminol:lightingluminol-server:macheDecompileJar UP-TO-DATE
+> Task :LightingLuminol:lightingluminol-server:collectPaperATsFromPatches UP-TO-DATE
+> Task :LightingLuminol:lightingluminol-server:mergePaperATs UP-TO-DATE
+
+> Task :LightingLuminol:lightingluminol-server:setupMacheSources
+Copy initial sources...
+Setup git repo...
+
+> Task :applyAllPatches
+
+> Task :LightingLuminol:lightingluminol-server:setupMacheSources
+Applying mache patches...
+Applied 105 mache patches
+Applying access transformers...
+
+> Task :LightingLuminol:lightingluminol-server:extractMacheSources
+
+> Task :LightingLuminol:lightingluminol-server:applyPaperMinecraftSourcePatches
+Applied 928 patches
+
+> Task :LightingLuminol:lightingluminol-server:applyPaperMinecraftFilePatches
+> Task :LightingLuminol:lightingluminol-server:applyPaperMinecraftFeaturePatches
+
+> Task :LightingLuminol:lightingluminol-server:importLightingluminolLibraryFiles
+Importing 0 classes from library sources...
+
+> Task :LightingLuminol:lightingluminol-server:collectLightingluminolATsFromPatches UP-TO-DATE
+> Task :LightingLuminol:lightingluminol-server:mergeLightingluminolATs UP-TO-DATE
+> Task :LightingLuminol:lightingluminol-server:runLightingluminolSetup
+
+> Task :LightingLuminol:lightingluminol-server:applyMinecraftSourcePatches
+Applied 0 patches
+
+> Task :LightingLuminol:lightingluminol-server:applyMinecraftFilePatches
+> Task :LightingLuminol:lightingluminol-server:applyMinecraftFeaturePatches
+> Task :LightingLuminol:lightingluminol-server:applyMinecraftPatches
+> Task :LightingLuminol:lightingluminol-server:filterPaperServerFromPaper UP-TO-DATE
+
+> Task :LightingLuminol:lightingluminol-server:applyPaperServerFilePatches
+Applied 0 patches
+
+> Task :LightingLuminol:lightingluminol-server:applyPaperServerFeaturePatches
+> Task :LightingLuminol:lightingluminol-server:applyPaperServerPatches
+> Task :LightingLuminol:lightingluminol-server:applyServerPatches
+> Task :LightingLuminol:lightingluminol-server:applyAllServerPatches
+
+BUILD SUCCESSFUL in 4m 58s
+9 actionable tasks: 7 executed, 2 up-to-date

@@ -112,24 +112,10 @@ cd LightingLuminol-Fork
 
 `applyAllPatches` 任务会：从 `paperRef` 拉取上游 Paper 26.2 源码 → 应用 `lightingluminol-api/paper-patches` → 应用 `lightingluminol-server/{paper,minecraft,luminol}-patches` → 合并 `src/main/java` 下的 Luminol 核心源码到编译路径。
 
-> **注意：** `applyAllPatches` 会用反编译源码覆盖 `src/minecraft/java/`，导致其中已提交的修改（如 `EntityFluidInteraction.java` 的 `ChunkStatus.SPAWN`、`RegionFile.java` 的 `IRegionFile` 接口等）被还原。因此在 `applyAllPatches` 之后、`createPaperclipJar` 之前，需要恢复这些文件：
->
-> ```bash
-> git checkout -- lightingluminol-server/src/minecraft/java/
-> ```
-
 ### 一键构建
 
 ```bash
-# Windows
-.\gradlew.bat applyAllPatches
-git checkout -- lightingluminol-server/src/minecraft/java/
-.\gradlew.bat createPaperclipJar
-
-# Linux / macOS
-./gradlew applyAllPatches
-git checkout -- lightingluminol-server/src/minecraft/java/
-./gradlew createPaperclipJar
+.\gradlew.bat applyAllPatches createPaperclipJar
 ```
 
 ### 可用 Gradle 任务

@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import zone.little.arbor.config.modules.function.RegionFormatConfig;
+
 public final class ConfigLoader {
     private static final Logger LOGGER = Logger.getLogger(ConfigLoader.class.getName());
     private static final String CONFIG_DIR = "luminol_config";
@@ -40,7 +42,8 @@ public final class ConfigLoader {
         try {
             List<String> lines = Files.readAllLines(configPath, StandardCharsets.UTF_8);
             parseConfig(lines);
-            LOGGER.info("Successfully loaded Luminol config");
+            RegionFormatConfig.onLoaded();
+            LOGGER.info("Successfully loaded Luminol config, region format: " + RegionFormatConfig.regionFormat);
         } catch (IOException e) {
             LOGGER.severe("Failed to load Luminol config: " + e.getMessage());
         }
