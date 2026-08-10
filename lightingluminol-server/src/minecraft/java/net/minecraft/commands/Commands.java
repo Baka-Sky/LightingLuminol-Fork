@@ -202,7 +202,7 @@ public class Commands {
         ClearInventoryCommands.register(this.dispatcher, context);
         //CloneCommands.register(this.dispatcher, context); // Folia - region threading - TODO
         DamageCommand.register(this.dispatcher, context);
-        //DataCommands.register(this.dispatcher); // Folia - region threading - TODO
+        DataCommands.register(this.dispatcher); // LightingLuminol - re-enable /data command (vanilla datapack support)
         //DataPackCommand.register(this.dispatcher, context); // Folia - region threading - TODO
         //DebugCommand.register(this.dispatcher); // Folia - region threading - TODO
         DefaultGameModeCommands.register(this.dispatcher);
@@ -215,7 +215,7 @@ public class Commands {
         FillCommand.register(this.dispatcher, context);
         FillBiomeCommand.register(this.dispatcher, context);
         ForceLoadCommand.register(this.dispatcher);
-        //FunctionCommand.register(this.dispatcher); // Folia - region threading - TODO
+        FunctionCommand.register(this.dispatcher); // LightingLuminol - re-enable /function command (vanilla datapack support; depends on DataCommands)
         GameModeCommand.register(this.dispatcher);
         GameRuleCommand.register(this.dispatcher, context);
         GiveCommand.register(this.dispatcher, context);
@@ -257,7 +257,7 @@ public class Commands {
         TeleportCommand.register(this.dispatcher);
         TellRawCommand.register(this.dispatcher, context);
         //TestCommand.register(this.dispatcher, context); // Folia - region threading
-        //TickCommand.register(this.dispatcher); // Folia - region threading - TODO later
+        TickCommand.register(this.dispatcher); // LightingLuminol - re-enable /tick command (note: limited effect under Folia region threading)
         TimeCommand.register(this.dispatcher, context);
         TitleCommand.register(this.dispatcher, context);
         //TriggerCommand.register(this.dispatcher); // Folia - region threading - TODO later
