@@ -203,7 +203,7 @@ public class Commands {
         //CloneCommands.register(this.dispatcher, context); // Folia - region threading - TODO
         DamageCommand.register(this.dispatcher, context);
         DataCommands.register(this.dispatcher); // LightingLuminol - re-enable /data command (vanilla datapack support)
-        //DataPackCommand.register(this.dispatcher, context); // Folia - region threading - TODO
+        DataPackCommand.register(this.dispatcher, context); // LightingLuminol - re-enable /datapack command
         //DebugCommand.register(this.dispatcher); // Folia - region threading - TODO
         DefaultGameModeCommands.register(this.dispatcher);
         //DialogCommand.register(this.dispatcher, context); // Folia - region threading - TODO
@@ -232,7 +232,7 @@ public class Commands {
         PlaceCommand.register(this.dispatcher);
         PlaySoundCommand.register(this.dispatcher);
         RandomCommand.register(this.dispatcher);
-        //ReloadCommand.register(this.dispatcher); // Folia - region threading
+        ReloadCommand.register(this.dispatcher); // LightingLuminol - re-enable /reload command for datapack support
         RecipeCommand.register(this.dispatcher);
         FetchProfileCommand.register(this.dispatcher);
         //ReturnCommand.register(this.dispatcher); // Folia - region threading

@@ -1,0 +1,8 @@
+{
+  "pack": {
+    "pack_format": 107,
+    "min_format": 82,
+    "max_format": 107,
+    "description": "LightingLuminol Test Datapack - Tests /loot /scoreboard /item /function /schedule /data commands"
+  }
+}
