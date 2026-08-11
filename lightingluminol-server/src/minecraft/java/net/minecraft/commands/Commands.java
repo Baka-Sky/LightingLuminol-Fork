@@ -198,15 +198,15 @@ public class Commands {
         AdvancementCommands.register(this.dispatcher);
         AttributeCommand.register(this.dispatcher, context);
         ExecuteCommand.register(this.dispatcher, context);
-        //BossBarCommands.register(this.dispatcher, context); // Folia - region threading - TODO
+        BossBarCommands.register(this.dispatcher, context); // LightingLuminol - re-enable /bossbar command
         ClearInventoryCommands.register(this.dispatcher, context);
-        //CloneCommands.register(this.dispatcher, context); // Folia - region threading - TODO
+        CloneCommands.register(this.dispatcher, context); // LightingLuminol - re-enable /clone command
         DamageCommand.register(this.dispatcher, context);
         DataCommands.register(this.dispatcher); // LightingLuminol - re-enable /data command (vanilla datapack support)
         DataPackCommand.register(this.dispatcher, context); // LightingLuminol - re-enable /datapack command
-        //DebugCommand.register(this.dispatcher); // Folia - region threading - TODO
+        DebugCommand.register(this.dispatcher); // LightingLuminol - re-enable /debug command
         DefaultGameModeCommands.register(this.dispatcher);
-        //DialogCommand.register(this.dispatcher, context); // Folia - region threading - TODO
+        DialogCommand.register(this.dispatcher, context); // LightingLuminol - re-enable /dialog command
         DifficultyCommand.register(this.dispatcher);
         EffectCommands.register(this.dispatcher, context);
         EmoteCommands.register(this.dispatcher);
@@ -235,7 +235,7 @@ public class Commands {
         ReloadCommand.register(this.dispatcher); // LightingLuminol - re-enable /reload command for datapack support
         RecipeCommand.register(this.dispatcher);
         FetchProfileCommand.register(this.dispatcher);
-        //ReturnCommand.register(this.dispatcher); // Folia - region threading
+        ReturnCommand.register(this.dispatcher); // LightingLuminol - re-enable /return command
         RideCommand.register(this.dispatcher);
         RotateCommand.register(this.dispatcher);
         SayCommand.register(this.dispatcher);
@@ -246,22 +246,22 @@ public class Commands {
         SetBlockCommand.register(this.dispatcher, context);
         SetSpawnCommand.register(this.dispatcher);
         SetWorldSpawnCommand.register(this.dispatcher);
-        //SpectateCommand.register(this.dispatcher); // Folia - region threading - TODO later
-        //SpreadPlayersCommand.register(this.dispatcher); // Folia - region threading - TODO later
+        SpectateCommand.register(this.dispatcher); // LightingLuminol - re-enable /spectate command
+        SpreadPlayersCommand.register(this.dispatcher); // LightingLuminol - re-enable /spreadplayers command
         StopSoundCommand.register(this.dispatcher);
         StopwatchCommand.register(this.dispatcher);
         SummonCommand.register(this.dispatcher, context);
-        //TagCommand.register(this.dispatcher); // Folia - region threading - TODO later
-        //TeamCommand.register(this.dispatcher, context); // Folia - region threading - TODO later
-        //TeamMsgCommand.register(this.dispatcher); // Folia - region threading - TODO later
+        TagCommand.register(this.dispatcher); // LightingLuminol - re-enable /tag command
+        TeamCommand.register(this.dispatcher, context); // LightingLuminol - re-enable /team command
+        TeamMsgCommand.register(this.dispatcher); // LightingLuminol - re-enable /teammsg command
         TeleportCommand.register(this.dispatcher);
         TellRawCommand.register(this.dispatcher, context);
-        //TestCommand.register(this.dispatcher, context); // Folia - region threading
+        TestCommand.register(this.dispatcher, context); // LightingLuminol - re-enable /test command
         TickCommand.register(this.dispatcher); // LightingLuminol - re-enable /tick command (note: limited effect under Folia region threading)
         TimeCommand.register(this.dispatcher, context);
         TitleCommand.register(this.dispatcher, context);
-        //TriggerCommand.register(this.dispatcher); // Folia - region threading - TODO later
-        //WaypointCommand.register(this.dispatcher, context); // Folia - region threading - TODO later
+        TriggerCommand.register(this.dispatcher); // LightingLuminol - re-enable /trigger command
+        WaypointCommand.register(this.dispatcher, context); // LightingLuminol - re-enable /waypoint command
         WeatherCommand.register(this.dispatcher);
         WorldBorderCommand.register(this.dispatcher);
         if (JvmProfiler.INSTANCE.isAvailable()) {
@@ -292,8 +292,8 @@ public class Commands {
             OpCommand.register(this.dispatcher);
             PardonCommand.register(this.dispatcher);
             PardonIpCommand.register(this.dispatcher);
-            //PerfCommand.register(this.dispatcher); // Folia - region threading - TODO later
-            //SaveAllCommand.register(this.dispatcher); // Folia - region threading - TODO later
+            PerfCommand.register(this.dispatcher); // LightingLuminol - re-enable /perf command
+            SaveAllCommand.register(this.dispatcher); // LightingLuminol - re-enable /save-all command
             SaveOffCommand.register(this.dispatcher);
             SaveOnCommand.register(this.dispatcher);
             SetPlayerIdleTimeoutCommand.register(this.dispatcher);
