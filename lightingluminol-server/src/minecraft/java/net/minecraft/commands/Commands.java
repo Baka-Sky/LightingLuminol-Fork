@@ -220,12 +220,12 @@ public class Commands {
         GameRuleCommand.register(this.dispatcher, context);
         GiveCommand.register(this.dispatcher, context);
         HelpCommand.register(this.dispatcher);
-        //ItemCommands.register(this.dispatcher, context); // Folia - region threading - TODO later
+        ItemCommands.register(this.dispatcher, context); // LightingLuminol - re-enable /item command (note: block targets have Folia thread-safety risk)
         KickCommand.register(this.dispatcher);
         KillCommand.register(this.dispatcher);
         ListPlayersCommand.register(this.dispatcher);
         LocateCommand.register(this.dispatcher, context);
-        //LootCommand.register(this.dispatcher, context); // Folia - region threading - TODO later
+        LootCommand.register(this.dispatcher, context); // LightingLuminol - re-enable /loot command (note: block targets have Folia thread-safety risk)
         MsgCommand.register(this.dispatcher);
         SwingCommand.register(this.dispatcher);
         ParticleCommand.register(this.dispatcher, context);
@@ -239,8 +239,8 @@ public class Commands {
         RideCommand.register(this.dispatcher);
         RotateCommand.register(this.dispatcher);
         SayCommand.register(this.dispatcher);
-        //ScheduleCommand.register(this.dispatcher); // Folia - region threading
-        //ScoreboardCommand.register(this.dispatcher, context); // Folia - region threading
+        ScheduleCommand.register(this.dispatcher); // LightingLuminol - re-enable /schedule command (per-world TimerQueue, Folia-safe)
+        ScoreboardCommand.register(this.dispatcher, context); // LightingLuminol - re-enable /scoreboard command (server-level data, Folia-safe)
         SeedCommand.register(this.dispatcher, commandSelection != Commands.CommandSelection.INTEGRATED);
         VersionCommand.register(this.dispatcher, commandSelection != Commands.CommandSelection.INTEGRATED);
         SetBlockCommand.register(this.dispatcher, context);
